@@ -9,7 +9,7 @@ services:
     environment:
       POSTGRES_DB: zoikyc
       POSTGRES_USER: zoikyc_user
-      POSTGRES_PASSWORD: zoikyc_password123
+      POSTGRES_PASSWORD: Admin@32132321
     ports:
       - "5432:5432"
     volumes:
@@ -30,7 +30,7 @@ services:
     environment:
       FLASK_ENV: production
       SECRET_KEY: ${SECRET_KEY:-zoikyc-super-secret-production-key-2026!}
-      DATABASE_URL: postgresql+psycopg://zoikyc_user:zoikyc_password123@db:5432/zoikyc
+      DATABASE_URL: postgresql+psycopg://zoikyc_user:Admin%4032132321@db:5432/zoikyc
       MAIL_SERVER: ${MAIL_SERVER:-smtpout.secureserver.net}
       MAIL_PORT: ${MAIL_PORT:-465}
       MAIL_USE_SSL: ${MAIL_USE_SSL:-True}
