@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ZoiKYC — B2B FinTech Platform{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  {% if current_user.is_authenticated %}
+  <div class="app-layout">
+    <!-- Premium Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="{{ url_for('dashboard.index') }}" class="brand-logo" style="text-decoration: none;">
+          <img src="{{ url_for('static', filename='images/zoikyc_logo.png') }}" alt="ZoiKYC" style="max-height: 42px; width: auto;" />
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- Group 1: Core Platform -->
+        <div class="nav-group">
+          <div class="nav-group-label">Core Platform</div>
+          <ul class="nav-list">
+            <li class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+              <a href="{{ url_for('dashboard.index') }}">
+                <i class="bi bi-grid-1x2-fill"></i> Dashboard
+              </a>
+            </li>
+            <li class="nav-item {% if request.endpoint == 'wallet.index' %}active{% endif %}">
+              <a href="{{ url_for('wallet.index') }}">
+                <i class="bi bi-wallet2"></i> Wallet Overview
+              </a>
+            </li>
+            <li class="nav-item {% if request.endpoint == 'wallet.transactions' %}active{% endif %}">
+              <a href="{{ url_for('wallet.transactions') }}">
+                <i class="bi bi-journal-text"></i> Transactions History
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Group 2: Organisation Settings -->
+        <div class="nav-group">
+          <div class="nav-group-label">Organisation</div>
+          <ul class="nav-list">
+            <li class="nav-item {% if request.endpoint == 'company.profile' %}active{% endif %}">
+              <a href="{{ url_for('company.profile') }}">
+                <i class="bi bi-building-gear"></i> Company Profile
+              </a>
+            </li>
+            <li class="nav-item {% if request.endpoint == 'company.documents' %}active{% endif %}">
+              <a href="{{ url_for('company.documents') }}">
+                <i class="bi bi-file-earmark-check-fill"></i> Compliance Docs
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Group 3: FinTech Services -->
+        <div class="nav-group">
+          <div class="nav-group-label">FinTech Services</div>
+          <ul class="nav-list">
+            <li class="nav-item disabled">
+              <a href="#" onclick="return false;">
+                <i class="bi bi-people"></i> Customers <span class="disabled-badge">Soon</span>
+              </a>
+            </li>
+            <li class="nav-item disabled">
+              <a href="#" onclick="return false;">
+                <i class="bi bi-person-bounding-box"></i> KYC / KRA <span class="disabled-badge">Soon</span>
+              </a>
+            </li>
+            <li class="nav-item disabled">
+              <a href="#" onclick="return false;">
+                <i class="bi bi-file-earmark-code"></i> E-Sign <span class="disabled-badge">Soon</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Group 4: Developer API -->
+        <div class="nav-group">
+          <div class="nav-group-label">Developer API</div>
+          <ul class="nav-list">
+            <li class="nav-item disabled">
+              <a href="#" onclick="return false;">
+                <i class="bi bi-key-fill"></i> API Keys <span class="disabled-badge">Soon</span>
+              </a>
+            </li>
+            <li class="nav-item disabled">
+              <a href="#" onclick="return false;">
+                <i class="bi bi-code-square"></i> API Docs <span class="disabled-badge">Soon</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- Sidebar Footer Org Card -->
+      <div class="sidebar-footer-card">
+        <div class="sidebar-org-name">{{ current_user.company.name if current_user.company else 'Organisation' }}</div>
+        <div class="sidebar-org-status">
+          {% if current_user.company and current_user.company.status == 'active' %}
+            <span style="color: #059669; font-weight: 700;">&bull; Verified Company</span>
+          {% else %}
+            <span style="color: #d97706; font-weight: 700;">&bull; Pending Verification</span>
+          {% endif %}
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      <header class="top-navbar">
+        <div class="top-navbar-left">
+          <h2>{% block page_title %}Dashboard{% endblock %}</h2>
+        </div>
+
+        <div class="top-navbar-right">
+          <!-- Wallet Quick Pill -->
+          <a href="{{ url_for('wallet.index') }}" style="text-decoration: none;">
+            <div class="wallet-pill">
+              <i class="bi bi-wallet2" style="color: var(--tiancai-blue);"></i>
+              <span style="color: var(--text-muted);">Balance:</span>
+              <span class="wallet-pill-amount">
+                {{ current_user.company.wallet.balance | currency if current_user.company and current_user.company.wallet else '₹0.00' }}
+              </span>
+            </div>
+          </a>
+
+          <!-- User Profile Badge -->
+          <div class="user-profile-badge">
+            <div class="avatar-circle">
+              {{ current_user.name[:1].upper() if current_user.name else 'U' }}
+            </div>
+            <div>
+              <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-dark);">{{ current_user.name }}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">{{ current_user.company.name if current_user.company else 'Organisation' }}</div>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" title="Sign Out" style="color: var(--text-muted); margin-left: 10px; font-size: 1.1rem; transition: var(--transition);">
+              <i class="bi bi-box-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <main class="page-container">
+        <!-- Flash Messages -->
+        <div class="alert-container">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-auto-dismiss">
+                  <span>{{ message }}</span>
+                  <button type="button" onclick="this.parentElement.remove();" style="background:none; border:none; color:inherit; cursor:pointer; font-size:1.1rem;">&times;</button>
+                </div>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+        </div>
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+  {% else %}
+    <!-- Master Outer Auth Container matching reference image -->
+    <div class="auth-split-page">
+      <div class="auth-master-card">
+        <!-- Left Purple Graphic Panel -->
+        <div class="auth-split-left">
+          <div class="auth-left-brand">
+            <div class="brand-icon-square"><i class="bi bi-shield-check"></i></div>
+            <span>ZoiKYC</span>
+          </div>
+
+          <!-- Futuristic Graphic Illustration -->
+          <div class="auth-illustration-container">
+            <div class="illustration-svg-box">
+              <svg viewBox="0 0 300 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="90" y="20" width="130" height="110" rx="20" fill="#1e1b4b" stroke="#a855f7" stroke-width="3"/>
+                <circle cx="120" cy="50" r="3" fill="#fef08a"/>
+                <circle cx="180" cy="80" r="2" fill="#ffffff"/>
+                <circle cx="160" cy="40" r="8" fill="#f43f5e"/>
+                <path d="M70 210 C70 160 110 130 150 130 C190 130 220 160 220 210 Z" fill="#9333ea"/>
+                <path d="M130 110 C130 85 165 85 165 110 L165 130 L130 130 Z" fill="#c084fc"/>
+                <rect x="125" y="92" width="45" height="16" rx="6" fill="#facc15"/>
+                <path d="M140 75 C135 60 165 60 160 75 Z" fill="#fb923c"/>
+                <polygon points="135,65 142,52 146,65" fill="#fb923c"/>
+                <polygon points="154,65 158,52 165,65" fill="#fb923c"/>
+                <rect x="30" y="110" width="75" height="100" rx="8" fill="#3b0764" stroke="#a855f7" stroke-width="2"/>
+                <rect x="40" y="125" width="55" height="70" rx="4" fill="#581c87"/>
+                <rect x="45" y="135" width="30" height="6" rx="2" fill="#facc15"/>
+                <rect x="45" y="148" width="40" height="4" rx="2" fill="#a855f7"/>
+                <rect x="45" y="158" width="35" height="4" rx="2" fill="#38bdf8"/>
+              </svg>
+            </div>
+
+            <div class="auth-left-caption">Orchestrate FinTech APIs</div>
+            <div class="auth-left-subcaption">KYC &bull; KRA &bull; E-Sign &bull; Wallet</div>
+          </div>
+
+          <div style="font-size: 0.75rem; opacity: 0.75; text-align: center; z-index: 10; font-weight: 500;">
+            &copy; 2026 ZoiKYC. All rights reserved. Product of Zoibit
+          </div>
+        </div>
+
+        <!-- Right White Form Panel -->
+        <div class="auth-split-right">
+          {% block auth_content %}{% endblock %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

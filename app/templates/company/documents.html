@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Company Compliance Documents — ZoiKYC{% endblock %}
+{% block page_title %}Company Verification Documents{% endblock %}
+
+{% block content %}
+<!-- Verification Banner Card -->
+<div class="card" style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(238, 242, 255, 0.8) 100%); border-color: rgba(99, 102, 241, 0.25); margin-bottom: 32px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px;">
+    <div>
+      <div style="font-size: 0.82rem; text-transform: uppercase; color: var(--brand-primary); font-weight: 800; letter-spacing: 1.2px; margin-bottom: 4px;">
+        <i class="bi bi-shield-check"></i> Organisation Verification & Compliance KYC
+      </div>
+      <h1 style="font-size: 1.7rem; font-weight: 800; color: var(--text-dark);">
+        Upload Required Company Documents (5)
+      </h1>
+      <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 4px; max-width: 700px;">
+        Submit all 5 mandatory registration and compliance documents to activate live FinTech APIs and wallet services.
+      </p>
+    </div>
+    
+    <div style="background: #ffffff; padding: 18px 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-subtle); box-shadow: var(--shadow-sm); min-width: 260px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-dark);">Completion Progress</span>
+        <span style="font-size: 0.85rem; font-weight: 800; color: var(--brand-primary);">{{ uploaded_dict | length }} / 5</span>
+      </div>
+      
+      <!-- Progress Bar -->
+      <div style="width: 100%; height: 10px; background: #e2e8f0; border-radius: 6px; overflow: hidden; margin-bottom: 10px;">
+        <div style="width: {{ (uploaded_dict | length / 5) * 100 }}%; height: 100%; background: var(--brand-gradient); transition: var(--transition);"></div>
+      </div>
+
+      <div style="font-size: 0.78rem; color: var(--text-muted); text-align: center;">
+        {% if uploaded_dict | length >= 5 %}
+          <span style="color: var(--accent-emerald); font-weight: 700;"><i class="bi bi-check-circle-fill"></i> All Documents Uploaded</span>
+        {% else %}
+          <span>{{ 5 - (uploaded_dict | length) }} remaining documents to upload</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}" style="margin-bottom: 24px;">
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<!-- 5 Document Cards Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px; margin-bottom: 36px;">
+
+  {% set doc_cards = [
+    ('certificate_of_incorporation', '1. Certificate of Incorporation', 'Company registration certificate issued by MCA / ROC', 'bi-file-earmark-pdf'),
+    ('company_pan', '2. Company PAN Card Document', 'Official Permanent Account Number card of the entity', 'bi-card-text'),
+    ('gst_certificate', '3. GSTIN Registration Certificate', 'GST registration certificate with valid GSTIN', 'bi-award'),
+    ('board_resolution', '4. Authorised Signatory Proof', 'Board Resolution or Director Aadhaar / Passport ID', 'bi-person-badge'),
+    ('bank_proof', '5. Bank Account Proof', 'Cancelled Cheque or Bank Statement (last 3 months)', 'bi-bank')
+  ] %}
+
+  {% for doc_key, title, subtitle, icon in doc_cards %}
+  {% set uploaded = uploaded_dict.get(doc_key) %}
+  <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between; border-color: {% if uploaded %}rgba(5, 150, 105, 0.3){% else %}var(--border-subtle){% endif %};">
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+        <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: {% if uploaded %}rgba(5, 150, 105, 0.12){% else %}var(--brand-primary-light){% endif %}; color: {% if uploaded %}var(--accent-emerald){% else %}var(--brand-primary){% endif %}; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+          <i class="bi {{ icon }}"></i>
+        </div>
+
+        <div>
+          {% if uploaded %}
+            {% if uploaded.status == 'approved' %}
+              <span class="metric-badge badge-active"><i class="bi bi-patch-check-fill"></i> Approved</span>
+            {% else %}
+              <span class="metric-badge" style="background: rgba(217, 119, 6, 0.12); color: var(--accent-amber);"><i class="bi bi-clock-history"></i> Under Review</span>
+            {% endif %}
+          {% else %}
+            <span class="metric-badge" style="background: #f1f5f9; color: var(--text-light);"><i class="bi bi-exclamation-circle"></i> Pending Upload</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin-bottom: 4px;">{{ title }}</h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 20px;">{{ subtitle }}</p>
+
+      {% if uploaded %}
+      <div style="background: #f8fafc; border: 1px solid var(--border-subtle); padding: 12px 14px; border-radius: var(--radius-md); font-size: 0.82rem; color: var(--text-dark); margin-bottom: 20px;">
+        <div style="font-weight: 700; display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          <i class="bi bi-paperclip" style="color: var(--brand-primary);"></i> {{ uploaded.document_name }}
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 4px;">
+          Uploaded on: {{ uploaded.created_at.strftime('%b %d, %Y %H:%M') if uploaded.created_at else '' }}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Upload Form per card -->
+    <form method="POST" action="{{ url_for('company.documents') }}" enctype="multipart/form-data">
+      {{ form.csrf_token }}
+      <input type="hidden" name="document_type" value="{{ doc_key }}">
+
+      <div style="margin-bottom: 12px;">
+        <input type="file" name="document_file" id="file_{{ doc_key }}" class="form-control" accept=".pdf,.png,.jpg,.jpeg,.docx" required style="padding: 8px 12px; font-size: 0.82rem;">
+      </div>
+
+      <button type="submit" class="btn-brand" style="padding: 10px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius-md);">
+        <i class="bi bi-upload"></i> {% if uploaded %}Replace Document{% else %}Upload Document{% endif %}
+      </button>
+    </form>
+  </div>
+  {% endfor %}
+
+</div>
+{% endblock %}

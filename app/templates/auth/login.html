@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In — ZoiKYC{% endblock %}
+
+{% block auth_content %}
+<div style="max-width: 440px; margin: auto; width: 100%;">
+  <div class="auth-ref-header">
+    <div>
+      <h1 class="auth-ref-title">Sign In</h1>
+      <div class="auth-title-bar"></div>
+    </div>
+    <div class="lang-toggle-pill">
+      <span>En</span> <i class="bi bi-globe"></i>
+    </div>
+  </div>
+
+  <p style="font-size: 0.92rem; color: var(--text-muted); margin-bottom: 28px;">
+    Welcome back! Enter your credentials to access your ZoiKYC account.
+  </p>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+          <span>{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST" action="{{ url_for('auth.login') }}">
+    {{ form.csrf_token }}
+
+    <div class="ref-form-group" style="margin-bottom: 18px;">
+      <label class="ref-form-label" for="email">Business Email *</label>
+      {{ form.email(class="ref-form-control", placeholder="Email address") }}
+      {% if form.email.errors %}
+        <span style="color: var(--accent-rose); font-size: 0.75rem;">{{ form.email.errors[0] }}</span>
+      {% endif %}
+    </div>
+
+    <div class="ref-form-group" style="margin-bottom: 18px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <label class="ref-form-label" for="password">Password *</label>
+        <a href="{{ url_for('auth.forgot_password') }}" style="font-size: 0.8rem; color: var(--tiancai-blue); font-weight: 700; text-decoration: none;">Forgot password?</a>
+      </div>
+      {{ form.password(class="ref-form-control", placeholder="Please enter password") }}
+      {% if form.password.errors %}
+        <span style="color: var(--accent-rose); font-size: 0.75rem;">{{ form.password.errors[0] }}</span>
+      {% endif %}
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label class="radio-option-item">
+        {{ form.remember() }}
+        <span style="font-weight: 500;">Remember me</span>
+      </label>
+    </div>
+
+    <button type="submit" class="btn-tiancai-pill">
+      Sign In <i class="bi bi-arrow-right"></i>
+    </button>
+  </form>
+
+  <div style="text-align: center; margin-top: 24px; font-size: 0.88rem; color: var(--text-muted);">
+    Don't have an account yet? <a href="{{ url_for('auth.register') }}" style="color: var(--tiancai-blue); font-weight: 700; text-decoration: underline;">Create an account</a>
+  </div>
+</div>
+{% endblock %}

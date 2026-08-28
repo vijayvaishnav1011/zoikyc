@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}Registration — ZoiKYC{% endblock %}
+
+{% block auth_content %}
+<div>
+  <!-- Header with Title, Blue Accent Bar, and Top-Right Pill -->
+  <div class="auth-ref-header">
+    <div>
+      <h1 class="auth-ref-title">Registration</h1>
+      <div class="auth-title-bar"></div>
+    </div>
+    <div class="lang-toggle-pill">
+      <span>En</span> <i class="bi bi-globe"></i>
+    </div>
+  </div>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+          <span>{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST" action="{{ url_for('auth.register') }}">
+    {{ form.csrf_token }}
+
+    <!-- Row 1: Full Name & Organisation Name -->
+    <div class="ref-form-grid">
+      <div class="ref-form-group">
+        <label class="ref-form-label" for="authorised_signatory_name">Full Name *</label>
+        {{ form.authorised_signatory_name(class="ref-form-control", placeholder="Please enter your name") }}
+        {% if form.authorised_signatory_name.errors %}
+          <span style="color: var(--accent-rose); font-size: 0.75rem;">{{ form.authorised_signatory_name.errors[0] }}</span>
+        {% endif %}
+      </div>
+
+      <div class="ref-form-group">
+        <label class="ref-form-label" for="company_name">Company Name *</label>
+        {{ form.company_name(class="ref-form-control", placeholder="Organisation name") }}
+        {% if form.company_name.errors %}
+          <span style="color: var(--accent-rose); font-size: 0.75rem;">{{ form.company_name.errors[0] }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Row 2: Email & Phone Number -->
+    <div class="ref-form-grid">
+      <div class="ref-form-group">
+        <label class="ref-form-label" for="email">Email *</label>
+        {{ form.email(class="ref-form-control", placeholder="Email address") }}
+        {% if form.email.errors %}
+          <span style="color: var(--accent-rose); font-size: 0.75rem;">{{ form.email.errors[0] }}</span>
+        {% endif %}
+      </div>
+
+      <div class="ref-form-group">
+        <label class="ref-form-label" for="phone">Phone number *</label>
+        {{ form.phone(class="ref-form-control", placeholder="Mobile number") }}
+        {% if form.phone.errors %}
+          <span style="color: var(--accent-rose); font-size: 0.75rem;">{{ form.phone.errors[0] }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Row 3: Country & City -->
+    <div class="ref-form-grid">
+      <div class="ref-form-group">
+        <label class="ref-form-label" for="country">Country *</label>
+        {{ form.country(class="ref-form-control") }}
+      </div>
+
+      <div class="ref-form-group">
+        <label class="ref-form-label" for="city">City *</label>
+        {{ form.city(class="ref-form-control", placeholder="Please enter city") }}
+        {% if form.city.errors %}
+          <span style="color: var(--accent-rose); font-size: 0.75rem;">{{ form.city.errors[0] }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Row 4: State & ZIP Code -->
+    <div class="ref-form-grid">
+      <div class="ref-form-group">
+        <label class="ref-form-label" for="state">State *</label>
+        {{ form.state(class="ref-form-control", placeholder="Please enter state") }}
+        {% if form.state.errors %}
+          <span style="color: var(--accent-rose); font-size: 0.75rem;">{{ form.state.errors[0] }}</span>
+        {% endif %}
+      </div>
+
+      <div class="ref-form-group">
+        <label class="ref-form-label" for="zip_code">Postal Code *</label>
+        {{ form.zip_code(class="ref-form-control", placeholder="ZIP / Postal Code") }}
+        {% if form.zip_code.errors %}
+          <span style="color: var(--accent-rose); font-size: 0.75rem;">{{ form.zip_code.errors[0] }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Row 5: GSTIN & Address -->
+    <div class="ref-form-grid">
+      <div class="ref-form-group">
+        <label class="ref-form-label" for="gstin">GSTIN (Optional)</label>
+        {{ form.gstin(class="ref-form-control", placeholder="GSTIN number") }}
+      </div>
+
+      <div class="ref-form-group">
+        <label class="ref-form-label" for="address">Business Address *</label>
+        {{ form.address(class="ref-form-control", placeholder="Registered address") }}
+      </div>
+    </div>
+
+    <!-- Row 6: Password & Confirm Password -->
+    <div class="ref-form-grid">
+      <div class="ref-form-group">
+        <label class="ref-form-label" for="password">Password *</label>
+        {{ form.password(class="ref-form-control", placeholder="Please enter password") }}
+        {% if form.password.errors %}
+          <span style="color: var(--accent-rose); font-size: 0.75rem;">{{ form.password.errors[0] }}</span>
+        {% endif %}
+      </div>
+
+      <div class="ref-form-group">
+        <label class="ref-form-label" for="confirm_password">Confirm password *</label>
+        {{ form.confirm_password(class="ref-form-control", placeholder="Confirm password") }}
+        {% if form.confirm_password.errors %}
+          <span style="color: var(--accent-rose); font-size: 0.75rem;">{{ form.confirm_password.errors[0] }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+
+
+    <!-- Consent Checkbox -->
+    <div style="margin-bottom: 20px;">
+      <label class="radio-option-item">
+        {{ form.agree_terms() }}
+        <span style="font-weight: 500;">I agree to <a href="#" style="color: var(--tiancai-blue); font-weight: 700;">Terms & Conditions</a> and <a href="#" style="color: var(--tiancai-blue); font-weight: 700;">Privacy Policy</a>.</span>
+      </label>
+      {% if form.agree_terms.errors %}
+        <span style="color: var(--accent-rose); font-size: 0.75rem; display: block; margin-top: 4px;">{{ form.agree_terms.errors[0] }}</span>
+      {% endif %}
+    </div>
+
+    <!-- Pill Blue Button matching reference image -->
+    <button type="submit" class="btn-tiancai-pill">
+      Create Account <i class="bi bi-arrow-right"></i>
+    </button>
+  </form>
+
+  <!-- Footer Link -->
+  <div style="text-align: center; margin-top: 20px; font-size: 0.85rem; color: var(--text-muted);">
+    Already have an account? <a href="{{ url_for('auth.login') }}" style="color: var(--tiancai-blue); font-weight: 700; text-decoration: underline;">Sign in</a>
+  </div>
+</div>
+{% endblock %}
