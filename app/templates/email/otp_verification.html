@@ -5,59 +5,52 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Verify your ZoiKYC sign-up</title>
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; margin: 0; padding: 50px 16px; color: #111827; -webkit-font-smoothing: antialiased;">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 40px 16px; color: #1e293b; -webkit-font-smoothing: antialiased;">
 
-  <!-- Main Centered White Outer Card -->
-  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 580px; margin: 0 auto; background-color: #ffffff; border-radius: 20px; border: 1px solid #e5e7eb; box-shadow: 0 4px 25px rgba(0, 0, 0, 0.03); overflow: hidden;">
+  <!-- Main Centered Email Container Card -->
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 540px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04); overflow: hidden;">
     <tr>
-      <td style="padding: 48px 44px 44px 44px; text-align: center;">
+      <td style="padding: 0;">
 
-        <!-- Brand Logo Header Tag -->
-        <div style="margin: 0 auto 32px auto; text-align: center;">
-          <img src="https://yourdomain.com/assets/zoikyc_logo.png" alt="ZoiKYC" width="220" style="border: 0; max-width: 100%; height: auto; display: inline-block;">
+        <!-- CENTERED HEADER WITH SOLID WHITE BACKGROUND -->
+        <div style="padding: 24px 24px 20px; background-color: #ffffff !important; background: #ffffff !important; border-bottom: 1px solid #edf2f7; text-align: center;">
+          <img src="https://zoikyc.zoibit.com/static/images/zoikyc_logo.png" alt="ZoiKYC" style="height: 46px; max-height: 46px; width: auto; margin: 0 auto; display: block;" />
         </div>
 
-        <!-- Heading -->
-        <h1 style="font-size: 24px; font-weight: 700; color: #111827; margin: 0 0 16px 0; letter-spacing: -0.4px;">
-          Verify your ZoiKYC sign-up
-        </h1>
+        <!-- BODY -->
+        <div style="padding: 32px 28px 24px; color: #1e293b; font-size: 14.5px; line-height: 1.65; text-align: left;">
+          
+          <h2 style="font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 14px 0; letter-spacing: -0.3px;">
+            Verify your email address
+          </h2>
 
-        <!-- Description Paragraph -->
-        <p style="font-size: 15px; color: #4b5563; line-height: 1.6; margin: 0 auto 32px auto; max-width: 460px;">
-          We have received a sign-up attempt with the following code. Please enter it in the browser window where you started signing up for ZoiKYC.
-        </p>
+          <p style="margin: 0 0 20px 0; color: #334155; font-size: 14.5px;">
+            {% if user_name %}Hello <strong>{{ user_name }}</strong>,<br>{% endif %}
+            We received a request to verify your account on <strong>ZoiKYC</strong>. Please use the verification code below to complete your registration:
+          </p>
 
-        <!-- Large Rounded Light Gray OTP Container Box -->
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 28px;">
-          <tr>
-            <td align="center">
-              <div style="background-color: #f3f4f6; border-radius: 14px; padding: 22px 10px; width: 100%; box-sizing: border-box;">
-                <div style="font-size: 34px; font-weight: 700; letter-spacing: 12px; color: #111827; font-family: 'SF Mono', Consolas, Monaco, monospace; text-indent: 12px;">
-                  {{ otp_code }}
-                </div>
-              </div>
-            </td>
-          </tr>
-        </table>
+          <!-- OTP Box -->
+          <div style="background-color: #f1f5f9; border-radius: 10px; padding: 18px 20px; margin: 24px 0; text-align: center; border: 1px solid #e2e8f0;">
+            <div style="font-size: 32px; font-weight: 800; letter-spacing: 10px; color: #0f172a; font-family: 'SF Mono', Consolas, Monaco, monospace; text-indent: 10px;">
+              {{ otp_code }}
+            </div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 6px; font-weight: 500;">
+              This code will expire in 15 minutes
+            </div>
+          </div>
 
-        <!-- Security Disclaimer Subtext -->
-        <p style="font-size: 13.5px; color: #6b7280; line-height: 1.55; margin: 0 auto 36px auto; max-width: 460px;">
-          If you did not attempt to sign up but received this email, please disregard it. The code will remain active for 15 minutes.
-        </p>
+          <p style="margin: 0 0 16px 0; color: #64748b; font-size: 13.5px; line-height: 1.55;">
+            If you did not make this request or start a sign-up with ZoiKYC, you can safely ignore this email.
+          </p>
 
-        <!-- Centered Short Divider -->
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
-          <tr>
-            <td align="center">
-              <div style="width: 220px; height: 1px; background-color: #e5e7eb;"></div>
-            </td>
-          </tr>
-        </table>
+        </div>
 
-        <!-- Copyright Footer -->
-        <p style="font-size: 12px; color: #9ca3af; margin: 0; font-weight: 500;">
-          &copy; 2026 ZoiKYC. All rights reserved.
-        </p>
+        <!-- FOOTER -->
+        <div style="padding: 16px 28px 24px; background-color: #f8fafc; border-top: 1px solid #edf2f7; text-align: center;">
+          <p style="font-size: 12px; color: #94a3b8; margin: 0; font-weight: 500;">
+            &copy; 2026 ZoiKYC. All rights reserved.
+          </p>
+        </div>
 
       </td>
     </tr>
