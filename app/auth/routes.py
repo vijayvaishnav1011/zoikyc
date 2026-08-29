@@ -78,6 +78,8 @@ def resend_otp():
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
+        if current_user.role == 'super_admin':
+            return redirect(url_for('admin.index'))
         return redirect(url_for('dashboard.index'))
 
     form = LoginForm()
@@ -100,6 +102,9 @@ def login():
             login_user(user, remember=form.remember.data)
             next_page = request.args.get('next')
             flash("Logged in successfully.", "success")
+
+            if user.role == 'super_admin':
+                return redirect(next_page or url_for('admin.index'))
             return redirect(next_page or url_for('dashboard.index'))
         else:
             flash("Invalid email or password.", "danger")

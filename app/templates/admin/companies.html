@@ -1,0 +1,122 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}Client Companies — Super Admin ZoiKYC{% endblock %}
+{% block page_title %}Client Organisations Directory{% endblock %}
+
+{% block content %}
+<div class="card">
+  <!-- Search and Filter Bar -->
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+    <div>
+      <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark);">All Registered Companies</h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted);">Manage client accounts, compliance statuses, and wallet allocations.</p>
+    </div>
+
+    <!-- Status Filters -->
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <a href="{{ url_for('admin.companies', status='all', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'all' %}background: var(--tiancai-purple-gradient); color: #fff;{% endif %}">
+        All
+      </a>
+      <a href="{{ url_for('admin.companies', status='active', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'active' %}background: #059669; color: #fff;{% endif %}">
+        Active (Verified)
+      </a>
+      <a href="{{ url_for('admin.companies', status='pending_verification', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'pending_verification' %}background: #d97706; color: #fff;{% endif %}">
+        Pending Verification
+      </a>
+      <a href="{{ url_for('admin.companies', status='suspended', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'suspended' %}background: #dc2626; color: #fff;{% endif %}">
+        Suspended
+      </a>
+    </div>
+  </div>
+
+  <!-- Search Input Form -->
+  <form method="GET" action="{{ url_for('admin.companies') }}" style="margin-bottom: 20px;">
+    <input type="hidden" name="status" value="{{ status_filter }}">
+    <div style="display: flex; gap: 10px; max-width: 460px;">
+      <input type="text" name="q" value="{{ search_query }}" placeholder="Search company, signatory, email, GSTIN..." class="ref-form-control" style="font-size: 0.88rem;">
+      <button type="submit" class="btn-tiancai-pill" style="width: auto; padding: 0 20px; font-size: 0.88rem;">
+        <i class="bi bi-search"></i>
+      </button>
+      {% if search_query %}
+        <a href="{{ url_for('admin.companies', status=status_filter) }}" class="lang-toggle-pill" style="text-decoration: none; display: flex; align-items: center;">Clear</a>
+      {% endif %}
+    </div>
+  </form>
+
+  <!-- Companies Table -->
+  {% if companies %}
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Company Name</th>
+          <th>Authorised Signatory</th>
+          <th>Email & Phone</th>
+          <th>Wallet Balance</th>
+          <th>Compliance Status</th>
+          <th>Registered</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for comp in companies %}
+        <tr>
+          <td style="font-weight: 800;">
+            <a href="{{ url_for('admin.company_detail', company_id=comp.id) }}" style="color: var(--tiancai-purple-dark); text-decoration: none;">
+              {{ comp.name }}
+            </a>
+            <div style="font-size: 0.72rem; color: var(--text-light); font-weight: normal;">GSTIN: {{ comp.gstin if comp.gstin else 'N/A' }}</div>
+          </td>
+          <td>{{ comp.authorised_signatory_name }}</td>
+          <td>
+            <div>{{ comp.email }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ comp.phone }}</div>
+          </td>
+          <td style="font-weight: 800; color: #059669;">
+            {{ comp.wallet.balance | currency if comp.wallet else '₹0.00' }}
+          </td>
+          <td>
+            {% if comp.status == 'active' %}
+              <span class="metric-badge badge-active"><i class="bi bi-check-circle-fill"></i> Active</span>
+            {% elif comp.status == 'suspended' %}
+              <span class="metric-badge" style="background: rgba(220, 38, 38, 0.12); color: #dc2626;"><i class="bi bi-x-circle-fill"></i> Suspended</span>
+            {% else %}
+              <span class="metric-badge" style="background: rgba(217, 119, 6, 0.12); color: #d97706;"><i class="bi bi-clock-history"></i> Pending Docs</span>
+            {% endif %}
+          </td>
+          <td style="color: var(--text-muted); font-size: 0.82rem;">
+            {{ comp.created_at.strftime('%b %d, %Y') if comp.created_at else '' }}
+          </td>
+          <td>
+            <a href="{{ url_for('admin.company_detail', company_id=comp.id) }}" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 14px; font-size: 0.78rem;">
+              <i class="bi bi-gear-fill"></i> Manage
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if pagination and pagination.pages > 1 %}
+  <div class="pagination-container">
+    <div>Showing page {{ pagination.page }} of {{ pagination.pages }}</div>
+    <div style="display: flex; gap: 8px;">
+      {% if pagination.has_prev %}
+        <a href="{{ url_for('admin.companies', page=pagination.prev_num, status=status_filter, q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none;">&larr; Previous</a>
+      {% endif %}
+      {% if pagination.has_next %}
+        <a href="{{ url_for('admin.companies', page=pagination.next_num, status=status_filter, q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none;">Next &rarr;</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+    <p>No client companies found matching your criteria.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

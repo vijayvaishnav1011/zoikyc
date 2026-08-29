@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>{% block title %}Super Admin Portal — ZoiKYC{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+  <div class="app-layout">
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Admin Sidebar Navigation -->
+    <aside class="sidebar" id="appSidebar">
+      <div class="sidebar-header">
+        <a href="{{ url_for('admin.index') }}" class="brand-logo" style="text-decoration: none;">
+          <img src="{{ url_for('static', filename='images/zoikyc_logo.png') }}" alt="ZoiKYC"
+            style="max-height: 40px; width: auto;" />
+        </a>
+        <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close menu">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- Group 1: Administration -->
+        <div class="nav-group">
+          <div class="nav-group-label" style="color: #a855f7;">Platform Administration</div>
+          <ul class="nav-list">
+            <li class="nav-item {% if request.endpoint == 'admin.index' %}active{% endif %}">
+              <a href="{{ url_for('admin.index') }}">
+                <i class="bi bi-speedometer2"></i> Admin Overview
+              </a>
+            </li>
+            <li class="nav-item {% if request.endpoint in ['admin.companies', 'admin.company_detail'] %}active{% endif %}">
+              <a href="{{ url_for('admin.companies') }}">
+                <i class="bi bi-buildings-fill"></i> Client Companies
+              </a>
+            </li>
+            <li class="nav-item {% if request.endpoint == 'admin.documents' %}active{% endif %}">
+              <a href="{{ url_for('admin.documents') }}">
+                <i class="bi bi-file-earmark-check-fill"></i> Document Verification
+              </a>
+            </li>
+            <li class="nav-item {% if request.endpoint == 'admin.transactions' %}active{% endif %}">
+              <a href="{{ url_for('admin.transactions') }}">
+                <i class="bi bi-receipt-cutoff"></i> Global Transactions
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Group 2: Quick Links -->
+        <div class="nav-group">
+          <div class="nav-group-label">Direct Views</div>
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a href="{{ url_for('dashboard.index') }}">
+                <i class="bi bi-arrow-left-circle"></i> Switch to Client View
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- Sidebar Footer Admin Card -->
+      <div class="sidebar-footer-card" style="background: #2e0854; color: #ffffff; border: 1px solid #4c1d95;">
+        <div class="sidebar-org-name" style="color: #ffffff; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+          <i class="bi bi-shield-lock-fill" style="color: #facc15;"></i> Super Administrator
+        </div>
+        <div class="sidebar-org-status" style="color: #cbd5e1; font-size: 0.75rem; margin-top: 4px;">
+          {{ current_user.email }}
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      <header class="top-navbar">
+        <div class="top-navbar-left">
+          <button type="button" class="mobile-toggle-btn" id="mobileMenuToggle" aria-label="Open menu">
+            <i class="bi bi-list"></i>
+          </button>
+          <h2>{% block page_title %}Admin Portal{% endblock %}</h2>
+        </div>
+
+        <div class="top-navbar-right">
+          <!-- Super Admin Badge -->
+          <div class="lang-toggle-pill" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">
+            <i class="bi bi-shield-fill-check"></i> Super Admin
+          </div>
+
+          <!-- User Profile Badge -->
+          <div class="user-profile-badge">
+            <div class="avatar-circle" style="background: #2e0854;">
+              <i class="bi bi-person-fill-gear"></i>
+            </div>
+            <div class="user-info-text">
+              <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-dark);">{{ current_user.name }}</div>
+              <div style="font-size: 0.75rem; color: #7e22ce; font-weight: 700;">Platform Operator</div>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" title="Sign Out" class="logout-link"
+              style="color: var(--text-muted); margin-left: 6px; font-size: 1.15rem; transition: var(--transition);">
+              <i class="bi bi-box-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <main class="page-container">
+        <!-- Flash Messages -->
+        <div class="alert-container">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+          {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-auto-dismiss">
+            <span>{{ message }}</span>
+            <button type="button" onclick="this.parentElement.remove();"
+              style="background:none; border:none; color:inherit; cursor:pointer; font-size:1.1rem;">&times;</button>
+          </div>
+          {% endfor %}
+          {% endif %}
+          {% endwith %}
+        </div>
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+
+</html>

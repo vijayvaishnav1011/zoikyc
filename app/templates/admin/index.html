@@ -1,0 +1,256 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}Admin Dashboard — ZoiKYC{% endblock %}
+{% block page_title %}Platform Overview & Verification Center{% endblock %}
+
+{% block content %}
+<!-- Super Admin Hero Banner -->
+<div class="dashboard-hero-banner" style="background: linear-gradient(135deg, #1e053a 0%, #3b0764 50%, #581c87 100%);">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; position: relative; z-index: 5;">
+    <div>
+      <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(250, 204, 21, 0.2); color: #fef08a; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 8px;">
+        <i class="bi bi-shield-fill-check"></i> Master Control Panel
+      </div>
+      <h1 style="font-size: 1.75rem; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; margin-bottom: 6px;">
+        ZoiKYC Super Administration
+      </h1>
+      <p style="color: rgba(255, 255, 255, 0.85); font-size: 0.9rem; max-width: 680px; line-height: 1.5;">
+        Verify client compliance documents, audit multi-tenant wallet balances, and monitor live FinTech transaction throughput.
+      </p>
+    </div>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <a href="{{ url_for('admin.documents') }}" class="btn-tiancai-pill" style="text-decoration: none; padding: 11px 22px; font-size: 0.88rem; width: auto; background: #f59e0b; box-shadow: 0 8px 20px rgba(245, 158, 11, 0.35);">
+        <i class="bi bi-file-earmark-check"></i> Review Pending Docs ({{ pending_documents }})
+      </a>
+      <a href="{{ url_for('admin.companies') }}" style="text-decoration: none; padding: 11px 20px; font-size: 0.88rem; background: rgba(255, 255, 255, 0.15); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: var(--radius-pill); font-weight: 700; display: inline-flex; align-items: center; gap: 6px; transition: var(--transition);">
+        <i class="bi bi-buildings"></i> View All Clients ({{ total_companies }})
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- 4 Key Admin Metric Cards -->
+<div class="metric-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
+  <!-- Total Companies Card -->
+  <div class="metric-card">
+    <div>
+      <div class="metric-title">
+        <i class="bi bi-buildings-fill" style="color: var(--tiancai-blue);"></i> Total Client Companies
+      </div>
+      <div class="metric-value">
+        {{ total_companies }}
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
+        <span style="color: #059669; font-weight: 700;">{{ active_companies }} Active</span> &bull; <span style="color: #d97706; font-weight: 700;">{{ pending_companies }} Pending</span>
+      </div>
+    </div>
+    <span class="metric-badge badge-active">{{ active_companies }} Verified</span>
+  </div>
+
+  <!-- Pending Document Verifications Card -->
+  <div class="metric-card" style="border-color: {% if pending_documents > 0 %}#fde68a{% else %}var(--border-input){% endif %};">
+    <div>
+      <div class="metric-title">
+        <i class="bi bi-file-earmark-text-fill" style="color: #f59e0b;"></i> Pending Verifications
+      </div>
+      <div class="metric-value" style="color: {% if pending_documents > 0 %}#d97706{% else %}var(--text-dark){% endif %};">
+        {{ pending_documents }}
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
+        Compliance files awaiting review
+      </div>
+    </div>
+    <span class="metric-badge" style="background: rgba(245, 158, 11, 0.15); color: #d97706; font-weight: 800;">Action Required</span>
+  </div>
+
+  <!-- Total Platform Wallet Reserves Card -->
+  <div class="metric-card">
+    <div>
+      <div class="metric-title">
+        <i class="bi bi-wallet2" style="color: #059669;"></i> Total Wallet Reserves
+      </div>
+      <div class="metric-value" style="color: #059669;">
+        {{ total_wallet_reserves | currency }}
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
+        Sum of all active company balances
+      </div>
+    </div>
+    <span class="metric-badge badge-credit">INR Float</span>
+  </div>
+
+  <!-- Total Platform Transactions Volume -->
+  <div class="metric-card">
+    <div>
+      <div class="metric-title">
+        <i class="bi bi-graph-up-arrow" style="color: #7e22ce;"></i> Total Credit Volume
+      </div>
+      <div class="metric-value" style="color: #7e22ce;">
+        {{ total_credit_volume | currency }}
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
+        Across {{ total_transactions }} platform transactions
+      </div>
+    </div>
+    <span class="metric-badge" style="background: rgba(126, 34, 206, 0.12); color: #7e22ce;">Audited</span>
+  </div>
+</div>
+
+<!-- Two-Column Layout: Pending Document Queue & Recent Registrations -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px; margin-bottom: 28px;">
+  
+  <!-- Left Box: Document Verification Queue -->
+  <div class="card" style="margin-bottom: 0;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+        <i class="bi bi-clock-history" style="color: #f59e0b;"></i> Document Verification Queue
+      </h3>
+      <a href="{{ url_for('admin.documents') }}" style="color: var(--tiancai-blue); font-weight: 700; font-size: 0.82rem; text-decoration: none;">
+        View All <i class="bi bi-arrow-right"></i>
+      </a>
+    </div>
+
+    {% if pending_docs %}
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      {% for doc in pending_docs %}
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #f8fafc; border: 1px solid var(--border-input); border-radius: var(--radius-md); gap: 12px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 180px;">
+          <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-dark);">{{ doc.company.name }}</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+            <i class="bi bi-file-earmark-pdf" style="color: #7e22ce;"></i> {{ doc.document_type.replace('_', ' ').title() }}
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+          <a href="{{ url_for('admin.download_document', doc_id=doc.id) }}" target="_blank" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 12px; font-size: 0.78rem;">
+            <i class="bi bi-eye"></i> View
+          </a>
+          <form method="POST" action="{{ url_for('admin.document_action', doc_id=doc.id) }}" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="action" value="approve">
+            <button type="submit" class="lang-toggle-pill" style="background: #d1fae5; color: #065f46; border: none; cursor: pointer; padding: 6px 12px; font-size: 0.78rem;">
+              <i class="bi bi-check-lg"></i> Approve
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 36px 16px; color: var(--text-muted);">
+      <i class="bi bi-check-all" style="font-size: 2.2rem; color: #059669; display: block; margin-bottom: 8px;"></i>
+      <p style="font-size: 0.9rem;">All compliance documents are reviewed and up to date!</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right Box: Recent Client Registrations -->
+  <div class="card" style="margin-bottom: 0;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+        <i class="bi bi-building-add" style="color: var(--tiancai-purple-light);"></i> Recent Registrations
+      </h3>
+      <a href="{{ url_for('admin.companies') }}" style="color: var(--tiancai-blue); font-weight: 700; font-size: 0.82rem; text-decoration: none;">
+        View Directory <i class="bi bi-arrow-right"></i>
+      </a>
+    </div>
+
+    {% if recent_companies %}
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      {% for comp in recent_companies %}
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #f8fafc; border: 1px solid var(--border-input); border-radius: var(--radius-md); gap: 10px;">
+        <div>
+          <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-dark);">
+            <a href="{{ url_for('admin.company_detail', company_id=comp.id) }}" style="color: inherit; text-decoration: none;">
+              {{ comp.name }}
+            </a>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+            Signatory: {{ comp.authorised_signatory_name }} &bull; {{ comp.city }}, {{ comp.state }}
+          </div>
+        </div>
+
+        <div style="text-align: right;">
+          <div>
+            {% if comp.status == 'active' %}
+              <span class="metric-badge badge-active" style="font-size: 0.7rem;">Active</span>
+            {% else %}
+              <span class="metric-badge" style="background: rgba(217, 119, 6, 0.12); color: #d97706; font-size: 0.7rem;">Pending</span>
+            {% endif %}
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-light); margin-top: 4px;">
+            {{ comp.created_at.strftime('%b %d, %Y') if comp.created_at else '' }}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 36px 16px; color: var(--text-muted);">
+      <p style="font-size: 0.9rem;">No registered companies found.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Recent Global Platform Transactions Table -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+    <div>
+      <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark);">Recent Platform Transactions</h3>
+      <p style="font-size: 0.8rem; color: var(--text-muted);">Live transactions across all client organization wallets.</p>
+    </div>
+    <a href="{{ url_for('admin.transactions') }}" style="color: var(--tiancai-blue); font-weight: 700; text-decoration: none; font-size: 0.85rem;">
+      Full Ledger <i class="bi bi-arrow-right"></i>
+    </a>
+  </div>
+
+  {% if recent_transactions %}
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Reference ID</th>
+          <th>Company</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>Balance After</th>
+          <th>Description</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for txn in recent_transactions %}
+        <tr>
+          <td><code style="color: var(--tiancai-blue); font-weight: 700;">{{ txn.reference_id }}</code></td>
+          <td style="font-weight: 700;">
+            <a href="{{ url_for('admin.company_detail', company_id=txn.company_id) }}" style="color: inherit; text-decoration: none;">
+              {{ txn.company.name if txn.company else 'N/A' }}
+            </a>
+          </td>
+          <td>
+            <span class="metric-badge {% if txn.type == 'credit' %}badge-credit{% else %}badge-debit{% endif %}">
+              {{ txn.type | upper }}
+            </span>
+          </td>
+          <td style="font-weight: 800; color: {% if txn.type == 'credit' %}#059669{% else %}#dc2626{% endif %};">
+            {% if txn.type == 'credit' %}+{% else %}-{% endif %} {{ txn.amount | currency }}
+          </td>
+          <td style="font-weight: 600;">{{ txn.balance_after | currency }}</td>
+          <td style="font-size: 0.85rem;">{{ txn.description }}</td>
+          <td style="color: var(--text-muted); font-size: 0.82rem;">
+            {{ txn.created_at.strftime('%b %d, %Y %H:%M') if txn.created_at else '' }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align: center; padding: 36px 16px; color: var(--text-muted);">
+    <p>No transaction history recorded yet.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

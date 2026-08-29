@@ -36,11 +36,13 @@ def create_app(config_name=None):
     from app.dashboard import dashboard_bp
     from app.wallet import wallet_bp
     from app.company import company_bp
+    from app.admin import admin_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(wallet_bp)
     app.register_blueprint(company_bp)
+    app.register_blueprint(admin_bp)
 
     # Health check endpoint
     @app.route('/health')
@@ -52,11 +54,54 @@ def create_app(config_name=None):
     def index_redirect():
         return redirect(url_for('dashboard.index'))
 
-    # Auto-create missing database tables on app startup
+    # Auto-create missing database tables & seed Super Admin on startup
     with app.app_context():
         try:
             db.create_all()
+            from app.models.company import Company
+            from app.models.user import User
+            from app.models.wallet import Wallet
+
+            # Seed default Super Admin if not exists
+            admin_user = User.query.filter_by(role='super_admin').first()
+            if not admin_user:
+                # Ensure Master Platform Company exists
+                master_company = Company.query.filter_by(email='admin@zoikyc.com').first()
+                if not master_company:
+                    master_company = Company(
+                        name='ZoiKYC Platform Admin',
+                        authorised_signatory_name='Platform Master',
+                        email='admin@zoikyc.com',
+                        phone='+91 9999999999',
+                        country='India',
+                        state='Delhi',
+                        city='New Delhi',
+                        zip_code='110001',
+                        gstin='07AAAAA0000A1Z0',
+                        address='ZoiKYC Operations HQ',
+                        status='active'
+                    )
+                    db.session.add(master_company)
+                    db.session.flush()
+
+                    master_wallet = Wallet(company_id=master_company.id)
+                    db.session.add(master_wallet)
+
+                admin_user = User(
+                    company_id=master_company.id,
+                    name='Super Admin',
+                    email='admin@zoikyc.com',
+                    phone='+91 9999999999',
+                    role='super_admin',
+                    email_verified=True,
+                    status='active'
+                )
+                admin_user.set_password('Admin@32132321')
+                db.session.add(admin_user)
+                db.session.commit()
+                app.logger.info("Default Super Admin created: admin@zoikyc.com")
+
         except Exception as e:
-            app.logger.warning(f"Auto db.create_all notice: {e}")
+            app.logger.warning(f"Auto db initialization notice: {e}")
 
     return app

@@ -1,0 +1,257 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}{{ company.name }} — Super Admin ZoiKYC{% endblock %}
+{% block page_title %}Company 360° Profile: {{ company.name }}{% endblock %}
+
+{% block content %}
+<!-- Back to Companies Link -->
+<div style="margin-bottom: 16px;">
+  <a href="{{ url_for('admin.companies') }}" style="color: var(--tiancai-blue); text-decoration: none; font-weight: 700; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 6px;">
+    <i class="bi bi-arrow-left"></i> Back to All Companies
+  </a>
+</div>
+
+<!-- Company Header Card -->
+<div class="card" style="background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%); border-color: #e9d5ff; margin-bottom: 24px;">
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+    <div>
+      <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--tiancai-purple-light); font-weight: 800; letter-spacing: 1px; margin-bottom: 4px;">
+        <i class="bi bi-building"></i> Client Organization ID #{{ company.id }}
+      </div>
+      <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--tiancai-purple-dark); margin-bottom: 6px;">
+        {{ company.name }}
+      </h1>
+      <p style="color: var(--text-muted); font-size: 0.88rem;">
+        Signatory: <strong>{{ company.authorised_signatory_name }}</strong> &bull; Email: <strong>{{ company.email }}</strong> &bull; Phone: <strong>{{ company.phone }}</strong>
+      </p>
+      <p style="color: var(--text-light); font-size: 0.8rem; margin-top: 4px;">
+        Address: {{ company.address }}, {{ company.city }}, {{ company.state }} - {{ company.zip_code }}, {{ company.country }} &bull; GSTIN: {{ company.gstin or 'Not Provided' }}
+      </p>
+    </div>
+
+    <!-- Status Change Action Form -->
+    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
+      <div>
+        {% if company.status == 'active' %}
+          <span class="metric-badge badge-active" style="padding: 8px 16px; font-size: 0.85rem;"><i class="bi bi-check-circle-fill"></i> Active (Verified)</span>
+        {% elif company.status == 'suspended' %}
+          <span class="metric-badge" style="background: rgba(220, 38, 38, 0.15); color: #dc2626; padding: 8px 16px; font-size: 0.85rem;"><i class="bi bi-x-circle-fill"></i> Suspended</span>
+        {% else %}
+          <span class="metric-badge" style="background: rgba(217, 119, 6, 0.15); color: #d97706; padding: 8px 16px; font-size: 0.85rem;"><i class="bi bi-clock-history"></i> Pending Verification</span>
+        {% endif %}
+      </div>
+
+      <form method="POST" action="{{ url_for('admin.update_company_status', company_id=company.id) }}" style="display: flex; gap: 8px; align-items: center;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <select name="status" class="ref-form-control" style="padding: 6px 12px; font-size: 0.8rem; height: auto;">
+          <option value="active" {% if company.status == 'active' %}selected{% endif %}>Active</option>
+          <option value="pending_verification" {% if company.status == 'pending_verification' %}selected{% endif %}>Pending Verification</option>
+          <option value="suspended" {% if company.status == 'suspended' %}selected{% endif %}>Suspended</option>
+        </select>
+        <button type="submit" class="btn-tiancai-pill" style="padding: 6px 14px; font-size: 0.8rem; width: auto; min-height: auto;">
+          Update Status
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 5 Compliance Documents Matrix (With Direct One-Click Approval / Rejection) -->
+<div class="card" style="margin-bottom: 24px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+    <div>
+      <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark);">Mandatory Compliance Documents Verification (5)</h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted);">Review uploaded legal documents. Approving all 5 automatically verifies the organization.</p>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
+    {% for doc_key, title in required_doc_types %}
+    {% set doc = docs_by_type.get(doc_key) %}
+    <div style="background: #f8fafc; border: 1px solid var(--border-input); border-radius: var(--radius-lg); padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <span style="font-weight: 800; font-size: 0.9rem; color: var(--text-dark);">{{ title }}</span>
+          {% if doc %}
+            {% if doc.status == 'approved' %}
+              <span class="metric-badge badge-active" style="font-size: 0.7rem;">Approved</span>
+            {% elif doc.status == 'rejected' %}
+              <span class="metric-badge badge-debit" style="font-size: 0.7rem;">Rejected</span>
+            {% else %}
+              <span class="metric-badge" style="background: #fef3c7; color: #d97706; font-size: 0.7rem;">Under Review</span>
+            {% endif %}
+          {% else %}
+            <span class="metric-badge" style="background: #e2e8f0; color: #64748b; font-size: 0.7rem;">Not Uploaded</span>
+          {% endif %}
+        </div>
+
+        {% if doc %}
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--tiancai-purple-dark);">
+            <i class="bi bi-file-earmark-pdf"></i> {{ doc.document_name }}
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-light); margin-top: 4px;">
+            Uploaded: {{ doc.created_at.strftime('%b %d, %Y %H:%M') if doc.created_at else '' }}
+          </div>
+          {% if doc.notes %}
+          <div style="font-size: 0.75rem; color: #7e22ce; margin-top: 4px;">Note: {{ doc.notes }}</div>
+          {% endif %}
+        </div>
+        {% else %}
+        <div style="font-size: 0.8rem; color: var(--text-light); font-style: italic; margin-bottom: 14px;">
+          Client has not uploaded this document yet.
+        </div>
+        {% endif %}
+      </div>
+
+      {% if doc %}
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="{{ url_for('admin.download_document', doc_id=doc.id) }}" target="_blank" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 12px; font-size: 0.78rem;">
+          <i class="bi bi-eye"></i> View
+        </a>
+
+        {% if doc.status != 'approved' %}
+        <form method="POST" action="{{ url_for('admin.document_action', doc_id=doc.id) }}" style="display: inline;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input type="hidden" name="action" value="approve">
+          <button type="submit" class="lang-toggle-pill" style="background: #d1fae5; color: #065f46; border: none; cursor: pointer; padding: 6px 12px; font-size: 0.78rem;">
+            <i class="bi bi-check-lg"></i> Approve
+          </button>
+        </form>
+        {% endif %}
+
+        {% if doc.status != 'rejected' %}
+        <form method="POST" action="{{ url_for('admin.document_action', doc_id=doc.id) }}" style="display: inline;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input type="hidden" name="action" value="reject">
+          <button type="submit" class="lang-toggle-pill" style="background: #ffe4e6; color: #9f1239; border: none; cursor: pointer; padding: 6px 12px; font-size: 0.78rem;">
+            <i class="bi bi-x-lg"></i> Reject
+          </button>
+        </form>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Two Columns: Manual Wallet Adjustment & Team Users -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px; margin-bottom: 28px;">
+  
+  <!-- Manual Wallet Adjustment Card -->
+  <div class="card" style="margin-bottom: 0;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+      <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+        <i class="bi bi-wallet2" style="color: #059669;"></i> Wallet Balance & Adjustment
+      </h3>
+      <div style="font-size: 1.25rem; font-weight: 800; color: #059669;">
+        {{ company.wallet.balance | currency if company.wallet else '₹0.00' }}
+      </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin.adjust_wallet', company_id=company.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+      <div class="ref-form-group" style="margin-bottom: 14px;">
+        <label class="ref-form-label">Adjustment Type</label>
+        <div style="display: flex; gap: 20px;">
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; cursor: pointer;">
+            <input type="radio" name="action_type" value="credit" checked accent-color="#059669"> Credit (+)
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; cursor: pointer;">
+            <input type="radio" name="action_type" value="debit" accent-color="#dc2626"> Debit (-)
+          </label>
+        </div>
+      </div>
+
+      <div class="ref-form-group" style="margin-bottom: 14px;">
+        <label class="ref-form-label" for="amount">Amount (₹) *</label>
+        <input type="number" step="0.01" name="amount" id="amount" placeholder="e.g. 5000.00" required class="ref-form-control">
+      </div>
+
+      <div class="ref-form-group" style="margin-bottom: 18px;">
+        <label class="ref-form-label" for="reason">Reason / Audit Remark *</label>
+        <input type="text" name="reason" id="reason" placeholder="e.g. Test credit / billing adjustment" required class="ref-form-control">
+      </div>
+
+      <button type="submit" class="btn-tiancai-pill" style="font-size: 0.88rem;">
+        <i class="bi bi-check2-circle"></i> Execute Wallet Adjustment
+      </button>
+    </form>
+  </div>
+
+  <!-- Team Users Card -->
+  <div class="card" style="margin-bottom: 0;">
+    <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
+      <i class="bi bi-people" style="color: var(--tiancai-blue);"></i> Registered User Accounts ({{ users | length }})
+    </h3>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      {% for u in users %}
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: #f8fafc; border: 1px solid var(--border-input); border-radius: var(--radius-md);">
+        <div>
+          <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-dark);">{{ u.name }}</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted);">{{ u.email }} &bull; {{ u.phone }}</div>
+        </div>
+        <div style="text-align: right;">
+          <span class="metric-badge badge-active" style="font-size: 0.7rem; text-transform: uppercase;">{{ u.role }}</span>
+          <div style="font-size: 0.7rem; color: {% if u.email_verified %}#059669{% else %}#d97706{% endif %}; font-weight: 700; margin-top: 4px;">
+            {{ 'Verified' if u.email_verified else 'Unverified' }}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<!-- Recent Transactions of This Client -->
+<div class="card">
+  <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin-bottom: 18px;">
+    Recent Transaction Ledger ({{ company.name }})
+  </h3>
+
+  {% if transactions %}
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Reference ID</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>Balance After</th>
+          <th>Description</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for txn in transactions %}
+        <tr>
+          <td><code style="color: var(--tiancai-blue); font-weight: 700;">{{ txn.reference_id }}</code></td>
+          <td>
+            <span class="metric-badge {% if txn.type == 'credit' %}badge-credit{% else %}badge-debit{% endif %}">
+              {{ txn.type | upper }}
+            </span>
+          </td>
+          <td style="font-weight: 800; color: {% if txn.type == 'credit' %}#059669{% else %}#dc2626{% endif %};">
+            {% if txn.type == 'credit' %}+{% else %}-{% endif %} {{ txn.amount | currency }}
+          </td>
+          <td style="font-weight: 600;">{{ txn.balance_after | currency }}</td>
+          <td>{{ txn.description }}</td>
+          <td style="color: var(--text-muted); font-size: 0.82rem;">
+            {{ txn.created_at.strftime('%b %d, %Y %H:%M') if txn.created_at else '' }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align: center; padding: 30px; color: var(--text-muted);">
+    <p>No transaction history for this company yet.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
