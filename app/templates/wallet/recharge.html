@@ -1,24 +1,26 @@
 {% extends 'base.html' %}
 
 {% block title %}Recharge Wallet — ZoiKYC{% endblock %}
-{% block page_title %}Recharge Wallet Balance{% endblock %}
+{% block page_title %}Recharge Wallet{% endblock %}
 
 {% block content %}
-<div style="max-width: 680px; margin: 0 auto;">
+<div style="max-width: 620px; margin: 0 auto; width: 100%;">
   <div class="card">
     <div style="margin-bottom: 24px; text-align: center;">
-      <i class="bi bi-wallet-fill" style="font-size: 2.5rem; color: var(--primary); display: block; margin-bottom: 8px;"></i>
-      <h2 style="font-size: 1.4rem; font-weight: 700;">Recharge Organisation Wallet</h2>
-      <p style="color: var(--text-muted); font-size: 0.9rem;">
-        Current Balance: <strong style="color: var(--accent-green);">{{ wallet.balance | currency if wallet else '₹0.00' }}</strong>
+      <div style="width: 54px; height: 54px; border-radius: 50%; background: rgba(37, 99, 235, 0.1); color: var(--tiancai-blue); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 12px;">
+        <i class="bi bi-wallet2"></i>
+      </div>
+      <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-dark);">Recharge Organisation Wallet</h2>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">
+        Current Balance: <strong style="color: #059669;">{{ wallet.balance | currency if wallet else '₹0.00' }}</strong>
       </p>
     </div>
 
     <form method="POST" action="{{ url_for('wallet.recharge') }}">
-      {{ form.csrf_token }}
+      {{ form.hidden_tag() }}
 
-      <div class="form-group">
-        <label class="form-label">Select Quick Amount Presets</label>
+      <div class="ref-form-group" style="margin-bottom: 20px;">
+        <label class="ref-form-label">Select Quick Amount Presets</label>
         <div class="preset-grid">
           <button type="button" class="btn-preset" data-amount="1000">₹1,000</button>
           <button type="button" class="btn-preset" data-amount="5000">₹5,000</button>
@@ -27,24 +29,24 @@
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label" for="amount">Or Enter Custom Recharge Amount (₹) *</label>
-        {{ form.amount(class="form-control", id="amount", value="10000.00", placeholder="e.g. 10000.00", style="font-size: 1.2rem; font-weight: 700; color: var(--accent-green);") }}
+      <div class="ref-form-group" style="margin-bottom: 20px;">
+        <label class="ref-form-label" for="amount">Or Enter Custom Amount (₹) *</label>
+        {{ form.amount(class="ref-form-control", id="amount", value="10000.00", placeholder="e.g. 10000.00", style="font-size: 1.2rem; font-weight: 800; color: #059669;") }}
         {% if form.amount.errors %}
-          <span style="color: var(--accent-red); font-size: 0.8rem;">{{ form.amount.errors[0] }}</span>
+          <span style="color: var(--accent-rose); font-size: 0.8rem;">{{ form.amount.errors[0] }}</span>
         {% endif %}
       </div>
 
-      <div class="form-group" style="margin: 20px 0;">
-        <label class="form-label" for="payment_method">Payment Mode *</label>
-        {{ form.payment_method(class="form-control form-select") }}
+      <div class="ref-form-group" style="margin-bottom: 20px;">
+        <label class="ref-form-label" for="payment_method">Payment Mode *</label>
+        {{ form.payment_method(class="ref-form-control") }}
       </div>
 
-      <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid var(--primary); padding: 14px 18px; border-radius: var(--radius-md); font-size: 0.85rem; color: #a5b4fc; margin-bottom: 24px;">
-        <i class="bi bi-shield-lock-fill"></i> <strong>Server-Side Verified Payment:</strong> Credits are atomically verified and appended to your company's immutable ledger upon success.
+      <div style="background: #f8fafc; border: 1px solid var(--border-input); padding: 14px 16px; border-radius: var(--radius-md); font-size: 0.82rem; color: var(--text-muted); margin-bottom: 24px;">
+        <i class="bi bi-shield-lock-fill" style="color: var(--tiancai-blue);"></i> <strong>Server-Side Verified Payment:</strong> Credits are atomically verified and appended to your company's immutable ledger upon success.
       </div>
 
-      <button type="submit" class="btn btn-success btn-block" style="padding: 14px; font-size: 1.05rem; font-weight: 700;">
+      <button type="submit" class="btn-tiancai-pill">
         <i class="bi bi-credit-card"></i> Process Secure Recharge
       </button>
     </form>

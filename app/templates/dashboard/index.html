@@ -5,22 +5,22 @@
 
 {% block content %}
 <!-- Welcome Banner -->
-<div class="card" style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(238, 242, 255, 0.85) 100%); border-color: rgba(79, 70, 229, 0.2);">
-  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+<div class="card" style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(238, 242, 255, 0.85) 100%); border-color: rgba(37, 99, 235, 0.2); margin-bottom: 24px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
     <div>
-      <div style="font-size: 0.85rem; color: var(--accent-cyan); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">
+      <div style="font-size: 0.8rem; color: var(--tiancai-blue); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">
         <i class="bi bi-building"></i> {{ company.name if company else 'Organisation Account' }}
       </div>
-      <h1 style="font-size: 1.8rem; font-weight: 700; color: var(--text-main);">Welcome, {{ company.name if company else current_user.name }}</h1>
-      <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">
+      <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-dark);">Welcome, {{ company.name if company else current_user.name }}</h1>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px; max-width: 680px;">
         Manage your wallet, track real-time transactions, and submit your company verification documents.
       </p>
     </div>
-    <div style="display: flex; gap: 12px;">
-      <a href="{{ url_for('company.documents') }}" class="btn btn-outline" style="padding: 12px 20px; font-size: 0.95rem;">
-        <i class="bi bi-file-earmark-check"></i> Submit Compliance Docs
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <a href="{{ url_for('company.documents') }}" class="lang-toggle-pill" style="text-decoration: none; padding: 10px 18px; font-size: 0.85rem;">
+        <i class="bi bi-file-earmark-check"></i> Compliance Docs
       </a>
-      <a href="{{ url_for('wallet.recharge') }}" class="btn btn-primary" style="padding: 12px 24px; font-size: 0.95rem;">
+      <a href="{{ url_for('wallet.recharge') }}" class="btn-tiancai-pill" style="text-decoration: none; padding: 10px 20px; font-size: 0.88rem;">
         <i class="bi bi-plus-circle"></i> Recharge Wallet
       </a>
     </div>
@@ -33,12 +33,12 @@
   <div class="metric-card">
     <div>
       <div class="metric-title">
-        <i class="bi bi-wallet2" style="color: var(--primary);"></i> Wallet Balance
+        <i class="bi bi-wallet2" style="color: var(--tiancai-blue);"></i> Wallet Balance
       </div>
-      <div class="metric-value" style="color: var(--accent-green);">
+      <div class="metric-value" style="color: #059669;">
         {{ wallet.balance | currency if wallet else '₹0.00' }}
       </div>
-      <div style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 6px;">
+      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
         Currency: {{ wallet.currency if wallet else 'INR' }} &bull; Status: Active
       </div>
     </div>
@@ -49,16 +49,16 @@
   <div class="metric-card">
     <div>
       <div class="metric-title">
-        <i class="bi bi-shield-check" style="color: var(--accent-cyan);"></i> Account Verification
+        <i class="bi bi-shield-check" style="color: var(--tiancai-blue);"></i> Account Verification
       </div>
-      <div class="metric-value" style="font-size: 1.35rem; color: var(--text-dark);">
+      <div class="metric-value" style="font-size: 1.25rem; color: var(--text-dark);">
         {% if company and company.status == 'active' %}
           Verified
         {% else %}
-          Pending Document Verification
+          Pending Documents
         {% endif %}
       </div>
-      <div style="font-size: 0.78rem; color: var(--text-subtle); margin-top: 6px;">
+      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
         Signatory: {{ company.authorised_signatory_name if company else current_user.name }}
       </div>
     </div>
@@ -66,7 +66,7 @@
     {% if company and company.status == 'active' %}
       <span class="metric-badge badge-active"><i class="bi bi-check-circle-fill"></i> Active</span>
     {% else %}
-      <span class="metric-badge" style="background: rgba(217, 119, 6, 0.12); color: var(--accent-amber);"><i class="bi bi-clock-history"></i> Pending Verification</span>
+      <span class="metric-badge" style="background: rgba(217, 119, 6, 0.12); color: #d97706;"><i class="bi bi-clock-history"></i> Pending</span>
     {% endif %}
   </div>
 
@@ -74,27 +74,27 @@
   <div class="metric-card">
     <div>
       <div class="metric-title">
-        <i class="bi bi-cpu" style="color: var(--accent-amber);"></i> Middleware Gateway
+        <i class="bi bi-cpu" style="color: #7e22ce;"></i> FinTech Middleware
       </div>
-      <div class="metric-value" style="font-size: 1.4rem; color: var(--text-main);">
+      <div class="metric-value" style="font-size: 1.25rem; color: var(--text-dark);">
         Phase 1 Active
       </div>
-      <div style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 6px;">
-        API Keys & Provider Routers Available in Phase 2
+      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
+        KYC, KRA, E-Sign APIs
       </div>
     </div>
-    <span class="metric-badge" style="background: rgba(99, 102, 241, 0.15); color: var(--primary);">Ready</span>
+    <span class="metric-badge" style="background: rgba(37, 99, 235, 0.1); color: var(--tiancai-blue);">Ready</span>
   </div>
 </div>
 
 <!-- Recent Wallet Transactions Table -->
 <div class="card">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
     <div>
-      <h3 style="font-size: 1.1rem; font-weight: 600;">Recent Transactions</h3>
+      <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark);">Recent Transactions</h3>
       <p style="font-size: 0.8rem; color: var(--text-muted);">Real-time ledger updates for your wallet balance movements.</p>
     </div>
-    <a href="{{ url_for('wallet.transactions') }}" class="btn btn-outline" style="font-size: 0.85rem; padding: 8px 16px;">
+    <a href="{{ url_for('wallet.transactions') }}" style="color: var(--tiancai-blue); font-weight: 700; text-decoration: none; font-size: 0.85rem;">
       View Full Ledger <i class="bi bi-arrow-right"></i>
     </a>
   </div>
@@ -116,13 +116,13 @@
       <tbody>
         {% for txn in recent_transactions %}
         <tr>
-          <td><code style="color: var(--accent-cyan); font-family: monospace;">{{ txn.reference_id }}</code></td>
+          <td><code style="color: var(--tiancai-blue); font-weight: 700;">{{ txn.reference_id }}</code></td>
           <td>
             <span class="metric-badge {% if txn.type == 'credit' %}badge-credit{% else %}badge-debit{% endif %}">
               {{ txn.type | upper }}
             </span>
           </td>
-          <td style="font-weight: 700; color: {% if txn.type == 'credit' %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+          <td style="font-weight: 800; color: {% if txn.type == 'credit' %}#059669{% else %}#dc2626{% endif %};">
             {% if txn.type == 'credit' %}+{% else %}-{% endif %} {{ txn.amount | currency }}
           </td>
           <td style="color: var(--text-muted);">{{ txn.balance_after | currency }}</td>
@@ -130,8 +130,8 @@
           <td>
             <span class="metric-badge badge-active">{{ txn.status | capitalize }}</span>
           </td>
-          <td style="color: var(--text-subtle); font-size: 0.8rem;">
-            {{ txn.created_at.strftime('%b %d, %Y %H:%M:%S') if txn.created_at else 'N/A' }}
+          <td style="color: var(--text-muted); font-size: 0.8rem;">
+            {{ txn.created_at.strftime('%b %d, %Y %H:%M') if txn.created_at else 'N/A' }}
           </td>
         </tr>
         {% endfor %}
@@ -140,10 +140,10 @@
   </div>
   {% else %}
   <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
-    <i class="bi bi-inbox" style="font-size: 2.5rem; color: var(--text-subtle); display: block; margin-bottom: 12px;"></i>
+    <i class="bi bi-inbox" style="font-size: 2.5rem; color: var(--text-light); display: block; margin-bottom: 12px;"></i>
     <p style="font-size: 0.95rem; margin-bottom: 16px;">No transactions recorded yet in your wallet ledger.</p>
-    <a href="{{ url_for('wallet.recharge') }}" class="btn btn-primary btn-sm">
-      <i class="bi bi-plus-circle"></i> Make Your First Wallet Recharge
+    <a href="{{ url_for('wallet.recharge') }}" class="btn-tiancai-pill" style="text-decoration: none; display: inline-flex; width: auto; padding: 10px 22px;">
+      <i class="bi bi-plus-circle"></i> Make Your First Recharge
     </a>
   </div>
   {% endif %}

@@ -1,29 +1,29 @@
 {% extends 'base.html' %}
 
 {% block title %}Company Profile — ZoiKYC{% endblock %}
-{% block page_title %}Organisation Profile & Settings{% endblock %}
+{% block page_title %}Company Profile{% endblock %}
 
 {% block content %}
 <!-- Overview Header Banner -->
-<div class="card" style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(238, 242, 255, 0.8) 100%); border-color: rgba(79, 70, 229, 0.25); margin-bottom: 32px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+<div class="card" style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(238, 242, 255, 0.8) 100%); border-color: rgba(79, 70, 229, 0.25); margin-bottom: 24px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
     <div>
-      <span style="font-size: 0.82rem; text-transform: uppercase; color: var(--brand-primary); font-weight: 800; letter-spacing: 1.2px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+      <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--tiancai-blue); font-weight: 800; letter-spacing: 1.2px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
         <i class="bi bi-building"></i> Organisation Master Profile
       </span>
-      <h1 style="font-size: 1.7rem; font-weight: 800; color: var(--text-dark); margin-top: 4px;">
+      <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-dark); margin-top: 4px;">
         {{ company.name }}
       </h1>
-      <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">
-        Registered Signatory: <strong>{{ company.authorised_signatory_name }}</strong> &bull; GSTIN: <strong>{{ company.gstin if company.gstin else 'Not Provided' }}</strong>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">
+        Signatory: <strong>{{ company.authorised_signatory_name }}</strong> &bull; GSTIN: <strong>{{ company.gstin if company.gstin else 'Not Provided' }}</strong>
       </p>
     </div>
     
     <div>
       {% if company.status == 'active' %}
-        <span class="metric-badge badge-active" style="padding: 8px 16px; font-size: 0.85rem;"><i class="bi bi-patch-check-fill"></i> Verified & Active</span>
+        <span class="metric-badge badge-active" style="padding: 6px 14px; font-size: 0.82rem;"><i class="bi bi-patch-check-fill"></i> Verified & Active</span>
       {% else %}
-        <span class="metric-badge" style="background: rgba(217, 119, 6, 0.12); color: var(--accent-amber); padding: 8px 16px; font-size: 0.85rem;"><i class="bi bi-clock-history"></i> Pending Verification</span>
+        <span class="metric-badge" style="background: rgba(217, 119, 6, 0.12); color: #d97706; padding: 6px 14px; font-size: 0.82rem;"><i class="bi bi-clock-history"></i> Pending Verification</span>
       {% endif %}
     </div>
   </div>
@@ -33,102 +33,90 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
-      <div class="alert alert-{{ category }}" style="margin-bottom: 24px;">
+      <div class="alert alert-{{ category }}" style="margin-bottom: 20px;">
         <span>{{ message }}</span>
       </div>
     {% endfor %}
   {% endif %}
 {% endwith %}
 
-<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 28px; align-items: start;">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; align-items: start;">
   <!-- Edit Profile Form Card -->
-  <div class="card">
-    <h3 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 24px; color: var(--text-dark); display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
-      <i class="bi bi-pencil-square" style="color: var(--brand-primary);"></i> Edit Organisation Profile
+  <div class="card" style="margin-bottom: 0;">
+    <h3 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 20px; color: var(--text-dark); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-input); padding-bottom: 12px;">
+      <i class="bi bi-pencil-square" style="color: var(--tiancai-blue);"></i> Edit Organisation Profile
     </h3>
 
     <form method="POST" action="{{ url_for('company.profile') }}">
-      {{ form.csrf_token }}
+      {{ form.hidden_tag() }}
 
       <!-- Row 1: Company Name & Signatory Name -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label" for="company_name">Company / Organisation Name *</label>
-          <div class="input-icon-group">
-            <i class="bi bi-building input-icon-left"></i>
-            {{ form.company_name(class="form-control") }}
-          </div>
+      <div class="ref-form-grid">
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="company_name">Company / Organisation Name *</label>
+          {{ form.company_name(class="ref-form-control") }}
           {% if form.company_name.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.company_name.errors[0] }}</span>{% endif %}
         </div>
 
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label" for="authorised_signatory_name">Authorised Signatory Name *</label>
-          <div class="input-icon-group">
-            <i class="bi bi-person input-icon-left"></i>
-            {{ form.authorised_signatory_name(class="form-control") }}
-          </div>
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="authorised_signatory_name">Authorised Signatory Name *</label>
+          {{ form.authorised_signatory_name(class="ref-form-control") }}
           {% if form.authorised_signatory_name.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.authorised_signatory_name.errors[0] }}</span>{% endif %}
         </div>
       </div>
 
       <!-- Row 2: Phone & GSTIN -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label" for="phone">Business Phone *</label>
-          <div class="input-icon-group">
-            <i class="bi bi-telephone input-icon-left"></i>
-            {{ form.phone(class="form-control") }}
-          </div>
+      <div class="ref-form-grid">
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="phone">Business Phone *</label>
+          {{ form.phone(class="ref-form-control") }}
           {% if form.phone.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.phone.errors[0] }}</span>{% endif %}
         </div>
 
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label" for="gstin">GSTIN Number</label>
-          <div class="input-icon-group">
-            <i class="bi bi-file-earmark-text input-icon-left"></i>
-            {{ form.gstin(class="form-control") }}
-          </div>
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="gstin">GSTIN Number</label>
+          {{ form.gstin(class="ref-form-control") }}
           {% if form.gstin.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.gstin.errors[0] }}</span>{% endif %}
         </div>
       </div>
 
       <!-- Row 3: Country & State -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label" for="country">Country *</label>
-          {{ form.country(class="form-control") }}
+      <div class="ref-form-grid">
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="country">Country *</label>
+          {{ form.country(class="ref-form-control") }}
         </div>
 
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label" for="state">State *</label>
-          {{ form.state(class="form-control") }}
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="state">State *</label>
+          {{ form.state(class="ref-form-control") }}
           {% if form.state.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.state.errors[0] }}</span>{% endif %}
         </div>
       </div>
 
       <!-- Row 4: City & ZIP Code -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label" for="city">City *</label>
-          {{ form.city(class="form-control") }}
+      <div class="ref-form-grid">
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="city">City *</label>
+          {{ form.city(class="ref-form-control") }}
           {% if form.city.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.city.errors[0] }}</span>{% endif %}
         </div>
 
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label" for="zip_code">ZIP / Postal Code *</label>
-          {{ form.zip_code(class="form-control") }}
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="zip_code">ZIP / Postal Code *</label>
+          {{ form.zip_code(class="ref-form-control") }}
           {% if form.zip_code.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.zip_code.errors[0] }}</span>{% endif %}
         </div>
       </div>
 
       <!-- Row 5: Full Width Address -->
-      <div class="form-group" style="margin-bottom: 28px;">
-        <label class="form-label" for="address">Registered Business Address *</label>
-        {{ form.address(class="form-control", rows="2", style="resize: vertical;") }}
+      <div class="ref-form-group" style="margin-bottom: 24px;">
+        <label class="ref-form-label" for="address">Registered Business Address *</label>
+        {{ form.address(class="ref-form-control", rows="2", style="resize: vertical;") }}
         {% if form.address.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.address.errors[0] }}</span>{% endif %}
       </div>
 
-      <button type="submit" class="btn-brand" style="padding: 14px 28px; font-size: 0.95rem; font-weight: 700; width: auto;">
+      <button type="submit" class="btn-tiancai-pill" style="max-width: 260px;">
         <i class="bi bi-floppy-fill"></i> Save Profile Changes
       </button>
     </form>
@@ -136,22 +124,22 @@
 
   <!-- Team & User Access Panel -->
   <div>
-    <div class="card">
-      <h3 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 20px; color: var(--text-dark); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
-        <i class="bi bi-people" style="color: var(--brand-primary);"></i> Team Members ({{ team_users | length }})
+    <div class="card" style="margin-bottom: 0;">
+      <h3 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 18px; color: var(--text-dark); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-input); padding-bottom: 12px;">
+        <i class="bi bi-people" style="color: var(--tiancai-blue);"></i> Team Members ({{ team_users | length }})
       </h3>
 
-      <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; flex-direction: column; gap: 12px;">
         {% for u in team_users %}
-        <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #f8fafc; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8fafc; border-radius: var(--radius-md); border: 1px solid var(--border-input);">
           <div class="avatar-circle" style="width: 36px; height: 36px; font-size: 0.85rem;">
             {{ u.name[:1].upper() }}
           </div>
           <div style="flex: 1; min-width: 0;">
-            <div style="font-size: 0.88rem; font-weight: 700; color: var(--text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ u.name }}</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ u.email }}</div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ u.name }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ u.email }}</div>
           </div>
-          <span class="metric-badge badge-active" style="font-size: 0.68rem; text-transform: uppercase;">{{ u.role }}</span>
+          <span class="metric-badge badge-active" style="font-size: 0.65rem; text-transform: uppercase;">{{ u.role }}</span>
         </div>
         {% endfor %}
       </div>

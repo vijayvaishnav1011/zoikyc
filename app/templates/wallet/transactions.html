@@ -1,24 +1,24 @@
 {% extends 'base.html' %}
 
 {% block title %}Wallet Transactions — ZoiKYC{% endblock %}
-{% block page_title %}Transaction Ledger History{% endblock %}
+{% block page_title %}Transaction History{% endblock %}
 
 {% block content %}
 <div class="card">
-  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
     <div>
-      <h3 style="font-size: 1.1rem; font-weight: 600;">Immutable Wallet Ledger</h3>
-      <p style="font-size: 0.85rem; color: var(--text-muted);">Audited transaction history with balance snapshots.</p>
+      <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark);">Immutable Wallet Ledger</h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted);">Audited transaction history with balance snapshots.</p>
     </div>
     
-    <div style="display: flex; gap: 10px;">
-      <a href="{{ url_for('wallet.transactions', type='all') }}" class="btn btn-outline {% if txn_type == 'all' %}active{% endif %}" style="padding: 8px 16px; font-size: 0.85rem;">
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <a href="{{ url_for('wallet.transactions', type='all') }}" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 14px; {% if txn_type == 'all' %}background: var(--tiancai-blue); color: #fff;{% endif %}">
         All
       </a>
-      <a href="{{ url_for('wallet.transactions', type='credit') }}" class="btn btn-outline {% if txn_type == 'credit' %}active{% endif %}" style="padding: 8px 16px; font-size: 0.85rem;">
+      <a href="{{ url_for('wallet.transactions', type='credit') }}" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 14px; {% if txn_type == 'credit' %}background: var(--tiancai-blue); color: #fff;{% endif %}">
         Credits
       </a>
-      <a href="{{ url_for('wallet.transactions', type='debit') }}" class="btn btn-outline {% if txn_type == 'debit' %}active{% endif %}" style="padding: 8px 16px; font-size: 0.85rem;">
+      <a href="{{ url_for('wallet.transactions', type='debit') }}" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 14px; {% if txn_type == 'debit' %}background: var(--tiancai-blue); color: #fff;{% endif %}">
         Debits
       </a>
     </div>
@@ -42,21 +42,21 @@
       <tbody>
         {% for txn in transactions %}
         <tr>
-          <td><code style="color: var(--accent-cyan); font-family: monospace;">{{ txn.reference_id }}</code></td>
+          <td><code style="color: var(--tiancai-blue); font-weight: 700;">{{ txn.reference_id }}</code></td>
           <td>
             <span class="metric-badge {% if txn.type == 'credit' %}badge-credit{% else %}badge-debit{% endif %}">
               {{ txn.type | upper }}
             </span>
           </td>
-          <td style="font-weight: 700; color: {% if txn.type == 'credit' %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+          <td style="font-weight: 800; color: {% if txn.type == 'credit' %}#059669{% else %}#dc2626{% endif %};">
             {% if txn.type == 'credit' %}+{% else %}-{% endif %} {{ txn.amount | currency }}
           </td>
-          <td style="color: var(--text-subtle);">{{ txn.balance_before | currency }}</td>
-          <td style="font-weight: 600;">{{ txn.balance_after | currency }}</td>
+          <td style="color: var(--text-muted);">{{ txn.balance_before | currency }}</td>
+          <td style="font-weight: 700;">{{ txn.balance_after | currency }}</td>
           <td>{{ txn.description }}</td>
           <td><span class="metric-badge badge-active">{{ txn.status | capitalize }}</span></td>
-          <td style="color: var(--text-subtle); font-size: 0.8rem;">
-            {{ txn.created_at.strftime('%b %d, %Y %H:%M:%S') if txn.created_at else '' }}
+          <td style="color: var(--text-muted); font-size: 0.82rem;">
+            {{ txn.created_at.strftime('%b %d, %Y %H:%M') if txn.created_at else '' }}
           </td>
         </tr>
         {% endfor %}
@@ -67,13 +67,13 @@
   <!-- Pagination -->
   {% if pagination and pagination.pages > 1 %}
   <div class="pagination-container">
-    <div>Showing page {{ pagination.page }} of {{ pagination.pages }}</div>
+    <div>Page {{ pagination.page }} of {{ pagination.pages }}</div>
     <div style="display: flex; gap: 8px;">
       {% if pagination.has_prev %}
-        <a href="{{ url_for('wallet.transactions', page=pagination.prev_num, type=txn_type) }}" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem;">Previous</a>
+        <a href="{{ url_for('wallet.transactions', page=pagination.prev_num, type=txn_type) }}" class="lang-toggle-pill" style="text-decoration: none;">&larr; Previous</a>
       {% endif %}
       {% if pagination.has_next %}
-        <a href="{{ url_for('wallet.transactions', page=pagination.next_num, type=txn_type) }}" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem;">Next</a>
+        <a href="{{ url_for('wallet.transactions', page=pagination.next_num, type=txn_type) }}" class="lang-toggle-pill" style="text-decoration: none;">Next &rarr;</a>
       {% endif %}
     </div>
   </div>
