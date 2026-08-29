@@ -49,17 +49,6 @@
   </div>
 </div>
 
-<!-- Flash Messages -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-{% if messages %}
-{% for category, message in messages %}
-<div class="alert alert-{{ category }}" style="margin-bottom: 20px;">
-  <span>{{ message }}</span>
-</div>
-{% endfor %}
-{% endif %}
-{% endwith %}
-
 <!-- 4 Document Cards Grid -->
 <div
   style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 32px;">

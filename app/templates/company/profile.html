@@ -29,17 +29,6 @@
   </div>
 </div>
 
-<!-- Flash Messages -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    {% for category, message in messages %}
-      <div class="alert alert-{{ category }}" style="margin-bottom: 20px;">
-        <span>{{ message }}</span>
-      </div>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
-
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; align-items: start;">
   <!-- Edit Profile Form Card -->
   <div class="card" style="margin-bottom: 0;">
