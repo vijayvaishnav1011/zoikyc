@@ -63,6 +63,13 @@
       <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark);">Mandatory Compliance Documents Verification (4)</h3>
       <p style="font-size: 0.82rem; color: var(--text-muted);">Review uploaded legal documents. Approving all 4 automatically verifies the organization.</p>
     </div>
+
+    <form method="POST" action="{{ url_for('admin.approve_all_documents', company_id=company.id) }}" style="display: inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit" class="btn-tiancai-pill" style="padding: 8px 18px; font-size: 0.82rem; width: auto; min-height: auto; background: #059669; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);">
+        <i class="bi bi-check-all"></i> Approve All 4 Documents & Activate
+      </button>
+    </form>
   </div>
 
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">

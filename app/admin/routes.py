@@ -13,6 +13,13 @@ from app.models.wallet import Wallet
 from app.models.transaction import WalletTransaction
 from app.models.document import CompanyDocument
 
+REQUIRED_KYC_DOCS = [
+    ('certificate_of_incorporation', 'Certificate of Incorporation'),
+    ('company_pan', 'Company PAN Card'),
+    ('gst_certificate', 'GSTIN Registration'),
+    ('board_resolution', 'Authorised Signatory / Director Proof')
+]
+
 @admin_bp.route('/')
 @admin_required
 def index():
@@ -98,13 +105,6 @@ def company_detail(company_id):
 
     # Document completion mapping
     docs_by_type = {doc.document_type: doc for doc in documents}
-    
-    required_doc_types = [
-        ('certificate_of_incorporation', 'Certificate of Incorporation'),
-        ('company_pan', 'Company PAN Card'),
-        ('gst_certificate', 'GSTIN Registration'),
-        ('board_resolution', 'Authorised Signatory / Director Proof')
-    ]
 
     return render_template(
         'admin/company_detail.html',
@@ -113,7 +113,7 @@ def company_detail(company_id):
         documents=documents,
         transactions=transactions,
         docs_by_type=docs_by_type,
-        required_doc_types=required_doc_types
+        required_doc_types=REQUIRED_KYC_DOCS
     )
 
 @admin_bp.route('/companies/<int:company_id>/status', methods=['POST'])
@@ -132,29 +132,84 @@ def update_company_status(company_id):
 
     return redirect(request.referrer or url_for('admin.company_detail', company_id=company.id))
 
+@admin_bp.route('/companies/<int:company_id>/approve-all', methods=['POST'])
+@admin_required
+def approve_all_documents(company_id):
+    company = Company.query.get_or_404(company_id)
+    notes = request.form.get('notes', 'Bulk approved by Administrator')
+
+    docs = company.documents.all()
+    for doc in docs:
+        doc.status = 'approved'
+        doc.notes = notes
+        doc.updated_at = datetime.now(timezone.utc)
+
+    # Check if all 4 required types exist and are approved
+    required_keys = [t[0] for t in REQUIRED_KYC_DOCS]
+    existing_types = set(d.document_type for d in docs)
+    
+    if set(required_keys).issubset(existing_types):
+        company.status = 'active'
+        company.updated_at = datetime.now(timezone.utc)
+        flash(f"All 4 documents approved! Company '{company.name}' is now fully ACTIVE and verified.", "success")
+    else:
+        flash(f"Approved all existing documents for '{company.name}'. (Some mandatory docs still missing).", "info")
+
+    db.session.commit()
+    return redirect(request.referrer or url_for('admin.company_detail', company_id=company.id))
+
 @admin_bp.route('/documents')
 @admin_required
 def documents():
     status_filter = request.args.get('status', 'all')
-    doc_type_filter = request.args.get('doc_type', 'all')
+    search_query = request.args.get('q', '').strip()
     page = request.args.get('page', 1, type=int)
 
-    query = CompanyDocument.query.join(Company)
+    query = Company.query
 
-    if status_filter != 'all':
-        query = query.filter(CompanyDocument.status == status_filter)
+    if status_filter == 'pending':
+        query = query.filter(Company.status != 'active')
+    elif status_filter == 'active':
+        query = query.filter_by(status='active')
+    elif status_filter == 'suspended':
+        query = query.filter_by(status='suspended')
 
-    if doc_type_filter != 'all':
-        query = query.filter(CompanyDocument.document_type == doc_type_filter)
+    if search_query:
+        search = f"%{search_query}%"
+        query = query.filter(
+            (Company.name.ilike(search)) |
+            (Company.email.ilike(search)) |
+            (Company.authorised_signatory_name.ilike(search)) |
+            (Company.gstin.ilike(search))
+        )
 
-    pagination = query.order_by(CompanyDocument.created_at.desc()).paginate(page=page, per_page=15, error_out=False)
+    pagination = query.order_by(Company.created_at.desc()).paginate(page=page, per_page=12, error_out=False)
+
+    required_keys = [t[0] for t in REQUIRED_KYC_DOCS]
+
+    # Pre-map document status per company
+    companies_data = []
+    for comp in pagination.items:
+        comp_docs = comp.documents.all()
+        doc_dict = {d.document_type: d for d in comp_docs}
+        approved_count = sum(1 for d in comp_docs if d.status == 'approved' and d.document_type in required_keys)
+        under_review_count = sum(1 for d in comp_docs if d.status == 'under_review' and d.document_type in required_keys)
+        
+        companies_data.append({
+            'company': comp,
+            'docs': doc_dict,
+            'uploaded_count': len(comp_docs),
+            'approved_count': approved_count,
+            'under_review_count': under_review_count
+        })
 
     return render_template(
         'admin/documents.html',
-        documents=pagination.items,
+        companies_data=companies_data,
         pagination=pagination,
         status_filter=status_filter,
-        doc_type_filter=doc_type_filter
+        search_query=search_query,
+        required_doc_types=REQUIRED_KYC_DOCS
     )
 
 @admin_bp.route('/documents/<int:doc_id>/action', methods=['POST'])

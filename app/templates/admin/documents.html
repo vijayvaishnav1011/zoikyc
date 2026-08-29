@@ -1,126 +1,179 @@
 {% extends 'admin/base.html' %}
 
 {% block title %}Document Verification Center — Super Admin ZoiKYC{% endblock %}
-{% block page_title %}Compliance Document Verification Center{% endblock %}
+{% block page_title %}Company Document Verification Matrix{% endblock %}
 
 {% block content %}
 <div class="card">
   <!-- Header & Filters -->
   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
     <div>
-      <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark);">Client Compliance Documents Queue</h3>
-      <p style="font-size: 0.82rem; color: var(--text-muted);">Inspect, verify, approve, or reject business registration and KYC documents.</p>
+      <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-dark);">Client KYC Document Verification by Company</h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted);">Review and verify the 4 mandatory compliance documents submitted by each client organization.</p>
     </div>
 
     <!-- Status Filters -->
     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-      <a href="{{ url_for('admin.documents', status='all', doc_type=doc_type_filter) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'all' %}background: var(--tiancai-purple-gradient); color: #fff;{% endif %}">
-        All Documents
+      <a href="{{ url_for('admin.documents', status='all', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'all' %}background: var(--tiancai-purple-gradient); color: #fff;{% endif %}">
+        All Companies
       </a>
-      <a href="{{ url_for('admin.documents', status='under_review', doc_type=doc_type_filter) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'under_review' %}background: #d97706; color: #fff;{% endif %}">
-        Under Review
+      <a href="{{ url_for('admin.documents', status='pending', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'pending' %}background: #d97706; color: #fff;{% endif %}">
+        Pending Review
       </a>
-      <a href="{{ url_for('admin.documents', status='approved', doc_type=doc_type_filter) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'approved' %}background: #059669; color: #fff;{% endif %}">
-        Approved
+      <a href="{{ url_for('admin.documents', status='active', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'active' %}background: #059669; color: #fff;{% endif %}">
+        Verified (Active)
       </a>
-      <a href="{{ url_for('admin.documents', status='rejected', doc_type=doc_type_filter) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'rejected' %}background: #dc2626; color: #fff;{% endif %}">
-        Rejected
+      <a href="{{ url_for('admin.documents', status='suspended', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'suspended' %}background: #dc2626; color: #fff;{% endif %}">
+        Suspended
       </a>
     </div>
   </div>
 
-  <!-- Documents Table -->
-  {% if documents %}
-  <div class="table-responsive">
-    <table class="custom-table">
-      <thead>
-        <tr>
-          <th>Client Company</th>
-          <th>Document Type</th>
-          <th>Uploaded File</th>
-          <th>Status</th>
-          <th>Uploaded Date</th>
-          <th>Admin Review Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for doc in documents %}
-        <tr>
-          <td style="font-weight: 800;">
-            <a href="{{ url_for('admin.company_detail', company_id=doc.company_id) }}" style="color: var(--tiancai-purple-dark); text-decoration: none;">
-              {{ doc.company.name }}
+  <!-- Search Bar -->
+  <form method="GET" action="{{ url_for('admin.documents') }}" style="margin-bottom: 24px;">
+    <input type="hidden" name="status" value="{{ status_filter }}">
+    <div style="display: flex; gap: 10px; max-width: 480px;">
+      <input type="text" name="q" value="{{ search_query }}" placeholder="Search company name, signatory, email, GSTIN..." class="ref-form-control" style="font-size: 0.88rem;">
+      <button type="submit" class="btn-tiancai-pill" style="width: auto; padding: 0 20px; font-size: 0.88rem;">
+        <i class="bi bi-search"></i>
+      </button>
+      {% if search_query %}
+        <a href="{{ url_for('admin.documents', status=status_filter) }}" class="lang-toggle-pill" style="text-decoration: none; display: flex; align-items: center;">Clear</a>
+      {% endif %}
+    </div>
+  </form>
+
+  <!-- Company-Wise Document Cards Grid -->
+  {% if companies_data %}
+  <div style="display: flex; flex-direction: column; gap: 18px;">
+    {% for item in companies_data %}
+    {% set comp = item.company %}
+    {% set docs = item.docs %}
+    <div style="background: #ffffff; border: 1px solid {% if comp.status == 'active' %}rgba(5, 150, 105, 0.3){% else %}var(--border-input){% endif %}; border-radius: var(--radius-lg); padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); transition: var(--transition);">
+      
+      <!-- Top Row: Company Info & Verification Status -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border-input);">
+        <div>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <a href="{{ url_for('admin.company_detail', company_id=comp.id) }}" style="font-size: 1.15rem; font-weight: 800; color: var(--tiancai-purple-dark); text-decoration: none;">
+              {{ comp.name }}
             </a>
-            <div style="font-size: 0.72rem; color: var(--text-light); font-weight: normal;">Signatory: {{ doc.company.authorised_signatory_name }}</div>
-          </td>
-          <td>
-            <span style="font-weight: 700; color: #7e22ce;">{{ doc.document_type.replace('_', ' ').title() }}</span>
-          </td>
-          <td>
-            <div style="display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.85rem;">
-              <i class="bi bi-file-earmark-pdf"></i> {{ doc.document_name }}
-            </div>
-            {% if doc.notes %}
-              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Note: {{ doc.notes }}</div>
-            {% endif %}
-          </td>
-          <td>
-            {% if doc.status == 'approved' %}
-              <span class="metric-badge badge-active"><i class="bi bi-check-circle-fill"></i> Approved</span>
-            {% elif doc.status == 'rejected' %}
-              <span class="metric-badge badge-debit"><i class="bi bi-x-circle-fill"></i> Rejected</span>
+            {% if comp.status == 'active' %}
+              <span class="metric-badge badge-active"><i class="bi bi-patch-check-fill"></i> Verified & Active</span>
+            {% elif comp.status == 'suspended' %}
+              <span class="metric-badge badge-debit"><i class="bi bi-x-circle-fill"></i> Suspended</span>
             {% else %}
-              <span class="metric-badge" style="background: rgba(217, 119, 6, 0.12); color: #d97706;"><i class="bi bi-clock-history"></i> Under Review</span>
+              <span class="metric-badge" style="background: #fef3c7; color: #d97706;"><i class="bi bi-clock-history"></i> Pending Verification</span>
             {% endif %}
-          </td>
-          <td style="color: var(--text-muted); font-size: 0.82rem;">
-            {{ doc.created_at.strftime('%b %d, %Y %H:%M') if doc.created_at else '' }}
-          </td>
-          <td>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <!-- View / Download Document Link -->
-              <a href="{{ url_for('admin.download_document', doc_id=doc.id) }}" target="_blank" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 12px; font-size: 0.78rem;">
-                <i class="bi bi-eye"></i> View
-              </a>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+            Signatory: <strong>{{ comp.authorised_signatory_name }}</strong> &bull; Email: <strong>{{ comp.email }}</strong> &bull; Phone: <strong>{{ comp.phone }}</strong>
+          </div>
+        </div>
 
-              <!-- Approve Button -->
-              {% if doc.status != 'approved' %}
-              <form method="POST" action="{{ url_for('admin.document_action', doc_id=doc.id) }}" style="display: inline;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <input type="hidden" name="action" value="approve">
-                <button type="submit" class="lang-toggle-pill" style="background: #d1fae5; color: #065f46; border: none; cursor: pointer; padding: 6px 12px; font-size: 0.78rem;">
-                  <i class="bi bi-check-lg"></i> Approve
-                </button>
-              </form>
-              {% endif %}
+        <!-- Quick Summary Metrics & Action Button -->
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <div style="text-align: right; margin-right: 8px;">
+            <div style="font-size: 0.85rem; font-weight: 800; color: var(--tiancai-blue);">
+              {{ item.uploaded_count }} / 4 Uploaded
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">
+              <span style="color: #059669; font-weight: 700;">{{ item.approved_count }} Approved</span> &bull; <span style="color: #d97706; font-weight: 700;">{{ item.under_review_count }} Under Review</span>
+            </div>
+          </div>
 
-              <!-- Reject Button -->
-              {% if doc.status != 'rejected' %}
-              <form method="POST" action="{{ url_for('admin.document_action', doc_id=doc.id) }}" style="display: inline;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <input type="hidden" name="action" value="reject">
-                <button type="submit" class="lang-toggle-pill" style="background: #ffe4e6; color: #9f1239; border: none; cursor: pointer; padding: 6px 12px; font-size: 0.78rem;">
-                  <i class="bi bi-x-lg"></i> Reject
-                </button>
-              </form>
+          <a href="{{ url_for('admin.company_detail', company_id=comp.id) }}" class="btn-tiancai-pill" style="text-decoration: none; padding: 8px 18px; font-size: 0.82rem; width: auto; min-height: auto;">
+            <i class="bi bi-search"></i> Inspect & Verify
+          </a>
+
+          {% if item.under_review_count > 0 %}
+          <form method="POST" action="{{ url_for('admin.approve_all_documents', company_id=comp.id) }}" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="lang-toggle-pill" style="background: #d1fae5; color: #065f46; border: none; cursor: pointer; padding: 8px 14px; font-size: 0.82rem; font-weight: 700;">
+              <i class="bi bi-check-all"></i> Approve All
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- 4 Document Category Grid for this Company -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+        {% for doc_key, title in required_doc_types %}
+        {% set doc = docs.get(doc_key) %}
+        <div style="background: #f8fafc; border: 1px solid var(--border-input); border-radius: var(--radius-md); padding: 12px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-weight: 700; font-size: 0.82rem; color: var(--text-dark);">{{ title }}</span>
+              {% if doc %}
+                {% if doc.status == 'approved' %}
+                  <span class="metric-badge badge-active" style="font-size: 0.65rem; padding: 2px 6px;">Approved</span>
+                {% elif doc.status == 'rejected' %}
+                  <span class="metric-badge badge-debit" style="font-size: 0.65rem; padding: 2px 6px;">Rejected</span>
+                {% else %}
+                  <span class="metric-badge" style="background: #fef3c7; color: #d97706; font-size: 0.65rem; padding: 2px 6px;">Under Review</span>
+                {% endif %}
+              {% else %}
+                <span class="metric-badge" style="background: #e2e8f0; color: #64748b; font-size: 0.65rem; padding: 2px 6px;">Missing</span>
               {% endif %}
             </div>
-          </td>
-        </tr>
+
+            {% if doc %}
+            <div style="font-size: 0.75rem; color: var(--tiancai-purple-dark); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 8px;">
+              <i class="bi bi-paperclip"></i> {{ doc.document_name }}
+            </div>
+            {% else %}
+            <div style="font-size: 0.72rem; color: var(--text-light); font-style: italic; margin-bottom: 8px;">
+              Not uploaded yet
+            </div>
+            {% endif %}
+          </div>
+
+          {% if doc %}
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
+            <a href="{{ url_for('admin.download_document', doc_id=doc.id) }}" target="_blank" class="lang-toggle-pill" style="text-decoration: none; padding: 3px 8px; font-size: 0.72rem;">
+              <i class="bi bi-eye"></i> View
+            </a>
+
+            {% if doc.status != 'approved' %}
+            <form method="POST" action="{{ url_for('admin.document_action', doc_id=doc.id) }}" style="display: inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <input type="hidden" name="action" value="approve">
+              <button type="submit" class="lang-toggle-pill" style="background: #d1fae5; color: #065f46; border: none; cursor: pointer; padding: 3px 8px; font-size: 0.72rem;">
+                <i class="bi bi-check-lg"></i>
+              </button>
+            </form>
+            {% endif %}
+
+            {% if doc.status != 'rejected' %}
+            <form method="POST" action="{{ url_for('admin.document_action', doc_id=doc.id) }}" style="display: inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <input type="hidden" name="action" value="reject">
+              <button type="submit" class="lang-toggle-pill" style="background: #ffe4e6; color: #9f1239; border: none; cursor: pointer; padding: 3px 8px; font-size: 0.72rem;">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </form>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
         {% endfor %}
-      </tbody>
-    </table>
+      </div>
+
+    </div>
+    {% endfor %}
   </div>
 
   <!-- Pagination -->
   {% if pagination and pagination.pages > 1 %}
-  <div class="pagination-container">
+  <div class="pagination-container" style="margin-top: 24px;">
     <div>Showing page {{ pagination.page }} of {{ pagination.pages }}</div>
     <div style="display: flex; gap: 8px;">
       {% if pagination.has_prev %}
-        <a href="{{ url_for('admin.documents', page=pagination.prev_num, status=status_filter, doc_type=doc_type_filter) }}" class="lang-toggle-pill" style="text-decoration: none;">&larr; Previous</a>
+        <a href="{{ url_for('admin.documents', page=pagination.prev_num, status=status_filter, q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none;">&larr; Previous</a>
       {% endif %}
       {% if pagination.has_next %}
-        <a href="{{ url_for('admin.documents', page=pagination.next_num, status=status_filter, doc_type=doc_type_filter) }}" class="lang-toggle-pill" style="text-decoration: none;">Next &rarr;</a>
+        <a href="{{ url_for('admin.documents', page=pagination.next_num, status=status_filter, q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none;">Next &rarr;</a>
       {% endif %}
     </div>
   </div>
@@ -128,7 +181,7 @@
 
   {% else %}
   <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-    <p>No compliance documents found matching your filter criteria.</p>
+    <p>No client companies found matching your criteria.</p>
   </div>
   {% endif %}
 </div>
