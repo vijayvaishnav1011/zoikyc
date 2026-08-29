@@ -10,8 +10,7 @@ REQUIRED_DOCUMENTS = {
     'certificate_of_incorporation': 'Certificate of Incorporation / Registration',
     'company_pan': 'Company PAN Card Document',
     'gst_certificate': 'GSTIN Registration Certificate',
-    'board_resolution': 'Authorised Signatory / Director KYC Proof (Board Resolution / POA / ID)',
-    'bank_proof': 'Bank Account Proof (Cancelled Cheque / Statement)'
+    'board_resolution': 'Authorised Signatory / Director KYC Proof (Board Resolution / POA / ID)'
 }
 
 def upload_company_document(company_id, document_type, file_storage, notes=None):

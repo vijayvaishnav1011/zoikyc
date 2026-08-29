@@ -103,8 +103,7 @@ def company_detail(company_id):
         ('certificate_of_incorporation', 'Certificate of Incorporation'),
         ('company_pan', 'Company PAN Card'),
         ('gst_certificate', 'GSTIN Registration'),
-        ('board_resolution', 'Authorised Signatory Proof'),
-        ('bank_proof', 'Bank Account Proof')
+        ('board_resolution', 'Authorised Signatory / Director Proof')
     ]
 
     return render_template(
@@ -171,25 +170,25 @@ def document_action(doc_id):
         doc.updated_at = datetime.now(timezone.utc)
         db.session.commit()
 
-        # Check if all 5 required docs are approved
-        required_types = ['certificate_of_incorporation', 'company_pan', 'gst_certificate', 'board_resolution', 'bank_proof']
+        # Check if all 4 required docs are approved
+        required_types = ['certificate_of_incorporation', 'company_pan', 'gst_certificate', 'board_resolution']
         approved_count = CompanyDocument.query.filter(
             CompanyDocument.company_id == doc.company_id,
             CompanyDocument.document_type.in_(required_types),
             CompanyDocument.status == 'approved'
         ).count()
 
-        if approved_count >= 5:
+        if approved_count >= 4:
             company = doc.company
             if company.status != 'active':
                 company.status = 'active'
                 company.updated_at = datetime.now(timezone.utc)
                 db.session.commit()
-                flash(f"Document approved! All 5 compliance documents verified. Company '{company.name}' is now fully ACTIVE.", "success")
+                flash(f"Document approved! All 4 compliance documents verified. Company '{company.name}' is now fully ACTIVE.", "success")
             else:
                 flash("Document approved successfully.", "success")
         else:
-            flash(f"Document approved. ({approved_count}/5 documents approved for this company).", "success")
+            flash(f"Document approved. ({approved_count}/4 documents approved for this company).", "success")
 
     elif action == 'reject':
         doc.status = 'rejected'

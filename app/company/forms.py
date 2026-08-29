@@ -39,8 +39,7 @@ class CompanyDocumentUploadForm(FlaskForm):
         ('certificate_of_incorporation', '1. Certificate of Incorporation / Registration Certificate'),
         ('company_pan', '2. Company PAN Card Document'),
         ('gst_certificate', '3. GSTIN Registration Certificate'),
-        ('board_resolution', '4. Authorised Signatory Board Resolution / ID Proof'),
-        ('bank_proof', '5. Bank Account Proof (Cancelled Cheque / Statement)')
+        ('board_resolution', '4. Authorised Signatory / Director KYC Proof (Board Resolution / POA / ID)')
     ], validators=[DataRequired()])
 
     document_file = FileField('Upload Document File (PDF, PNG, JPG, DOCX) *', validators=[
