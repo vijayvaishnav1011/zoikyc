@@ -1,5 +1,6 @@
 import os
 from flask import Flask, redirect, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import config_by_name
 from app.extensions import db, migrate, login_manager, csrf
 
@@ -9,6 +10,9 @@ def create_app(config_name=None):
 
     app = Flask(__name__)
     app.config.from_object(config_by_name.get(config_name, config_by_name['default']))
+
+    # Support reverse proxy headers (Traefik / Cloudflare) to prevent redirect loops
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     # Initialize extensions
     db.init_app(app)
