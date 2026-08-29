@@ -107,6 +107,25 @@
             </li>
           </ul>
         </div>
+
+        {% if current_user.role == 'super_admin' %}
+        <!-- Super Admin Master Control -->
+        <div class="nav-group" style="margin-top: 16px; padding-top: 14px; border-top: 1px dashed rgba(168, 85, 247, 0.3);">
+          <div class="nav-group-label" style="color: #facc15; font-weight: 800;"><i class="bi bi-shield-lock-fill"></i> Master Admin</div>
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a href="{{ url_for('admin.index') }}" style="background: rgba(250, 204, 21, 0.12); color: #fef08a; font-weight: 700; border-radius: var(--radius-md);">
+                <i class="bi bi-speedometer2" style="color: #facc15;"></i> Open Admin Panel
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('admin.documents') }}" style="color: #e9d5ff;">
+                <i class="bi bi-file-earmark-check"></i> Review Client Docs
+              </a>
+            </li>
+          </ul>
+        </div>
+        {% endif %}
       </nav>
 
       <!-- Sidebar Footer Org Card -->
@@ -134,6 +153,15 @@
         </div>
 
         <div class="top-navbar-right">
+          {% if current_user.role == 'super_admin' %}
+          <!-- Admin Panel Direct Switcher -->
+          <a href="{{ url_for('admin.index') }}" style="text-decoration: none;">
+            <div class="lang-toggle-pill" style="background: linear-gradient(135deg, #3b0764 0%, #581c87 100%); color: #fef08a; border: 1px solid #a855f7; font-weight: 800;">
+              <i class="bi bi-shield-lock-fill" style="color: #facc15;"></i> Admin Panel
+            </div>
+          </a>
+          {% endif %}
+
           <!-- Wallet Quick Pill -->
           <a href="{{ url_for('wallet.index') }}" style="text-decoration: none;">
             <div class="wallet-pill">
