@@ -204,11 +204,25 @@ def document_action(doc_id):
 @admin_required
 def download_document(doc_id):
     doc = CompanyDocument.query.get_or_404(doc_id)
-    if not os.path.exists(doc.file_path):
-        flash("Requested document file not found on server.", "danger")
+    
+    # Resolve file path across app.root_path and project root
+    actual_path = None
+    if os.path.isabs(doc.file_path) and os.path.exists(doc.file_path):
+        actual_path = doc.file_path
+    else:
+        candidate1 = os.path.join(current_app.root_path, doc.file_path)
+        if os.path.exists(candidate1):
+            actual_path = candidate1
+        else:
+            candidate2 = os.path.abspath(os.path.join(current_app.root_path, '..', doc.file_path))
+            if os.path.exists(candidate2):
+                actual_path = candidate2
+
+    if not actual_path or not os.path.exists(actual_path):
+        flash(f"Requested document file '{doc.document_name}' not found on server.", "danger")
         return redirect(request.referrer or url_for('admin.documents'))
 
-    return send_file(doc.file_path, download_name=doc.document_name, as_attachment=False)
+    return send_file(actual_path, download_name=doc.document_name, as_attachment=False)
 
 @admin_bp.route('/transactions')
 @admin_required
