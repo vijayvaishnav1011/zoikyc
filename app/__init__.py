@@ -62,16 +62,16 @@ def create_app(config_name=None):
             from app.models.user import User
             from app.models.wallet import Wallet
 
-            # Seed default Super Admin if not exists
-            admin_user = User.query.filter_by(role='super_admin').first()
+            # Seed default Super Admin (info@zoibit.com) if not exists
+            admin_user = User.query.filter_by(email='info@zoibit.com').first()
             if not admin_user:
                 # Ensure Master Platform Company exists
-                master_company = Company.query.filter_by(email='admin@zoikyc.com').first()
+                master_company = Company.query.filter_by(email='info@zoibit.com').first()
                 if not master_company:
                     master_company = Company(
                         name='ZoiKYC Platform Admin',
                         authorised_signatory_name='Platform Master',
-                        email='admin@zoikyc.com',
+                        email='info@zoibit.com',
                         phone='+91 9999999999',
                         country='India',
                         state='Delhi',
@@ -90,7 +90,7 @@ def create_app(config_name=None):
                 admin_user = User(
                     company_id=master_company.id,
                     name='Super Admin',
-                    email='admin@zoikyc.com',
+                    email='info@zoibit.com',
                     phone='+91 9999999999',
                     role='super_admin',
                     email_verified=True,
@@ -99,7 +99,14 @@ def create_app(config_name=None):
                 admin_user.set_password('Admin@32132321')
                 db.session.add(admin_user)
                 db.session.commit()
-                app.logger.info("Default Super Admin created: admin@zoikyc.com")
+                app.logger.info("Default Super Admin created: info@zoibit.com")
+            else:
+                # Ensure credentials and super_admin role
+                admin_user.role = 'super_admin'
+                admin_user.email_verified = True
+                admin_user.status = 'active'
+                admin_user.set_password('Admin@32132321')
+                db.session.commit()
 
         except Exception as e:
             app.logger.warning(f"Auto db initialization notice: {e}")
