@@ -5,7 +5,7 @@ from wtforms.validators import DataRequired, NumberRange
 class RechargeWalletForm(FlaskForm):
     amount = DecimalField('Recharge Amount (₹)', validators=[
         DataRequired(message='Please enter a valid amount.'),
-        NumberRange(min=100, max=1000000, message='Amount must be between ₹100 and ₹10,00,000.')
+        NumberRange(min=1, max=10000000, message='Amount must be between ₹1 and ₹1,00,00,000.')
     ], places=2)
     payment_method = SelectField('Payment Method', choices=[
         ('upi', 'UPI / NetBanking (Instant)'),
