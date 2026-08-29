@@ -26,9 +26,10 @@ services:
     container_name: zoikyc_app
     restart: always
     ports:
-      - "5000:5000"
+      - "5001:5001"
     environment:
       FLASK_ENV: production
+      PORT: 5001
       SECRET_KEY: ${SECRET_KEY:-zoikyc-super-secret-production-key-2026!}
       DATABASE_URL: postgresql+psycopg://zoikyc_user:Admin%4032132321@db:5432/zoikyc
       MAIL_SERVER: ${MAIL_SERVER:-smtpout.secureserver.net}
@@ -40,7 +41,7 @@ services:
     volumes:
       - ./app/uploads:/app/app/uploads
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://127.0.0.1:5000/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:5001/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

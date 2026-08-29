@@ -4,7 +4,8 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    FLASK_ENV=production
+    FLASK_ENV=production \
+    PORT=5001
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -26,12 +27,12 @@ COPY . /app/
 # Make entrypoint script executable
 RUN chmod +x /app/entrypoint.sh
 
-# Expose container port 5000
-EXPOSE 5000
+# Expose container port 5001
+EXPOSE 5001
 
-# Health check endpoint
+# Health check endpoint on port 5001
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
-  CMD curl -f http://127.0.0.1:5000/health || exit 1
+  CMD curl -f http://127.0.0.1:5001/health || exit 1
 
 # Set entrypoint
 ENTRYPOINT ["/app/entrypoint.sh"]
