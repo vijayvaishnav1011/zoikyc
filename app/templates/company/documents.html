@@ -76,6 +76,8 @@
           {% if uploaded %}
             {% if uploaded.status == 'approved' %}
               <span class="metric-badge badge-active"><i class="bi bi-patch-check-fill"></i> Approved</span>
+            {% elif uploaded.status == 'rejected' %}
+              <span class="metric-badge badge-debit"><i class="bi bi-x-circle-fill"></i> Rejected</span>
             {% else %}
               <span class="metric-badge" style="background: rgba(217, 119, 6, 0.12); color: #d97706;"><i class="bi bi-clock-history"></i> Under Review</span>
             {% endif %}
@@ -89,12 +91,24 @@
       <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 18px;">{{ subtitle }}</p>
 
       {% if uploaded %}
-      <div style="background: #f8fafc; border: 1px solid var(--border-input); padding: 10px 12px; border-radius: var(--radius-md); font-size: 0.8rem; color: var(--text-dark); margin-bottom: 16px;">
-        <div style="font-weight: 700; display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+      <div style="background: #f8fafc; border: 1px solid var(--border-input); padding: 12px 14px; border-radius: var(--radius-md); font-size: 0.8rem; color: var(--text-dark); margin-bottom: 16px;">
+        <div style="font-weight: 700; display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--tiancai-purple-dark);">
           <i class="bi bi-paperclip" style="color: var(--tiancai-blue);"></i> {{ uploaded.document_name }}
         </div>
         <div style="font-size: 0.72rem; color: var(--text-light); margin-top: 3px;">
-          Uploaded: {{ uploaded.created_at.strftime('%b %d, %Y') if uploaded.created_at else '' }}
+          Uploaded: {{ uploaded.created_at.strftime('%b %d, %Y %H:%M') if uploaded.created_at else '' }}
+        </div>
+        {% if uploaded.notes %}
+        <div style="font-size: 0.75rem; color: #7e22ce; margin-top: 4px;">
+          Note: {{ uploaded.notes }}
+        </div>
+        {% endif %}
+
+        <!-- Direct View / Preview Button for the Client -->
+        <div style="margin-top: 10px;">
+          <a href="{{ url_for('company.download_document', doc_id=uploaded.id) }}" target="_blank" class="lang-toggle-pill" style="text-decoration: none; padding: 5px 12px; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 5px; background: #ede9fe; color: #6d28d9; border-color: #ddd6fe;">
+            <i class="bi bi-eye-fill"></i> Direct View / Download
+          </a>
         </div>
       </div>
       {% endif %}

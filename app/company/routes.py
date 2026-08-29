@@ -1,4 +1,5 @@
-from flask import render_template, redirect, url_for, flash, request
+import os
+from flask import render_template, redirect, url_for, flash, request, send_file, current_app, abort
 from flask_login import login_required, current_user
 from app.company import company_bp
 from app.company.forms import CompanyProfileForm, CompanyDocumentUploadForm
@@ -43,7 +44,6 @@ def profile():
         team_users=team_users
     )
 
-
 @company_bp.route('/company/documents', methods=['GET', 'POST'])
 @login_required
 def documents():
@@ -84,3 +84,31 @@ def documents():
         required_docs=REQUIRED_DOCUMENTS,
         uploaded_dict=uploaded_dict
     )
+
+@company_bp.route('/company/documents/<int:doc_id>/download')
+@login_required
+def download_document(doc_id):
+    doc = CompanyDocument.query.get_or_404(doc_id)
+    
+    # Ensure current user belongs to the document's company (or is super_admin)
+    if doc.company_id != current_user.company_id and current_user.role != 'super_admin':
+        abort(403)
+
+    # Resolve file path across app.root_path and project root
+    actual_path = None
+    if os.path.isabs(doc.file_path) and os.path.exists(doc.file_path):
+        actual_path = doc.file_path
+    else:
+        candidate1 = os.path.join(current_app.root_path, doc.file_path)
+        if os.path.exists(candidate1):
+            actual_path = candidate1
+        else:
+            candidate2 = os.path.abspath(os.path.join(current_app.root_path, '..', doc.file_path))
+            if os.path.exists(candidate2):
+                actual_path = candidate2
+
+    if not actual_path or not os.path.exists(actual_path):
+        flash(f"Requested document file '{doc.document_name}' not found on server.", "danger")
+        return redirect(url_for('company.documents'))
+
+    return send_file(actual_path, download_name=doc.document_name, as_attachment=False)
