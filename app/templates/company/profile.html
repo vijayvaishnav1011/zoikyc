@@ -29,6 +29,14 @@
   </div>
 </div>
 
+{% if company.status == 'active' %}
+<!-- Verified Legal Lock Banner -->
+<div class="alert alert-info" style="margin-bottom: 24px; background: rgba(37, 99, 235, 0.08); border-color: rgba(37, 99, 235, 0.25); color: #1e3a8a; font-size: 0.85rem; line-height: 1.5;">
+  <i class="bi bi-shield-lock-fill" style="color: var(--tiancai-blue); margin-right: 6px; font-size: 1rem;"></i>
+  <span><strong>Verified Business Profile (Read-Only Legal Fields):</strong> Your legal organization name, authorised signatory, and GSTIN have been verified and permanently locked to ensure regulatory compliance. Contact support to request modifications.</span>
+</div>
+{% endif %}
+
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; align-items: start;">
   <!-- Edit Profile Form Card -->
   <div class="card" style="margin-bottom: 0;">
@@ -42,14 +50,28 @@
       <!-- Row 1: Company Name & Signatory Name -->
       <div class="ref-form-grid">
         <div class="ref-form-group">
-          <label class="ref-form-label" for="company_name">Company / Organisation Name *</label>
-          {{ form.company_name(class="ref-form-control") }}
+          <label class="ref-form-label" for="company_name">
+            Company / Organisation Name *
+            {% if company.status == 'active' %}<i class="bi bi-lock-fill" title="Locked after KYC verification" style="color: #64748b; margin-left: 4px;"></i>{% endif %}
+          </label>
+          {% if company.status == 'active' %}
+            {{ form.company_name(class="ref-form-control", readonly=true, style="background-color: #f1f5f9; cursor: not-allowed; color: #475569;") }}
+          {% else %}
+            {{ form.company_name(class="ref-form-control") }}
+          {% endif %}
           {% if form.company_name.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.company_name.errors[0] }}</span>{% endif %}
         </div>
 
         <div class="ref-form-group">
-          <label class="ref-form-label" for="authorised_signatory_name">Authorised Signatory Name *</label>
-          {{ form.authorised_signatory_name(class="ref-form-control") }}
+          <label class="ref-form-label" for="authorised_signatory_name">
+            Authorised Signatory Name *
+            {% if company.status == 'active' %}<i class="bi bi-lock-fill" title="Locked after KYC verification" style="color: #64748b; margin-left: 4px;"></i>{% endif %}
+          </label>
+          {% if company.status == 'active' %}
+            {{ form.authorised_signatory_name(class="ref-form-control", readonly=true, style="background-color: #f1f5f9; cursor: not-allowed; color: #475569;") }}
+          {% else %}
+            {{ form.authorised_signatory_name(class="ref-form-control") }}
+          {% endif %}
           {% if form.authorised_signatory_name.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.authorised_signatory_name.errors[0] }}</span>{% endif %}
         </div>
       </div>
@@ -63,8 +85,15 @@
         </div>
 
         <div class="ref-form-group">
-          <label class="ref-form-label" for="gstin">GSTIN Number</label>
-          {{ form.gstin(class="ref-form-control") }}
+          <label class="ref-form-label" for="gstin">
+            GSTIN Number
+            {% if company.status == 'active' and company.gstin %}<i class="bi bi-lock-fill" title="Locked after KYC verification" style="color: #64748b; margin-left: 4px;"></i>{% endif %}
+          </label>
+          {% if company.status == 'active' and company.gstin %}
+            {{ form.gstin(class="ref-form-control", readonly=true, style="background-color: #f1f5f9; cursor: not-allowed; color: #475569;") }}
+          {% else %}
+            {{ form.gstin(class="ref-form-control") }}
+          {% endif %}
           {% if form.gstin.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.gstin.errors[0] }}</span>{% endif %}
         </div>
       </div>

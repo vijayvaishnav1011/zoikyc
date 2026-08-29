@@ -21,10 +21,16 @@ def profile():
         form.company_name.data = company.name
 
     if form.validate_on_submit():
-        company.name = form.company_name.data.strip()
-        company.authorised_signatory_name = form.authorised_signatory_name.data.strip()
+        is_verified = (company.status == 'active')
+
+        # Only allow changing legal credentials if organisation is not yet verified
+        if not is_verified:
+            company.name = form.company_name.data.strip()
+            company.authorised_signatory_name = form.authorised_signatory_name.data.strip()
+            company.gstin = form.gstin.data.strip().upper() if form.gstin.data else None
+
+        # Operational contact details can always be updated
         company.phone = form.phone.data.strip()
-        company.gstin = form.gstin.data.strip().upper() if form.gstin.data else None
         company.country = form.country.data.strip()
         company.state = form.state.data.strip()
         company.city = form.city.data.strip()
@@ -32,7 +38,10 @@ def profile():
         company.address = form.address.data.strip()
 
         db.session.commit()
-        flash("Organisation profile updated successfully!", "success")
+        if is_verified:
+            flash("Organisation contact details updated. Verified legal credentials remain locked.", "success")
+        else:
+            flash("Organisation profile updated successfully!", "success")
         return redirect(url_for('company.profile'))
 
     team_users = User.query.filter_by(company_id=company.id).all()
