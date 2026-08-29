@@ -11,9 +11,13 @@ elif db_url.startswith('postgresql://') and not db_url.startswith('postgresql+ps
     db_url = db_url.replace('postgresql://', 'postgresql+psycopg://', 1)
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'default-dev-secret-key-change-me')
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'zoikyc-super-secret-production-key-2026!')
     SQLALCHEMY_DATABASE_URI = db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    
+    # CSRF Security Settings
+    WTF_CSRF_ENABLED = True
+    WTF_CSRF_TIME_LIMIT = 3600 # 1 hour
     
     # Session Security
     SESSION_COOKIE_HTTPONLY = True

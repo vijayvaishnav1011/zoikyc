@@ -27,7 +27,7 @@
   {% endwith %}
 
   <form method="POST" action="{{ url_for('auth.register') }}">
-    {{ form.csrf_token }}
+    {{ form.hidden_tag() }}
 
     <!-- Row 1: Full Name & Organisation Name -->
     <div class="ref-form-grid">

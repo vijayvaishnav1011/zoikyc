@@ -30,7 +30,7 @@
   {% endwith %}
 
   <form method="POST" action="{{ url_for('auth.login') }}">
-    {{ form.csrf_token }}
+    {{ form.hidden_tag() }}
 
     <div class="ref-form-group" style="margin-bottom: 18px;">
       <label class="ref-form-label" for="email">Business Email *</label>
