@@ -1,20 +1,22 @@
-/* ZoiKYC - Exact Reference Match UI Design & Full Mobile Responsiveness */
+/* ZoiKYC - Unified Modern Aesthetic & Design System */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
   --font-main: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   
-  /* Reference Image Color Palette */
-  --tiancai-purple-dark: #3b0764;
-  --tiancai-purple: #581c87;
+  /* Unified Auth & Dashboard Color Palette */
+  --tiancai-purple-dark: #2e0854;
+  --tiancai-purple: #4c1d95;
+  --tiancai-purple-medium: #6b21a8;
   --tiancai-purple-light: #7e22ce;
-  --tiancai-purple-gradient: linear-gradient(135deg, #4c1d95 0%, #6b21a8 50%, #7e22ce 100%);
+  --tiancai-purple-gradient: linear-gradient(135deg, #3b0764 0%, #581c87 50%, #7e22ce 100%);
+  --tiancai-hero-gradient: linear-gradient(135deg, #2e0854 0%, #4c1d95 60%, #6b21a8 100%);
   
   --tiancai-blue: #2563eb;
   --tiancai-blue-hover: #1d4ed8;
   --tiancai-blue-glow: rgba(37, 99, 235, 0.25);
 
-  --bg-body: #f1f5f9;
+  --bg-body: #f8fafc;
   --bg-card: #ffffff;
   --bg-input: #f8fafc;
   
@@ -33,7 +35,8 @@
   --radius-md: 10px;
   --radius-pill: 30px;
 
-  --shadow-card: 0 10px 30px rgba(15, 23, 42, 0.05);
+  --shadow-card: 0 10px 30px rgba(15, 23, 42, 0.04);
+  --shadow-purple: 0 12px 30px rgba(76, 29, 149, 0.25);
   --shadow-blue: 0 8px 25px rgba(37, 99, 235, 0.35);
 
   --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -57,7 +60,7 @@ body {
 }
 
 /* ==========================================================================
-   AUTHENTICATION SPLIT-SCREEN CONTAINER (EXACT MATCH TO REFERENCE DESIGN)
+   AUTHENTICATION SPLIT-SCREEN CONTAINER
    ========================================================================== */
 .auth-split-page {
   display: flex;
@@ -194,15 +197,20 @@ body {
 }
 
 .lang-toggle-pill {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   background: #f1f5f9;
-  padding: 5px 12px;
+  padding: 6px 14px;
   border-radius: 20px;
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--tiancai-blue);
+  transition: var(--transition);
+}
+
+.lang-toggle-pill:hover {
+  background: #e2e8f0;
 }
 
 /* Inputs Matching Reference Image */
@@ -232,7 +240,7 @@ body {
   border: 1px solid var(--border-input);
   border-radius: var(--radius-md);
   color: var(--text-dark);
-  font-size: 0.95rem; /* Prevents auto-zoom on iOS mobile */
+  font-size: 0.95rem;
   font-family: inherit;
   transition: var(--transition);
 }
@@ -277,16 +285,16 @@ body {
 /* Pill Primary CTA Button */
 .btn-tiancai-pill {
   width: 100%;
-  min-height: 48px;
-  padding: 14px 24px;
+  min-height: 46px;
+  padding: 12px 24px;
   background: var(--tiancai-blue);
   color: #ffffff;
   border: none;
   border-radius: var(--radius-pill);
-  font-size: 0.98rem;
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
@@ -304,14 +312,41 @@ body {
   transform: translateY(0);
 }
 
+/* Purple Pill Button Variant */
+.btn-purple-pill {
+  width: 100%;
+  min-height: 46px;
+  padding: 12px 24px;
+  background: var(--tiancai-purple-gradient);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: var(--shadow-purple);
+  transition: var(--transition);
+}
+
+.btn-purple-pill:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(76, 29, 149, 0.35);
+}
+
 /* ==========================================================================
-   APP DASHBOARD STYLING
+   APP DASHBOARD STYLING (PURPLE & BLUE UNIFIED PALETTE)
    ========================================================================== */
 .app-layout {
   display: flex;
   min-height: 100vh;
   width: 100%;
   position: relative;
+  background-color: var(--bg-body);
 }
 
 /* Mobile Sidebar Backdrop Overlay */
@@ -362,7 +397,7 @@ body {
   font-size: 1.4rem;
   font-weight: 800;
   letter-spacing: -0.5px;
-  color: var(--tiancai-purple);
+  color: var(--tiancai-purple-dark);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -400,7 +435,7 @@ body {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 1.2px;
-  color: var(--text-light);
+  color: var(--tiancai-purple-light);
   padding: 0 12px;
   margin-bottom: 8px;
 }
@@ -426,15 +461,15 @@ body {
 }
 
 .nav-item a:hover {
-  background: var(--bg-input);
-  color: var(--tiancai-blue);
+  background: #f5f3ff;
+  color: var(--tiancai-purple);
   transform: translateX(3px);
 }
 
 .nav-item.active a {
-  background: var(--tiancai-blue);
+  background: var(--tiancai-purple-gradient);
   color: #ffffff;
-  box-shadow: var(--shadow-blue);
+  box-shadow: 0 8px 20px rgba(88, 28, 135, 0.3);
 }
 
 .nav-item.active a i {
@@ -442,7 +477,7 @@ body {
 }
 
 .nav-item.disabled a {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
@@ -465,15 +500,15 @@ body {
 .sidebar-footer-card {
   margin: 14px;
   padding: 12px 14px;
-  background: #f8fafc;
-  border: 1px solid var(--border-input);
+  background: #faf5ff;
+  border: 1px solid #f3e8ff;
   border-radius: var(--radius-md);
 }
 
 .sidebar-org-name {
   font-size: 0.85rem;
   font-weight: 800;
-  color: var(--text-dark);
+  color: var(--tiancai-purple-dark);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -577,7 +612,7 @@ body {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: var(--tiancai-blue);
+  background: var(--tiancai-purple-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -585,6 +620,7 @@ body {
   font-size: 0.95rem;
   color: #fff;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(88, 28, 135, 0.2);
 }
 
 .page-container {
@@ -592,6 +628,30 @@ body {
   max-width: 1350px;
   width: 100%;
   margin: 0 auto;
+}
+
+/* Dashboard Hero Banner with Purple Theme */
+.dashboard-hero-banner {
+  background: var(--tiancai-purple-gradient);
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  color: #ffffff;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-purple);
+}
+
+.dashboard-hero-banner::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .card {
@@ -624,7 +684,8 @@ body {
 
 .metric-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  border-color: #c084fc;
+  box-shadow: 0 8px 25px rgba(88, 28, 135, 0.08);
 }
 
 .metric-title {
@@ -674,13 +735,13 @@ body {
   border-collapse: collapse;
   text-align: left;
   font-size: 0.9rem;
-  min-width: 580px; /* Ensures table is scrollable rather than cramped */
+  min-width: 580px;
 }
 
 .custom-table th {
   padding: 14px 16px;
-  background: #f8fafc;
-  color: var(--text-muted);
+  background: #faf5ff;
+  color: var(--tiancai-purple);
   font-weight: 700;
   border-bottom: 1px solid var(--border-input);
   text-transform: uppercase;
@@ -695,7 +756,7 @@ body {
 }
 
 .custom-table tbody tr:hover td {
-  background: #f8fafc;
+  background: #fdf4ff;
 }
 
 .alert-container {
@@ -757,8 +818,8 @@ body {
 }
 
 .btn-preset:hover, .btn-preset.selected {
-  border-color: var(--tiancai-blue);
-  background: var(--tiancai-blue);
+  border-color: var(--tiancai-purple);
+  background: var(--tiancai-purple-gradient);
   color: #ffffff;
 }
 
@@ -867,15 +928,19 @@ body {
   }
 
   .wallet-pill-label {
-    display: none; /* Keep wallet pill compact on mobile */
+    display: none;
   }
 
   .user-info-text {
-    display: none; /* Hide verbose name on tiny screens, keeping avatar */
+    display: none;
   }
 
   .page-container {
     padding: 18px 14px;
+  }
+
+  .dashboard-hero-banner {
+    padding: 24px 18px;
   }
 
   .card {
@@ -908,7 +973,7 @@ body {
     font-size: 0.78rem;
   }
 
-  .btn-tiancai-pill {
+  .btn-tiancai-pill, .btn-purple-pill {
     padding: 13px 18px;
     font-size: 0.92rem;
   }

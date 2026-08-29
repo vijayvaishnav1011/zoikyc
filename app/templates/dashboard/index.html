@@ -4,23 +4,25 @@
 {% block page_title %}Dashboard Overview{% endblock %}
 
 {% block content %}
-<!-- Welcome Banner -->
-<div class="card" style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(238, 242, 255, 0.85) 100%); border-color: rgba(37, 99, 235, 0.2); margin-bottom: 24px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+<!-- Welcome Hero Banner with Login/Register Purple Palette -->
+<div class="dashboard-hero-banner">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; position: relative; z-index: 5;">
     <div>
-      <div style="font-size: 0.8rem; color: var(--tiancai-blue); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">
-        <i class="bi bi-building"></i> {{ company.name if company else 'Organisation Account' }}
+      <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.15); padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 8px;">
+        <i class="bi bi-shield-check"></i> {{ company.name if company else 'Organisation Account' }}
       </div>
-      <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-dark);">Welcome, {{ company.name if company else current_user.name }}</h1>
-      <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px; max-width: 680px;">
+      <h1 style="font-size: 1.75rem; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; margin-bottom: 6px;">
+        Welcome, {{ company.name if company else current_user.name }}
+      </h1>
+      <p style="color: rgba(255, 255, 255, 0.85); font-size: 0.9rem; max-width: 680px; line-height: 1.5;">
         Manage your wallet, track real-time transactions, and submit your company verification documents.
       </p>
     </div>
-    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-      <a href="{{ url_for('company.documents') }}" class="lang-toggle-pill" style="text-decoration: none; padding: 10px 18px; font-size: 0.85rem;">
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <a href="{{ url_for('company.documents') }}" style="text-decoration: none; padding: 11px 20px; font-size: 0.88rem; background: rgba(255, 255, 255, 0.15); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: var(--radius-pill); font-weight: 700; display: inline-flex; align-items: center; gap: 6px; transition: var(--transition);">
         <i class="bi bi-file-earmark-check"></i> Compliance Docs
       </a>
-      <a href="{{ url_for('wallet.recharge') }}" class="btn-tiancai-pill" style="text-decoration: none; padding: 10px 20px; font-size: 0.88rem;">
+      <a href="{{ url_for('wallet.recharge') }}" class="btn-tiancai-pill" style="text-decoration: none; padding: 11px 22px; font-size: 0.88rem; width: auto;">
         <i class="bi bi-plus-circle"></i> Recharge Wallet
       </a>
     </div>
@@ -33,7 +35,7 @@
   <div class="metric-card">
     <div>
       <div class="metric-title">
-        <i class="bi bi-wallet2" style="color: var(--tiancai-blue);"></i> Wallet Balance
+        <i class="bi bi-wallet2" style="color: var(--tiancai-purple-medium);"></i> Wallet Balance
       </div>
       <div class="metric-value" style="color: #059669;">
         {{ wallet.balance | currency if wallet else '₹0.00' }}
@@ -74,7 +76,7 @@
   <div class="metric-card">
     <div>
       <div class="metric-title">
-        <i class="bi bi-cpu" style="color: #7e22ce;"></i> FinTech Middleware
+        <i class="bi bi-cpu" style="color: var(--tiancai-purple-light);"></i> FinTech Middleware
       </div>
       <div class="metric-value" style="font-size: 1.25rem; color: var(--text-dark);">
         Phase 1 Active
@@ -83,7 +85,7 @@
         KYC, KRA, E-Sign APIs
       </div>
     </div>
-    <span class="metric-badge" style="background: rgba(37, 99, 235, 0.1); color: var(--tiancai-blue);">Ready</span>
+    <span class="metric-badge" style="background: rgba(126, 34, 206, 0.1); color: var(--tiancai-purple-medium); font-weight: 800;">Ready</span>
   </div>
 </div>
 
