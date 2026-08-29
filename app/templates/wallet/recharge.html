@@ -16,9 +16,14 @@
       </p>
     </div>
 
-    <form method="POST" action="{{ url_for('wallet.recharge') }}">
-      {{ form.hidden_tag() }}
+    <!-- Alert / Status Notice Box -->
+    <div id="paymentAlert" class="alert" style="display: none; margin-bottom: 20px;"></div>
 
+    <form id="rechargeForm" method="POST" action="{{ url_for('wallet.recharge') }}">
+      {{ form.hidden_tag() }}
+      <input type="hidden" id="csrfToken" value="{{ csrf_token() }}">
+
+      <!-- Presets Grid -->
       <div class="ref-form-group" style="margin-bottom: 20px;">
         <label class="ref-form-label">Select Quick Amount Presets</label>
         <div class="preset-grid">
@@ -29,6 +34,7 @@
         </div>
       </div>
 
+      <!-- Custom Amount Field -->
       <div class="ref-form-group" style="margin-bottom: 20px;">
         <label class="ref-form-label" for="amount">Or Enter Custom Amount (₹) *</label>
         {{ form.amount(class="ref-form-control", id="amount", value="10000.00", placeholder="e.g. 10000.00", style="font-size: 1.2rem; font-weight: 800; color: #059669;") }}
@@ -37,19 +43,148 @@
         {% endif %}
       </div>
 
+      <!-- Payment Method -->
       <div class="ref-form-group" style="margin-bottom: 20px;">
-        <label class="ref-form-label" for="payment_method">Payment Mode *</label>
-        {{ form.payment_method(class="ref-form-control") }}
+        <label class="ref-form-label" for="payment_method">Payment Gateway / Mode *</label>
+        {{ form.payment_method(class="ref-form-control", id="payment_method") }}
       </div>
 
+      <!-- Security Notice -->
       <div style="background: #f8fafc; border: 1px solid var(--border-input); padding: 14px 16px; border-radius: var(--radius-md); font-size: 0.82rem; color: var(--text-muted); margin-bottom: 24px;">
-        <i class="bi bi-shield-lock-fill" style="color: var(--tiancai-blue);"></i> <strong>Server-Side Verified Payment:</strong> Credits are atomically verified and appended to your company's immutable ledger upon success.
+        <i class="bi bi-shield-lock-fill" style="color: var(--tiancai-blue);"></i> <strong>Razorpay Secured Payment:</strong> Credits are atomically verified and cryptographically reconciled with your company ledger.
       </div>
 
-      <button type="submit" class="btn-tiancai-pill">
-        <i class="bi bi-credit-card"></i> Process Secure Recharge
+      <!-- Submit Button -->
+      <button type="submit" id="payBtn" class="btn-tiancai-pill">
+        <i class="bi bi-credit-card"></i> <span id="payBtnText">Pay & Recharge Wallet</span>
       </button>
     </form>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Razorpay Checkout SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const rechargeForm = document.getElementById('rechargeForm');
+  const amountInput = document.getElementById('amount');
+  const payBtn = document.getElementById('payBtn');
+  const payBtnText = document.getElementById('payBtnText');
+  const paymentAlert = document.getElementById('paymentAlert');
+  const csrfToken = document.getElementById('csrfToken').value;
+
+  const hasRazorpayKey = "{{ razorpay_key_id }}" !== "";
+
+  rechargeForm.addEventListener('submit', async (e) => {
+    const amountVal = parseFloat(amountInput.value);
+
+    if (!amountVal || amountVal <= 0) {
+      alert("Please enter a valid recharge amount.");
+      return;
+    }
+
+    if (!hasRazorpayKey) {
+      // Direct server-side form submission fallback if Razorpay API keys not yet configured
+      return;
+    }
+
+    e.preventDefault();
+    payBtn.disabled = true;
+    payBtnText.textContent = "Initiating Razorpay Order...";
+
+    try {
+      // 1. Create Razorpay Order in Backend
+      const orderResp = await fetch("{{ url_for('wallet.create_order') }}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken
+        },
+        body: JSON.stringify({ amount: amountVal })
+      });
+
+      const orderData = await orderResp.json();
+
+      if (!orderData.success) {
+        throw new Error(orderData.message || "Failed to create Razorpay order.");
+      }
+
+      // 2. Open Razorpay Native Checkout Modal
+      const options = {
+        key: orderData.key_id,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "ZoiKYC",
+        description: `Wallet Recharge for ${orderData.company_name}`,
+        image: "{{ url_for('static', filename='images/zoikyc_logo.png') }}",
+        order_id: orderData.order_id,
+        prefill: {
+          name: orderData.user_name,
+          email: orderData.user_email,
+          contact: orderData.user_phone
+        },
+        theme: {
+          color: "#3b0764"
+        },
+        handler: async function (response) {
+          payBtnText.textContent = "Verifying Payment Signature...";
+
+          // 3. Cryptographically verify signature in Backend
+          const verifyResp = await fetch("{{ url_for('wallet.verify_payment') }}", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrfToken
+            },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              amount: amountVal
+            })
+          });
+
+          const verifyData = await verifyResp.json();
+
+          if (verifyData.success) {
+            window.location.href = verifyData.redirect_url || "{{ url_for('wallet.index') }}";
+          } else {
+            paymentAlert.className = "alert alert-danger";
+            paymentAlert.textContent = "Payment Verification Failed: " + verifyData.message;
+            paymentAlert.style.display = "block";
+            payBtn.disabled = false;
+            payBtnText.textContent = "Pay & Recharge Wallet";
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            payBtn.disabled = false;
+            payBtnText.textContent = "Pay & Recharge Wallet";
+          }
+        }
+      };
+
+      const rzp = new Razorpay(options);
+      rzp.on('payment.failed', function (response) {
+        paymentAlert.className = "alert alert-danger";
+        paymentAlert.textContent = "Payment Failed: " + (response.error.description || "Transaction declined.");
+        paymentAlert.style.display = "block";
+        payBtn.disabled = false;
+        payBtnText.textContent = "Pay & Recharge Wallet";
+      });
+      rzp.open();
+
+    } catch (err) {
+      paymentAlert.className = "alert alert-danger";
+      paymentAlert.textContent = err.message || "Error processing payment.";
+      paymentAlert.style.display = "block";
+      payBtn.disabled = false;
+      payBtnText.textContent = "Pay & Recharge Wallet";
+    }
+  });
+});
+</script>
 {% endblock %}

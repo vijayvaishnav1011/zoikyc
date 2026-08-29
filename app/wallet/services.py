@@ -1,11 +1,65 @@
 import uuid
+import razorpay
 from decimal import Decimal
 from datetime import datetime, timezone
+from flask import current_app
 from app.extensions import db
 from app.models.wallet import Wallet
 from app.models.transaction import WalletTransaction
 
-def process_wallet_recharge(company_id, amount, payment_method='mock_gateway', reference_prefix='RECH'):
+def get_razorpay_client():
+    key_id = current_app.config.get('RAZORPAY_KEY_ID')
+    key_secret = current_app.config.get('RAZORPAY_KEY_SECRET')
+    if key_id and key_secret:
+        return razorpay.Client(auth=(key_id, key_secret))
+    return None
+
+def create_razorpay_order(amount_inr, company_id, company_name=None):
+    """
+    Creates a new Razorpay Order for online wallet recharge.
+    Amount in Razorpay is specified in paise (1 INR = 100 paise).
+    """
+    client = get_razorpay_client()
+    if not client:
+        return None, "Razorpay API credentials not configured."
+
+    try:
+        amount_paise = int(Decimal(str(amount_inr)) * 100)
+        order_data = {
+            'amount': amount_paise,
+            'currency': 'INR',
+            'payment_capture': 1,
+            'notes': {
+                'company_id': str(company_id),
+                'company_name': str(company_name or '')
+            }
+        }
+        order = client.order.create(data=order_data)
+        return order, None
+    except Exception as e:
+        return None, str(e)
+
+def verify_razorpay_payment(razorpay_order_id, razorpay_payment_id, razorpay_signature):
+    """
+    Cryptographically verifies the Razorpay payment signature.
+    """
+    client = get_razorpay_client()
+    if not client:
+        return False, "Razorpay client not configured."
+
+    try:
+        client.utility.verify_payment_signature({
+            'razorpay_order_id': razorpay_order_id,
+            'razorpay_payment_id': razorpay_payment_id,
+            'razorpay_signature': razorpay_signature
+        })
+        return True, "Payment signature verified successfully."
+    except razorpay.errors.SignatureVerificationError:
+        return False, "Cryptographic signature verification failed."
+    except Exception as e:
+        return False, str(e)
+
+def process_wallet_recharge(company_id, amount, payment_method='razorpay', reference_id=None, reference_prefix='RECH'):
     """
     Atomically credits a company wallet and logs an immutable ledger transaction entry.
     Uses pessimistic locking (with_for_update) to prevent race conditions.
@@ -32,8 +86,8 @@ def process_wallet_recharge(company_id, amount, payment_method='mock_gateway', r
         wallet.balance = balance_after
         wallet.updated_at = datetime.now(timezone.utc)
 
-        # Generate unique reference ID
-        unique_ref = f"{reference_prefix}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:6].upper()}"
+        # Unique reference ID
+        unique_ref = reference_id or f"{reference_prefix}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:6].upper()}"
 
         # Create Ledger Transaction Record
         transaction = WalletTransaction(
