@@ -19,7 +19,14 @@
     <!-- Alert / Status Notice Box -->
     <div id="paymentAlert" class="alert" style="display: none; margin-bottom: 20px;"></div>
 
-    <form id="rechargeForm" method="POST" action="{{ url_for('wallet.recharge') }}">
+    {% if not razorpay_key_id %}
+    <div class="alert alert-warning" style="margin-bottom: 20px; font-size: 0.85rem; line-height: 1.5;">
+      <i class="bi bi-exclamation-triangle-fill" style="margin-right: 6px;"></i>
+      <span><strong>Razorpay Notice:</strong> Please add <code>RAZORPAY_KEY_ID</code> and <code>RAZORPAY_KEY_SECRET</code> in your <code>.env</code> file to enable live checkout.</span>
+    </div>
+    {% endif %}
+
+    <form id="rechargeForm" method="POST" action="javascript:void(0);">
       {{ form.hidden_tag() }}
       <input type="hidden" id="csrfToken" value="{{ csrf_token() }}">
 
@@ -43,20 +50,14 @@
         {% endif %}
       </div>
 
-      <!-- Payment Method -->
-      <div class="ref-form-group" style="margin-bottom: 20px;">
-        <label class="ref-form-label" for="payment_method">Payment Gateway / Mode *</label>
-        {{ form.payment_method(class="ref-form-control", id="payment_method") }}
-      </div>
-
       <!-- Security Notice -->
       <div style="background: #f8fafc; border: 1px solid var(--border-input); padding: 14px 16px; border-radius: var(--radius-md); font-size: 0.82rem; color: var(--text-muted); margin-bottom: 24px;">
-        <i class="bi bi-shield-lock-fill" style="color: var(--tiancai-blue);"></i> <strong>Razorpay Secured Payment:</strong> Credits are atomically verified and cryptographically reconciled with your company ledger.
+        <i class="bi bi-shield-lock-fill" style="color: var(--tiancai-blue);"></i> <strong>Razorpay Secured Payment:</strong> Supports UPI (GPay, PhonePe, Paytm), NetBanking, Credit/Debit Cards, and QR Code.
       </div>
 
       <!-- Submit Button -->
       <button type="submit" id="payBtn" class="btn-tiancai-pill">
-        <i class="bi bi-credit-card"></i> <span id="payBtnText">Pay & Recharge Wallet</span>
+        <i class="bi bi-credit-card"></i> <span id="payBtnText">Pay & Recharge via Razorpay</span>
       </button>
     </form>
   </div>
@@ -75,25 +76,29 @@ document.addEventListener('DOMContentLoaded', () => {
   const payBtnText = document.getElementById('payBtnText');
   const paymentAlert = document.getElementById('paymentAlert');
   const csrfToken = document.getElementById('csrfToken').value;
-
-  const hasRazorpayKey = "{{ razorpay_key_id }}" !== "";
+  const razorpayKeyId = "{{ razorpay_key_id }}";
 
   rechargeForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
     const amountVal = parseFloat(amountInput.value);
 
     if (!amountVal || amountVal <= 0) {
-      alert("Please enter a valid recharge amount.");
+      paymentAlert.className = "alert alert-danger";
+      paymentAlert.textContent = "Please enter a valid recharge amount greater than ₹0.";
+      paymentAlert.style.display = "block";
       return;
     }
 
-    if (!hasRazorpayKey) {
-      // Direct server-side form submission fallback if Razorpay API keys not yet configured
+    if (!razorpayKeyId) {
+      paymentAlert.className = "alert alert-warning";
+      paymentAlert.innerHTML = "<strong>Razorpay Keys Missing:</strong> Please add <code>RAZORPAY_KEY_ID</code> and <code>RAZORPAY_KEY_SECRET</code> in your <code>.env</code> file, then restart the server.";
+      paymentAlert.style.display = "block";
       return;
     }
 
-    e.preventDefault();
     payBtn.disabled = true;
-    payBtnText.textContent = "Initiating Razorpay Order...";
+    payBtnText.textContent = "Opening Razorpay Gateway...";
+    paymentAlert.style.display = "none";
 
     try {
       // 1. Create Razorpay Order in Backend
@@ -116,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const options = {
         key: orderData.key_id,
         amount: orderData.amount,
-        currency: orderData.currency,
+        currency: orderData.currency || "INR",
         name: "ZoiKYC",
         description: `Wallet Recharge for ${orderData.company_name}`,
         image: "{{ url_for('static', filename='images/zoikyc_logo.png') }}",
@@ -156,13 +161,13 @@ document.addEventListener('DOMContentLoaded', () => {
             paymentAlert.textContent = "Payment Verification Failed: " + verifyData.message;
             paymentAlert.style.display = "block";
             payBtn.disabled = false;
-            payBtnText.textContent = "Pay & Recharge Wallet";
+            payBtnText.textContent = "Pay & Recharge via Razorpay";
           }
         },
         modal: {
           ondismiss: function () {
             payBtn.disabled = false;
-            payBtnText.textContent = "Pay & Recharge Wallet";
+            payBtnText.textContent = "Pay & Recharge via Razorpay";
           }
         }
       };
@@ -173,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
         paymentAlert.textContent = "Payment Failed: " + (response.error.description || "Transaction declined.");
         paymentAlert.style.display = "block";
         payBtn.disabled = false;
-        payBtnText.textContent = "Pay & Recharge Wallet";
+        payBtnText.textContent = "Pay & Recharge via Razorpay";
       });
       rzp.open();
 
@@ -182,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
       paymentAlert.textContent = err.message || "Error processing payment.";
       paymentAlert.style.display = "block";
       payBtn.disabled = false;
-      payBtnText.textContent = "Pay & Recharge Wallet";
+      payBtnText.textContent = "Pay & Recharge via Razorpay";
     }
   });
 });
