@@ -29,5 +29,9 @@ RUN chmod +x /app/entrypoint.sh
 # Expose container port 5000
 EXPOSE 5000
 
+# Health check endpoint
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
+  CMD curl -f http://127.0.0.1:5000/health || exit 1
+
 # Set entrypoint
 ENTRYPOINT ["/app/entrypoint.sh"]

@@ -39,6 +39,12 @@ services:
       MAIL_DEFAULT_SENDER: ${MAIL_DEFAULT_SENDER:-info@zoibit.com}
     volumes:
       - ./app/uploads:/app/app/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:5000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     depends_on:
       db:
         condition: service_healthy

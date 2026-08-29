@@ -5,6 +5,10 @@ from app.models import Company, User, Wallet, WalletTransaction
 
 app = create_app(os.environ.get('FLASK_ENV', 'development'))
 
+@app.route('/health')
+def health_check():
+    return {'status': 'healthy', 'service': 'ZoiKYC'}, 200
+
 @app.shell_context_processor
 def make_shell_context():
     return {
