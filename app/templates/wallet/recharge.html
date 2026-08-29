@@ -19,13 +19,6 @@
     <!-- Alert / Status Notice Box -->
     <div id="paymentAlert" class="alert" style="display: none; margin-bottom: 20px;"></div>
 
-    {% if not razorpay_key_id %}
-    <div class="alert alert-warning" style="margin-bottom: 20px; font-size: 0.85rem; line-height: 1.5;">
-      <i class="bi bi-exclamation-triangle-fill" style="margin-right: 6px;"></i>
-      <span><strong>Razorpay Notice:</strong> Please add <code>RAZORPAY_KEY_ID</code> and <code>RAZORPAY_KEY_SECRET</code> in your <code>.env</code> file to enable live checkout.</span>
-    </div>
-    {% endif %}
-
     <form id="rechargeForm" method="POST" action="javascript:void(0);">
       {{ form.hidden_tag() }}
       <input type="hidden" id="csrfToken" value="{{ csrf_token() }}">
@@ -52,7 +45,7 @@
 
       <!-- Security Notice -->
       <div style="background: #f8fafc; border: 1px solid var(--border-input); padding: 14px 16px; border-radius: var(--radius-md); font-size: 0.82rem; color: var(--text-muted); margin-bottom: 24px;">
-        <i class="bi bi-shield-lock-fill" style="color: var(--tiancai-blue);"></i> <strong>Razorpay Secured Payment:</strong> Supports UPI (GPay, PhonePe, Paytm), NetBanking, Credit/Debit Cards, and QR Code.
+        <i class="bi bi-shield-lock-fill" style="color: var(--tiancai-blue);"></i> <strong>Instant Razorpay Payment:</strong> Supports UPI (GPay, PhonePe, Paytm), NetBanking, Credit/Debit Cards, and QR Code.
       </div>
 
       <!-- Submit Button -->
@@ -76,7 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const payBtnText = document.getElementById('payBtnText');
   const paymentAlert = document.getElementById('paymentAlert');
   const csrfToken = document.getElementById('csrfToken').value;
-  const razorpayKeyId = "{{ razorpay_key_id }}";
 
   rechargeForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -85,13 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!amountVal || amountVal <= 0) {
       paymentAlert.className = "alert alert-danger";
       paymentAlert.textContent = "Please enter a valid recharge amount greater than ₹0.";
-      paymentAlert.style.display = "block";
-      return;
-    }
-
-    if (!razorpayKeyId) {
-      paymentAlert.className = "alert alert-warning";
-      paymentAlert.innerHTML = "<strong>Razorpay Keys Missing:</strong> Please add <code>RAZORPAY_KEY_ID</code> and <code>RAZORPAY_KEY_SECRET</code> in your <code>.env</code> file, then restart the server.";
       paymentAlert.style.display = "block";
       return;
     }

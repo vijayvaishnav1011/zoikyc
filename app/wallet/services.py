@@ -1,5 +1,7 @@
+import os
 import uuid
 import razorpay
+from dotenv import load_dotenv
 from decimal import Decimal
 from datetime import datetime, timezone
 from flask import current_app
@@ -8,10 +10,11 @@ from app.models.wallet import Wallet
 from app.models.transaction import WalletTransaction
 
 def get_razorpay_client():
-    key_id = current_app.config.get('RAZORPAY_KEY_ID')
-    key_secret = current_app.config.get('RAZORPAY_KEY_SECRET')
+    load_dotenv(override=True)
+    key_id = os.environ.get('RAZORPAY_KEY_ID') or current_app.config.get('RAZORPAY_KEY_ID')
+    key_secret = os.environ.get('RAZORPAY_KEY_SECRET') or current_app.config.get('RAZORPAY_KEY_SECRET')
     if key_id and key_secret:
-        return razorpay.Client(auth=(key_id, key_secret))
+        return razorpay.Client(auth=(key_id.strip(), key_secret.strip()))
     return None
 
 def create_razorpay_order(amount_inr, company_id, company_name=None):

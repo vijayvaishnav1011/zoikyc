@@ -1,5 +1,7 @@
+import os
 import json
 from decimal import Decimal
+from dotenv import load_dotenv
 from flask import render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_required, current_user
 from app.wallet import wallet_bp
@@ -10,6 +12,10 @@ from app.wallet.services import (
     verify_razorpay_payment
 )
 from app.models.transaction import WalletTransaction
+
+def get_current_razorpay_key():
+    load_dotenv(override=True)
+    return (os.environ.get('RAZORPAY_KEY_ID') or current_app.config.get('RAZORPAY_KEY_ID', '')).strip()
 
 @wallet_bp.route('/wallet')
 @login_required
@@ -51,24 +57,7 @@ def transactions():
 def recharge():
     form = RechargeWalletForm()
     wallet = current_user.company.wallet if current_user.company else None
-    key_id = current_app.config.get('RAZORPAY_KEY_ID', '')
-
-    if form.validate_on_submit():
-        amount = form.amount.data
-        payment_method = form.payment_method.data
-
-        # Execute direct/mock recharge if selected
-        success, txn, msg = process_wallet_recharge(
-            company_id=current_user.company_id,
-            amount=amount,
-            payment_method=payment_method
-        )
-
-        if success:
-            flash(f"Recharge successful! ₹{amount:,.2f} credited to your wallet. Reference: {txn.reference_id}", "success")
-            return redirect(url_for('wallet.index'))
-        else:
-            flash(f"Payment failed: {msg}", "danger")
+    key_id = get_current_razorpay_key()
 
     return render_template(
         'wallet/recharge.html',
@@ -89,7 +78,7 @@ def create_order():
             return jsonify({'success': False, 'message': 'Amount must be greater than zero.'}), 400
 
         company = current_user.company
-        key_id = current_app.config.get('RAZORPAY_KEY_ID', '')
+        key_id = get_current_razorpay_key()
 
         # Create Order with Razorpay SDK
         order, err = create_razorpay_order(amount, company.id, company.name)
