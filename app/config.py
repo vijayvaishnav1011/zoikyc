@@ -3,9 +3,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Format DATABASE_URL automatically for psycopg3 compatibility
+db_url = os.environ.get('DATABASE_URL', 'postgresql+psycopg://localhost/zoikyc')
+if db_url.startswith('postgres://'):
+    db_url = db_url.replace('postgres://', 'postgresql+psycopg://', 1)
+elif db_url.startswith('postgresql://') and not db_url.startswith('postgresql+psycopg://'):
+    db_url = db_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'default-dev-secret-key-change-me')
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'postgresql://localhost/zoikyc')
+    SQLALCHEMY_DATABASE_URI = db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Session Security
