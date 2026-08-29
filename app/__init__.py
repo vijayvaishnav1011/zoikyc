@@ -38,9 +38,21 @@ def create_app(config_name=None):
     app.register_blueprint(wallet_bp)
     app.register_blueprint(company_bp)
 
+    # Health check endpoint
+    @app.route('/health')
+    def health_check():
+        return {'status': 'healthy', 'service': 'ZoiKYC'}, 200
+
     # Root route redirect
     @app.route('/')
     def index_redirect():
         return redirect(url_for('dashboard.index'))
+
+    # Auto-create missing database tables on app startup
+    with app.app_context():
+        try:
+            db.create_all()
+        except Exception as e:
+            app.logger.warning(f"Auto db.create_all notice: {e}")
 
     return app
