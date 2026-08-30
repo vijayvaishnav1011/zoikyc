@@ -98,7 +98,7 @@
       </div>
 
       <!-- 4 Document Category Grid for this Company -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+      <div class="admin-doc-grid">
         {% for doc_key, title in required_doc_types %}
         {% set doc = docs.get(doc_key) %}
         <div style="background: #f8fafc; border: 1px solid var(--border-input); border-radius: var(--radius-md); padding: 12px; display: flex; flex-direction: column; justify-content: space-between;">

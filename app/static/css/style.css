@@ -624,10 +624,11 @@ body {
 }
 
 .page-container {
-  padding: 28px;
-  max-width: 1350px;
+  padding: 24px 32px;
+  max-width: 1600px;
   width: 100%;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 /* Dashboard Hero Banner with Purple Theme */
@@ -668,6 +669,48 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 20px;
   margin-bottom: 28px;
+}
+
+/* Specific Admin Desktop Grid Utilities */
+.admin-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.admin-doc-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.admin-split-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 1280px) {
+  .admin-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-doc-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-metric-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-doc-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-split-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .metric-card {

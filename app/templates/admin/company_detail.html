@@ -72,7 +72,7 @@
     </form>
   </div>
 
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
+  <div class="admin-doc-grid">
     {% for doc_key, title in required_doc_types %}
     {% set doc = docs_by_type.get(doc_key) %}
     <div style="background: #f8fafc; border: 1px solid var(--border-input); border-radius: var(--radius-lg); padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
@@ -144,7 +144,7 @@
 </div>
 
 <!-- Two Columns: Manual Wallet Adjustment & Team Users -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px; margin-bottom: 28px;">
+<div class="admin-split-grid">
   
   <!-- Manual Wallet Adjustment Card -->
   <div class="card" style="margin-bottom: 0;">
