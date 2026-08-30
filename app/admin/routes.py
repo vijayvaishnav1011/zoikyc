@@ -20,33 +20,45 @@ REQUIRED_KYC_DOCS = [
     ('board_resolution', 'Authorised Signatory / Director Proof')
 ]
 
+ADMIN_SYSTEM_EMAILS = ['info@zoibit.com', 'admin@zoikyc.com']
+
 @admin_bp.route('/')
 @admin_required
 def index():
-    # Platform Analytics Metrics
-    total_companies = Company.query.count()
-    active_companies = Company.query.filter_by(status='active').count()
-    pending_companies = Company.query.filter_by(status='pending_verification').count()
+    # Platform Analytics Metrics (Excluding internal admin tenant)
+    client_companies = Company.query.filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS))
     
-    pending_documents = CompanyDocument.query.filter(
+    total_companies = client_companies.count()
+    active_companies = client_companies.filter_by(status='active').count()
+    pending_companies = client_companies.filter_by(status='pending_verification').count()
+    
+    pending_documents = CompanyDocument.query.join(Company).filter(
+        Company.email.notin_(ADMIN_SYSTEM_EMAILS),
         CompanyDocument.status.in_(['under_review', 'pending'])
     ).count()
 
     total_wallet_reserves = db.session.query(
         func.coalesce(func.sum(Wallet.balance), 0)
-    ).scalar()
+    ).join(Company).filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS)).scalar()
 
-    total_transactions = WalletTransaction.query.count()
+    total_transactions = WalletTransaction.query.join(Company).filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS)).count()
     total_credit_volume = db.session.query(
         func.coalesce(func.sum(WalletTransaction.amount), 0)
-    ).filter_by(type='credit', status='success').scalar()
+    ).join(Company).filter(
+        Company.email.notin_(ADMIN_SYSTEM_EMAILS),
+        WalletTransaction.type == 'credit',
+        WalletTransaction.status == 'success'
+    ).scalar()
 
-    recent_companies = Company.query.order_by(Company.created_at.desc()).limit(6).all()
-    pending_docs = CompanyDocument.query.filter(
+    recent_companies = client_companies.order_by(Company.created_at.desc()).limit(6).all()
+    pending_docs = CompanyDocument.query.join(Company).filter(
+        Company.email.notin_(ADMIN_SYSTEM_EMAILS),
         CompanyDocument.status.in_(['under_review', 'pending'])
     ).order_by(CompanyDocument.created_at.desc()).limit(6).all()
     
-    recent_transactions = WalletTransaction.query.order_by(
+    recent_transactions = WalletTransaction.query.join(Company).filter(
+        Company.email.notin_(ADMIN_SYSTEM_EMAILS)
+    ).order_by(
         WalletTransaction.created_at.desc()
     ).limit(6).all()
 
@@ -71,7 +83,8 @@ def companies():
     search_query = request.args.get('q', '').strip()
     page = request.args.get('page', 1, type=int)
 
-    query = Company.query
+    # Exclude internal admin tenant from client companies directory
+    query = Company.query.filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS))
 
     if status_filter != 'all':
         query = query.filter_by(status=status_filter)
@@ -165,7 +178,8 @@ def documents():
     search_query = request.args.get('q', '').strip()
     page = request.args.get('page', 1, type=int)
 
-    query = Company.query
+    # Exclude internal admin tenant from document verification matrix
+    query = Company.query.filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS))
 
     if status_filter == 'pending':
         query = query.filter(Company.status != 'active')
