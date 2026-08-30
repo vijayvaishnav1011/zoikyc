@@ -19,11 +19,11 @@
       </p>
     </div>
     <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-      <a href="{{ url_for('admin.documents') }}" class="btn-tiancai-pill" style="text-decoration: none; padding: 11px 22px; font-size: 0.88rem; width: auto; background: #f59e0b; box-shadow: 0 8px 20px rgba(245, 158, 11, 0.35);">
-        <i class="bi bi-file-earmark-check"></i> Review Pending Docs ({{ pending_documents }})
+      <a href="{{ url_for('admin.companies') }}" class="btn-tiancai-pill" style="text-decoration: none; padding: 11px 22px; font-size: 0.88rem; width: auto; background: var(--tiancai-purple-gradient); box-shadow: 0 8px 20px rgba(88, 28, 135, 0.35);">
+        <i class="bi bi-buildings"></i> Client Organisations Directory ({{ total_companies }})
       </a>
-      <a href="{{ url_for('admin.companies') }}" style="text-decoration: none; padding: 11px 20px; font-size: 0.88rem; background: rgba(255, 255, 255, 0.15); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: var(--radius-pill); font-weight: 700; display: inline-flex; align-items: center; gap: 6px; transition: var(--transition);">
-        <i class="bi bi-buildings"></i> View All Clients ({{ total_companies }})
+      <a href="{{ url_for('admin.transactions') }}" style="text-decoration: none; padding: 11px 20px; font-size: 0.88rem; background: rgba(255, 255, 255, 0.15); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: var(--radius-pill); font-weight: 700; display: inline-flex; align-items: center; gap: 6px; transition: var(--transition);">
+        <i class="bi bi-receipt-cutoff"></i> Global Transactions ({{ total_transactions }})
       </a>
     </div>
   </div>
@@ -105,8 +105,8 @@
       <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
         <i class="bi bi-clock-history" style="color: #f59e0b;"></i> Document Verification Queue
       </h3>
-      <a href="{{ url_for('admin.documents') }}" style="color: var(--tiancai-blue); font-weight: 700; font-size: 0.82rem; text-decoration: none;">
-        View All <i class="bi bi-arrow-right"></i>
+      <a href="{{ url_for('admin.companies', status='pending_verification') }}" style="color: var(--tiancai-blue); font-weight: 700; font-size: 0.82rem; text-decoration: none;">
+        View Directory <i class="bi bi-arrow-right"></i>
       </a>
     </div>
 
