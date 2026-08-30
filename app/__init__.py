@@ -57,10 +57,29 @@ def create_app(config_name=None):
     # Auto-create missing database tables & seed Super Admin on startup
     with app.app_context():
         try:
+            from sqlalchemy import text
+            try:
+                db.session.execute(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS client_id VARCHAR(50);"))
+                db.session.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_companies_client_id ON companies(client_id);"))
+                db.session.commit()
+            except Exception as se:
+                db.session.rollback()
+
             db.create_all()
             from app.models.company import Company
             from app.models.user import User
             from app.models.wallet import Wallet
+            from app.auth.services import generate_unique_client_id
+
+            # Auto-backfill any companies missing client_id
+            try:
+                missing_id_comps = Company.query.filter(Company.client_id.is_(None)).all()
+                for comp in missing_id_comps:
+                    comp.client_id = generate_unique_client_id(comp.name)
+                if missing_id_comps:
+                    db.session.commit()
+            except Exception as be:
+                db.session.rollback()
 
             # Seed default Super Admin (info@zoibit.com) if not exists
             admin_user = User.query.filter_by(email='info@zoibit.com').first()
