@@ -5,6 +5,8 @@ class Company(db.Model):
     __tablename__ = 'companies'
 
     id = db.Column(db.Integer, primary_key=True)
+    # Permanent Unique Client ID: ZOI-{first 2 letters of company name + random ID}
+    client_id = db.Column(db.String(50), unique=True, index=True, nullable=True)
     name = db.Column(db.String(150), nullable=False, index=True)
     authorised_signatory_name = db.Column(db.String(150), nullable=False)
     email = db.Column(db.String(150), nullable=False, unique=True, index=True)

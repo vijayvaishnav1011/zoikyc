@@ -11,11 +11,16 @@
       <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--tiancai-blue); font-weight: 800; letter-spacing: 1.2px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
         <i class="bi bi-building"></i> Organisation Master Profile
       </span>
-      <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-dark); margin-top: 4px;">
-        {{ company.name }}
-      </h1>
-      <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">
-        Signatory: <strong>{{ company.authorised_signatory_name }}</strong> &bull; GSTIN: <strong>{{ company.gstin if company.gstin else 'Not Provided' }}</strong>
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 4px;">
+        <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-dark); margin: 0;">
+          {{ company.name }}
+        </h1>
+        <span class="metric-badge" style="background: rgba(37, 99, 235, 0.12); color: var(--tiancai-blue); font-size: 0.82rem; font-weight: 800; padding: 4px 10px;">
+          <i class="bi bi-hash"></i> {{ company.client_id or 'ZOI-CLIENT' }}
+        </span>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 6px;">
+        Client ID: <strong style="color: var(--tiancai-blue);">{{ company.client_id }}</strong> &bull; Signatory: <strong>{{ company.authorised_signatory_name }}</strong> &bull; GSTIN: <strong>{{ company.gstin if company.gstin else 'Not Provided' }}</strong>
       </p>
     </div>
     

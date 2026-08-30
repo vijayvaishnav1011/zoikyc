@@ -126,6 +126,9 @@
       <!-- Sidebar Footer Org Card -->
       <div class="sidebar-footer-card">
         <div class="sidebar-org-name">{{ current_user.company.name if current_user.company else 'Organisation' }}</div>
+        <div style="font-size: 0.72rem; color: var(--tiancai-purple-light); font-weight: 700; margin-top: 2px;">
+          ID: {{ current_user.company.client_id if current_user.company and current_user.company.client_id else 'ZOI-CLIENT' }}
+        </div>
         <div class="sidebar-org-status">
           {% if current_user.company and current_user.company.status == 'active' %}
           <span style="color: #059669; font-weight: 700;">&bull; Verified Company</span>

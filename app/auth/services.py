@@ -14,6 +14,25 @@ from app.models.company import Company
 from app.models.user import User
 from app.models.wallet import Wallet
 
+import re
+
+def generate_unique_client_id(company_name):
+    """
+    Generates permanent unique Company Client ID:
+    Format: ZOI-{first 2 letters of company name uppercase + 5 random alphanumeric chars}
+    Example: ZOI-GO84920, ZOI-VI73812
+    """
+    clean_name = re.sub(r'[^a-zA-Z0-9]', '', company_name).upper()
+    prefix = clean_name[:2] if len(clean_name) >= 2 else (clean_name + 'ZK')[:2]
+    if not prefix:
+        prefix = 'ZK'
+
+    while True:
+        random_part = ''.join(random.choices(string.digits + string.ascii_uppercase, k=5))
+        candidate_id = f"ZOI-{prefix}{random_part}"
+        if not Company.query.filter_by(client_id=candidate_id).first():
+            return candidate_id
+
 def generate_otp():
     """Generate a random 6-digit numeric OTP."""
     return ''.join(random.choices(string.digits, k=6))
@@ -68,8 +87,12 @@ def register_organisation(form_data):
     Returns (user, company, otp_code) on success.
     """
     try:
+        company_name = form_data['company_name'].strip()
+        client_id = generate_unique_client_id(company_name)
+
         company = Company(
-            name=form_data['company_name'].strip(),
+            client_id=client_id,
+            name=company_name,
             authorised_signatory_name=form_data['authorised_signatory_name'].strip(),
             email=form_data['email'].strip().lower(),
             phone=form_data['phone'].strip(),

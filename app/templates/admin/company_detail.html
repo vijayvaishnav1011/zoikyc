@@ -15,8 +15,11 @@
 <div class="card" style="background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%); border-color: #e9d5ff; margin-bottom: 24px;">
   <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
     <div>
-      <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--tiancai-purple-light); font-weight: 800; letter-spacing: 1px; margin-bottom: 4px;">
-        <i class="bi bi-building"></i> Client Organization ID #{{ company.id }}
+      <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--tiancai-purple-light); font-weight: 800; letter-spacing: 1px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+        <i class="bi bi-building"></i> Client Organization
+        <span class="metric-badge" style="background: var(--tiancai-purple-gradient); color: #ffffff; font-size: 0.75rem; padding: 2px 8px;">
+          {{ company.client_id or 'ZOI-CLIENT' }}
+        </span>
       </div>
       <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--tiancai-purple-dark); margin-bottom: 6px;">
         {{ company.name }}
