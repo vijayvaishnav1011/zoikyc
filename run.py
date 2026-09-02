@@ -17,4 +17,5 @@ def make_shell_context():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    use_reloader = os.environ.get('FLASK_USE_RELOADER', 'false').lower() == 'true'
+    app.run(host='0.0.0.0', port=port, debug=True, use_reloader=use_reloader)
