@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
         presetButtons.forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
         amountInput.value = btn.getAttribute('data-amount');
+        amountInput.dispatchEvent(new Event('input'));
       });
     });
   }

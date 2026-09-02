@@ -9,7 +9,8 @@ from app.wallet.forms import RechargeWalletForm
 from app.wallet.services import (
     process_wallet_recharge,
     create_razorpay_order,
-    verify_razorpay_payment
+    verify_razorpay_payment,
+    calculate_recharge_amounts
 )
 from app.models.transaction import WalletTransaction
 
@@ -80,14 +81,17 @@ def create_order():
         company = current_user.company
         key_id = get_current_razorpay_key()
 
-        # Create Order with Razorpay SDK
-        order, err = create_razorpay_order(amount, company.id, company.name)
+        # Create Order with Razorpay SDK (including 2% Platform Fee)
+        order, err, base_amount, platform_fee, total_payable = create_razorpay_order(amount, company.id, company.name)
         
         if order:
             return jsonify({
                 'success': True,
                 'order_id': order['id'],
                 'amount': order['amount'],
+                'base_amount': float(base_amount),
+                'platform_fee': float(platform_fee),
+                'total_payable': float(total_payable),
                 'currency': order.get('currency', 'INR'),
                 'key_id': key_id,
                 'company_name': company.name,
@@ -124,16 +128,20 @@ def verify_payment():
         if not verified:
             return jsonify({'success': False, 'message': f"Security verification failed: {msg}"}), 400
 
-        # Atomically credit company wallet
+        # Calculate base recharge amount (wallet credit) and 2% platform fee
+        base_amount, platform_fee, total_payable = calculate_recharge_amounts(amount)
+
+        # Atomically credit company wallet with the base recharge amount
         success, txn, msg = process_wallet_recharge(
             company_id=current_user.company_id,
-            amount=amount,
+            amount=base_amount,
             payment_method='razorpay',
-            reference_id=razorpay_payment_id
+            reference_id=razorpay_payment_id,
+            description=f"Wallet Recharge via RAZORPAY (₹{base_amount:,.2f} + 2% Fee: ₹{platform_fee:,.2f})"
         )
 
         if success:
-            flash(f"Payment Verified! ₹{amount:,.2f} credited to your wallet. Reference: {razorpay_payment_id}", "success")
+            flash(f"Payment Verified! ₹{base_amount:,.2f} credited to your wallet. (Ref: {razorpay_payment_id})", "success")
             return jsonify({
                 'success': True,
                 'message': 'Wallet successfully credited!',
