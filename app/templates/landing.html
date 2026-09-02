@@ -266,49 +266,7 @@
       font-size: 1rem;
     }
 
-    /* Mockup Showcase Card */
-    .mockup-wrapper {
-      max-width: 1040px;
-      margin: 40px auto 0;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.95) 100%);
-      border: 1px solid #e2e8f0;
-      border-radius: 20px;
-      padding: 24px;
-      box-shadow: 0 25px 60px rgba(76, 29, 149, 0.12);
-      text-align: left;
-    }
-
-    .mockup-header-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid #f1f5f9;
-      padding-bottom: 16px;
-      margin-bottom: 20px;
-    }
-
-    .mockup-dots {
-      display: flex;
-      gap: 6px;
-    }
-
-    .mockup-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #e2e8f0;
-    }
-
-    .mockup-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-
     @media (max-width: 768px) {
-      .mockup-grid {
-        grid-template-columns: 1fr;
-      }
       .landing-nav-links {
         display: none;
       }
@@ -469,41 +427,6 @@
       line-height: 1.6;
     }
 
-    /* API Developer CTA Banner */
-    .api-banner-section {
-      padding: 80px 24px;
-      background: var(--tiancai-purple-gradient);
-      color: #ffffff;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .api-banner-container {
-      max-width: 1240px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 40px;
-      align-items: center;
-    }
-
-    @media (max-width: 900px) {
-      .api-banner-container {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .code-preview-box {
-      background: #0f172a;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 14px;
-      padding: 20px;
-      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-      font-size: 0.85rem;
-      color: #38bdf8;
-      overflow-x: auto;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    }
 
     /* Footer */
     .landing-footer {
@@ -536,7 +459,6 @@
       <ul class="landing-nav-links">
         <li><a href="#features">Platform Features</a></li>
         <li><a href="#how-it-works">How It Works</a></li>
-        <li><a href="#developers">Enterprise API</a></li>
         <li><a href="#security">Compliance & Trust</a></li>
       </ul>
 
@@ -604,72 +526,6 @@
         <div class="trust-chip">
           <i class="bi bi-file-earmark-pdf-fill"></i> Automated PDF Tax Invoices
         </div>
-      </div>
-
-      <!-- Interactive Product Mockup Preview -->
-      <div class="mockup-wrapper">
-        <div class="mockup-header-bar">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div class="mockup-dots">
-              <div class="mockup-dot" style="background: #ef4444;"></div>
-              <div class="mockup-dot" style="background: #f59e0b;"></div>
-              <div class="mockup-dot" style="background: #10b981;"></div>
-            </div>
-            <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; margin-left: 8px;">ZoiKYC Enterprise Portal &bull; Live Client Dashboard Preview</span>
-          </div>
-          <span class="metric-badge badge-active"><i class="bi bi-patch-check-fill"></i> Regulatory Active</span>
-        </div>
-
-        <div class="mockup-grid">
-          <!-- Mockup Left: Document Compliance Matrix -->
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px;">
-            <div style="font-size: 0.85rem; font-weight: 800; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-              <i class="bi bi-file-earmark-check-fill" style="color: #7e22ce;"></i> 4-Point Document Compliance
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.82rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
-                <span>Certificate of Incorporation</span>
-                <span style="color: #059669; font-weight: 700;">✓ Verified</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
-                <span>Company PAN Card</span>
-                <span style="color: #059669; font-weight: 700;">✓ Verified</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
-                <span>GSTIN Registration Certificate</span>
-                <span style="color: #059669; font-weight: 700;">✓ Verified</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
-                <span>Authorised Signatory Proof</span>
-                <span style="color: #059669; font-weight: 700;">✓ Verified</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Mockup Right: Wallet & API Usage Preview -->
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
-            <div>
-              <div style="font-size: 0.85rem; font-weight: 800; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                <i class="bi bi-wallet2" style="color: #059669;"></i> Prepaid Wallet Float Balance
-              </div>
-              <div style="font-size: 2rem; font-weight: 800; color: #059669; margin-bottom: 4px;">
-                ₹25,480.00
-              </div>
-              <div style="font-size: 0.78rem; color: #64748b;">
-                Auto-deducted per API verification &bull; 2% transparent platform fee
-              </div>
-            </div>
-
-            <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <div style="font-size: 0.75rem; font-weight: 700; color: #0f172a;">Permanent Client ID</div>
-                <div style="font-size: 0.8rem; color: #2563eb; font-weight: 800;">ZOI-DEMO2026</div>
-              </div>
-              <span class="lang-toggle-pill" style="padding: 4px 10px; font-size: 0.72rem;">API Gateway Ready</span>
-            </div>
-          </div>
-        </div>
-
       </div>
 
     </div>
@@ -791,41 +647,6 @@
     </div>
   </section>
 
-  <!-- API Integration Banner -->
-  <section id="developers" class="api-banner-section">
-    <div class="api-banner-container">
-      
-      <div>
-        <div style="font-size: 0.8rem; font-weight: 800; color: #fef08a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
-          <i class="bi bi-code-slash"></i> Developer-First Integration
-        </div>
-        <h2 style="font-size: clamp(1.8rem, 3.5vw, 2.5rem); font-weight: 800; line-height: 1.2; margin-bottom: 16px;">
-          Plug ZoiKYC Directly into Your Enterprise Application
-        </h2>
-        <p style="font-size: 0.95rem; opacity: 0.9; line-height: 1.6; margin-bottom: 28px;">
-          Use our unified REST APIs with your permanent Client ID to verify entities, check KRA status, and initiate Aadhaar e-sign directly inside your CRM or onboarding funnel.
-        </p>
-
-        <a href="{{ url_for('auth.register') }}" style="display: inline-flex; align-items: center; gap: 8px; background: #ffffff; color: var(--tiancai-purple-dark); padding: 12px 28px; border-radius: 30px; text-decoration: none; font-weight: 800; font-size: 0.95rem; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-          Get Enterprise API Access &rarr;
-        </a>
-      </div>
-
-      <div class="code-preview-box">
-        <div style="color: #94a3b8; margin-bottom: 12px; font-size: 0.75rem;">// Sample Corporate Verification Request</div>
-        <span style="color: #f43f5e;">POST</span> <span style="color: #ffffff;">https://zoikyc.com/api/v1/kyc/verify</span><br>
-        <span style="color: #a855f7;">Headers:</span><br>
-        &nbsp;&nbsp;X-Client-ID: <span style="color: #facc15;">"ZOI-YOURCOMPANY"</span><br>
-        &nbsp;&nbsp;Authorization: <span style="color: #facc15;">"Bearer zoi_live_key_..."</span><br><br>
-        <span style="color: #a855f7;">Body:</span> {<br>
-        &nbsp;&nbsp;<span style="color: #38bdf8;">"gstin"</span>: <span style="color: #4ade80;">"07AAAAA0000A1Z0"</span>,<br>
-        &nbsp;&nbsp;<span style="color: #38bdf8;">"pan"</span>: <span style="color: #4ade80;">"ABCDE1234F"</span>,<br>
-        &nbsp;&nbsp;<span style="color: #38bdf8;">"service"</span>: <span style="color: #4ade80;">"CORPORATE_VERIFICATION"</span><br>
-        }
-      </div>
-
-    </div>
-  </section>
 
   <!-- Security & Trust Strip -->
   <section id="security" style="padding: 60px 24px; background: #ffffff; text-align: center; border-bottom: 1px solid var(--border-input);">
