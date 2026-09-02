@@ -5,9 +5,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>{% block title %}ZoiKYC — B2B FinTech Platform{% endblock %}</title>
+  <!-- Favicon -->
+  <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='images/zoi_icon.jpg') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/zoi_icon.jpg') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   {% block extra_css %}{% endblock %}
@@ -219,35 +222,19 @@
     <div class="auth-master-card">
       <!-- Left Purple Graphic Panel -->
       <div class="auth-split-left">
-        <div class="auth-left-brand">
-          <div class="brand-icon-square"><i class="bi bi-shield-check"></i></div>
-          <span>ZoiKYC</span>
+        <div class="auth-left-brand" style="display: flex; align-items: center; gap: 10px;">
+          <img src="{{ url_for('static', filename='images/zoi_icon.jpg') }}" alt="Zoi" style="width: 36px; height: 36px; border-radius: 9px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+          <span style="font-size: 1.4rem; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">Zoi<span style="color: #f0abfc;">KYC</span></span>
         </div>
 
         <!-- Futuristic Graphic Illustration -->
         <div class="auth-illustration-container">
-          <div class="illustration-svg-box">
-            <svg viewBox="0 0 300 240" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="90" y="20" width="130" height="110" rx="20" fill="#1e1b4b" stroke="#a855f7" stroke-width="3" />
-              <circle cx="120" cy="50" r="3" fill="#fef08a" />
-              <circle cx="180" cy="80" r="2" fill="#ffffff" />
-              <circle cx="160" cy="40" r="8" fill="#f43f5e" />
-              <path d="M70 210 C70 160 110 130 150 130 C190 130 220 160 220 210 Z" fill="#9333ea" />
-              <path d="M130 110 C130 85 165 85 165 110 L165 130 L130 130 Z" fill="#c084fc" />
-              <rect x="125" y="92" width="45" height="16" rx="6" fill="#facc15" />
-              <path d="M140 75 C135 60 165 60 160 75 Z" fill="#fb923c" />
-              <polygon points="135,65 142,52 146,65" fill="#fb923c" />
-              <polygon points="154,65 158,52 165,65" fill="#fb923c" />
-              <rect x="30" y="110" width="75" height="100" rx="8" fill="#3b0764" stroke="#a855f7" stroke-width="2" />
-              <rect x="40" y="125" width="55" height="70" rx="4" fill="#581c87" />
-              <rect x="45" y="135" width="30" height="6" rx="2" fill="#facc15" />
-              <rect x="45" y="148" width="40" height="4" rx="2" fill="#a855f7" />
-              <rect x="45" y="158" width="35" height="4" rx="2" fill="#38bdf8" />
-            </svg>
+          <div class="illustration-svg-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px 0;">
+            <img src="{{ url_for('static', filename='images/zoi_icon.jpg') }}" alt="ZoiKYC" style="width: 120px; height: 120px; border-radius: 26px; box-shadow: 0 20px 45px rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.25);">
           </div>
 
-          <div class="auth-left-caption">ZoiKyc</div>
-          <div class="auth-left-subcaption">KYC &bull; KRA &bull; E-Sign &bull; Wallet</div>
+          <div class="auth-left-caption">ZoiKYC Enterprise</div>
+          <div class="auth-left-subcaption">Digital KYC &bull; KRA Status &bull; Aadhaar E-Sign</div>
         </div>
 
         <div style="font-size: 0.75rem; opacity: 0.75; text-align: center; z-index: 10; font-weight: 500;">

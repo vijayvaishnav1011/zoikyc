@@ -7,6 +7,10 @@
   <title>ZoiKYC — Enterprise Corporate KYC, KRA & E-Sign Platform</title>
   <meta name="description" content="Seamlessly verify Indian companies, directors, PAN, GSTIN, and execute legally binding Aadhaar E-Sign with unified APIs and prepaid wallet float.">
   
+  <!-- Favicon -->
+  <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='images/zoi_icon.jpg') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/zoi_icon.jpg') }}">
+
   <!-- Google Fonts (Comfortaa) & Bootstrap Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -637,11 +641,8 @@
     <nav class="landing-navbar-pill">
       
       <!-- Brand Logo -->
-      <a href="{{ url_for('landing') }}" class="landing-brand">
-        <div class="landing-brand-badge">
-          <i class="bi bi-shield-check"></i>
-        </div>
-        <span>Zoi<span class="brand-accent">KYC</span></span>
+      <a href="{{ url_for('landing') }}" class="landing-brand" style="display: flex; align-items: center;">
+        <img src="{{ url_for('static', filename='images/zoikyc_logo.png') }}" alt="ZoiKYC" style="height: 38px; width: auto; object-fit: contain;">
       </a>
 
       <!-- Center Nav Links -->
@@ -680,9 +681,9 @@
   <section class="hero-section">
     <div class="hero-content">
 
-      <!-- Zoibit Outlined Eyebrow Chip -->
+      <!-- Zoibit Outlined Eyebrow Chip with zoi_icon -->
       <div class="zoi-pill-chip">
-        <i class="bi bi-cpu zoi-chip-icon"></i>
+        <img src="{{ url_for('static', filename='images/zoi_icon.jpg') }}" alt="Zoi" style="width: 20px; height: 20px; border-radius: 6px; object-fit: cover;">
         <span>Next-Gen Corporate KYC & E-Sign Platform</span>
       </div>
 
@@ -728,7 +729,8 @@
   <section id="features" class="features-section">
     <div class="section-header-box">
       <div class="zoi-pill-chip" style="margin-bottom: 16px;">
-        <i class="bi bi-stars zoi-chip-icon"></i> Everything You Need
+        <img src="{{ url_for('static', filename='images/zoi_icon.jpg') }}" alt="Zoi" style="width: 18px; height: 18px; border-radius: 5px; object-fit: cover;">
+        <span>Everything You Need</span>
       </div>
       <h2 class="section-title">Built for Scalable Business Verification</h2>
       <p class="section-subtitle">
@@ -809,7 +811,8 @@
   <section id="how-it-works" class="steps-section">
     <div class="section-header-box">
       <div class="zoi-pill-chip" style="margin-bottom: 16px;">
-        <i class="bi bi-lightning-charge-fill zoi-chip-icon"></i> Streamlined Onboarding
+        <img src="{{ url_for('static', filename='images/zoi_icon.jpg') }}" alt="Zoi" style="width: 18px; height: 18px; border-radius: 5px; object-fit: cover;">
+        <span>Streamlined Onboarding</span>
       </div>
       <h2 class="section-title">Get Started in 3 Simple Steps</h2>
       <p class="section-subtitle">
@@ -856,9 +859,12 @@
     </div>
   </section>
 
-  <!-- Footer (Strictly only the requested line) -->
+  <!-- Footer -->
   <footer class="landing-footer">
-    <div>&copy; 2026 ZoiKYC. All Rights Reserved.</div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+      <img src="{{ url_for('static', filename='images/zoikyc_logo.png') }}" alt="ZoiKYC" style="height: 30px; width: auto; opacity: 0.85;">
+      <div>&copy; 2026 ZoiKYC. All Rights Reserved.</div>
+    </div>
   </footer>
 
 </body>

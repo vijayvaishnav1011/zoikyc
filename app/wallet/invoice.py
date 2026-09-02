@@ -1,8 +1,9 @@
 import io
+import os
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, Image as RLImage
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 
@@ -93,10 +94,16 @@ def generate_recharge_pdf_invoice(company_name, client_id, gstin, address, user_
 
     story = []
 
-    # 1. Header Banner: Brand on Left, Invoice Details on Right
+    # 1. Header Banner: Brand Logo on Left, Invoice Details on Right
+    logo_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'images', 'zoikyc_logo.png')
+    if os.path.exists(logo_path):
+        logo_flowable = RLImage(logo_path, width=1.6*inch, height=0.5*inch)
+    else:
+        logo_flowable = Paragraph("<b>ZoiKYC</b>", title_style)
+
     header_data = [
         [
-            Paragraph("<b>ZoiKYC</b>", title_style),
+            logo_flowable,
             Paragraph("<b>PAYMENT CONFIRMED</b><br/><font color='#64748b'>TAX INVOICE / RECEIPT</font>", badge_style)
         ],
         [
