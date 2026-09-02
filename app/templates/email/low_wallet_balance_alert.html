@@ -4,35 +4,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Low Wallet Balance Alert — ZoiKYC</title>
+  <title>Low Wallet Balance Notice — ZoiKYC</title>
 </head>
 
-<body
-  style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 40px 16px; color: #0f172a;">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 36px 16px; color: #0f172a;">
 
   <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
-    style="max-width: 520px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.04); overflow: hidden;">
+    style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 12px 36px rgba(15, 23, 42, 0.08); overflow: hidden;">
 
-    <!-- Top Header -->
+    <!-- Brand Header with Login Page Theme Gradient -->
     <tr>
-      <td style="padding: 28px 32px 18px 32px; border-bottom: 1px solid #f1f5f9; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);">
+      <td style="padding: 22px 28px; background: linear-gradient(135deg, #3b0764 0%, #581c87 50%, #7e22ce 100%);">
         <table role="presentation" border="0" cellspacing="0" cellpadding="0" width="100%">
           <tr>
             <td style="vertical-align: middle;">
               <table role="presentation" border="0" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td style="width: 36px; height: 36px; background: linear-gradient(135deg, #d97706 0%, #b45309 100%); border-radius: 10px; text-align: center; vertical-align: middle; color: #ffffff; font-weight: 800; font-size: 18px;">
-                    Z
+                  <td style="vertical-align: middle;">
+                    <img src="https://zoikyc.com/static/images/zoi_icon.jpg" alt="Zoi" width="34" height="34"
+                      style="border-radius: 9px; display: block; border: 1.5px solid rgba(255,255,255,0.3); box-shadow: 0 4px 10px rgba(0,0,0,0.25);">
                   </td>
-                  <td style="padding-left: 12px; vertical-align: middle;">
-                    <div style="font-size: 20px; font-weight: 800; color: #92400e; letter-spacing: -0.5px;">ZoiKYC</div>
+                  <td style="padding-left: 10px; vertical-align: middle;">
+                    <span style="font-size: 19px; font-weight: 800; color: #ffffff; letter-spacing: -0.4px;">Zoi<span style="color: #f0abfc;">KYC</span></span>
                   </td>
                 </tr>
               </table>
             </td>
             <td style="text-align: right; vertical-align: middle;">
-              <span style="background: rgba(217, 119, 6, 0.15); color: #b45309; font-weight: 800; font-size: 12px; padding: 6px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">
-                ⚠️ Action Required
+              <span style="background: rgba(254, 240, 138, 0.2); border: 1px solid rgba(254, 240, 138, 0.4); color: #fef08a; font-weight: 700; font-size: 11px; padding: 5px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">
+                Low Float
               </span>
             </td>
           </tr>
@@ -40,45 +40,40 @@
       </td>
     </tr>
 
-    <!-- Body Section -->
+    <!-- Body Section (Clean & Minimal) -->
     <tr>
-      <td style="padding: 32px;">
-        <h1 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">
+      <td style="padding: 30px 28px;">
+        <h1 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; letter-spacing: -0.3px;">
           Low Wallet Balance Notice
         </h1>
-
-        <p style="font-size: 14px; color: #475569; line-height: 1.5; margin: 0 0 20px 0;">
-          Hello <strong>{{ user_name }}</strong>,<br>
-          This is an automated operational notice regarding your organisation account <strong>{{ company_name }}</strong> (Client ID: <code>{{ client_id or 'N/A' }}</code>).
+        
+        <p style="font-size: 14px; font-weight: 700; color: #7e22ce; margin: 0 0 20px 0;">
+          Please recharge for uninterrupted service
         </p>
 
-        <!-- Current Balance Highlight Box -->
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+        <!-- Current Balance Card -->
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 22px;">
           <tr>
-            <td align="center" style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 14px; padding: 20px;">
-              <div style="font-size: 12px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px;">
-                Current Available Wallet Balance
+            <td align="center" style="background: #faf5ff; border: 1.5px solid #e9d5ff; border-radius: 14px; padding: 20px;">
+              <div style="font-size: 11px; font-weight: 700; color: #7e22ce; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px;">
+                Current Balance
               </div>
-              <div style="font-size: 32px; font-weight: 800; color: #b45309; letter-spacing: -0.5px;">
+              <div style="font-size: 30px; font-weight: 800; color: #3b0764; letter-spacing: -0.5px;">
                 ₹{{ "%.2f"|format(balance) }}
               </div>
-              <div style="font-size: 13px; color: #78350f; margin-top: 6px;">
-                ⚠️ Balance is running low
+              <div style="font-size: 12px; color: #64748b; margin-top: 6px; font-weight: 600;">
+                {{ company_name }} &bull; {{ client_id or 'N/A' }}
               </div>
             </td>
           </tr>
         </table>
 
-        <p style="font-size: 14px; color: #475569; line-height: 1.6; margin: 0 0 24px 0;">
-          To prevent any interruption or API rejection during your active <strong>KYC, KRA, and E-Sign verification transactions</strong>, please top up your organisation wallet balance.
-        </p>
-
-        <!-- CTA Recharge Button -->
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+        <!-- CTA Recharge Button (Matching Login Pill Button) -->
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 18px;">
           <tr>
             <td align="center">
               <a href="https://zoikyc.com/wallet/recharge" target="_blank"
-                style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 13px 32px; border-radius: 24px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
+                style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 13px 34px; border-radius: 30px; box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);">
                 Recharge Wallet Now &rarr;
               </a>
             </td>
@@ -86,16 +81,15 @@
         </table>
 
         <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0; text-align: center;">
-          Have questions or need custom invoice billing? Contact our dedicated account team at
-          <a href="mailto:info@zoikyc.com" style="color: #2563eb; text-decoration: none; font-weight: 600;">info@zoikyc.com</a>.
+          Need assistance? Reach us at <a href="mailto:info@zoikyc.com" style="color: #2563eb; text-decoration: none; font-weight: 600;">info@zoikyc.com</a>
         </p>
       </td>
     </tr>
 
     <!-- Footer -->
     <tr>
-      <td style="background-color: #f8fafc; padding: 16px 32px; text-align: center; border-top: 1px solid #f1f5f9; font-size: 12px; color: #64748b; font-weight: 600;">
-        &copy; 2026 ZoiKYC Platforms &bull; Automated Operational Notification
+      <td style="background-color: #f8fafc; padding: 16px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; font-weight: 600;">
+        &copy; 2026 ZoiKYC. All Rights Reserved.
       </td>
     </tr>
 
