@@ -118,7 +118,7 @@ def process_wallet_recharge(company_id, amount, payment_method='razorpay', refer
             balance_after=balance_after,
             reference_id=unique_ref,
             status='success',
-            description=description or f"Wallet Recharge via {payment_method.upper()}"
+            description=description or "Wallet Recharge via Razorpay"
         )
 
         db.session.add(transaction)

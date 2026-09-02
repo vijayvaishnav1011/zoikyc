@@ -137,7 +137,7 @@ def verify_payment():
             amount=base_amount,
             payment_method='razorpay',
             reference_id=razorpay_payment_id,
-            description=f"Wallet Recharge via RAZORPAY (₹{base_amount:,.2f} + 2% Fee: ₹{platform_fee:,.2f})"
+            description="Wallet Recharge via Razorpay"
         )
 
         if success:
