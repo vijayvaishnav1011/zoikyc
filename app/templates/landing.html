@@ -509,66 +509,11 @@
     .landing-footer {
       background: #0f172a;
       color: #94a3b8;
-      padding: 60px 24px 30px;
+      padding: 24px 20px;
+      text-align: center;
       font-size: 0.88rem;
-    }
-
-    .footer-container {
-      max-width: 1240px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr;
-      gap: 40px;
-      margin-bottom: 40px;
-    }
-
-    @media (max-width: 768px) {
-      .footer-container {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    @media (max-width: 500px) {
-      .footer-container {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .footer-col h4 {
-      color: #ffffff;
-      font-size: 0.95rem;
-      font-weight: 700;
-      margin-bottom: 16px;
-    }
-
-    .footer-col ul {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .footer-col ul a {
-      color: #94a3b8;
-      text-decoration: none;
-      transition: var(--transition);
-    }
-
-    .footer-col ul a:hover {
-      color: #ffffff;
-    }
-
-    .footer-bottom {
-      max-width: 1240px;
-      margin: 0 auto;
-      padding-top: 24px;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 16px;
-      font-size: 0.82rem;
+      font-weight: 500;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
   </style>
 </head>
@@ -896,58 +841,7 @@
 
   <!-- Footer -->
   <footer class="landing-footer">
-    <div class="footer-container">
-      
-      <div class="footer-col">
-        <div style="display: flex; align-items: center; gap: 10px; font-size: 1.35rem; font-weight: 800; color: #ffffff; margin-bottom: 14px;">
-          <div class="landing-brand-icon" style="width: 32px; height: 32px; font-size: 1.1rem;">
-            <i class="bi bi-shield-check"></i>
-          </div>
-          ZoiKYC
-        </div>
-        <p style="line-height: 1.6; max-width: 320px; font-size: 0.85rem;">
-          Enterprise Identity, KRA, and E-Sign Gateway for Indian corporations, fintechs, and high-growth businesses.
-        </p>
-      </div>
-
-      <div class="footer-col">
-        <h4>Solutions</h4>
-        <ul>
-          <li><a href="#features">Corporate KYC</a></li>
-          <li><a href="#features">KRA Retrieval</a></li>
-          <li><a href="#features">Aadhaar E-Sign</a></li>
-          <li><a href="#features">Prepaid Wallet Float</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-col">
-        <h4>Portals</h4>
-        <ul>
-          <li><a href="{{ url_for('auth.login') }}">Client Login</a></li>
-          <li><a href="{{ url_for('auth.register') }}">Register Organisation</a></li>
-          <li><a href="{{ url_for('auth.forgot_password') }}">Reset Password</a></li>
-          <li><a href="{{ url_for('admin.index') }}">Platform Admin</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-col">
-        <h4>Support & Contact</h4>
-        <ul>
-          <li><a href="mailto:info@zoikyc.com">info@zoikyc.com</a></li>
-          <li><span style="color: #64748b;">ZoiKYC HQ, New Delhi, India</span></li>
-          <li><span style="color: #64748b;">Mon - Sat (9:00 AM - 7:00 PM)</span></li>
-        </ul>
-      </div>
-
-    </div>
-
-    <div class="footer-bottom">
-      <div>&copy; 2026 ZoiKYC Technologies Pvt. Ltd. All Rights Reserved.</div>
-      <div style="display: flex; gap: 20px;">
-        <span>GSTIN: 07AAAAA0000A1Z0</span>
-        <span>Secure HTTPS Portal</span>
-      </div>
-    </div>
+    <div>&copy; 2026 ZoiKYC. All Rights Reserved.</div>
   </footer>
 
 </body>
