@@ -12,16 +12,17 @@ from flask import current_app, render_template
 from app.extensions import db
 from app.models.wallet import Wallet
 from app.models.transaction import WalletTransaction
-
-PLATFORM_FEE_PERCENT = Decimal('0.02') # 2% Platform Fee
+from app.models.setting import get_platform_fee_config
 
 def calculate_recharge_amounts(base_amount_inr):
     """
-    Calculates 2% platform fee and total payable amount.
+    Calculates dynamic platform fee and total payable amount based on admin settings.
     Returns (base_amount, platform_fee, total_payable).
     """
+    fee_percent, _ = get_platform_fee_config()
+    fee_ratio = Decimal(str(fee_percent)) / Decimal('100')
     base_amount = Decimal(str(base_amount_inr)).quantize(Decimal('0.01'))
-    platform_fee = (base_amount * PLATFORM_FEE_PERCENT).quantize(Decimal('0.01'))
+    platform_fee = (base_amount * fee_ratio).quantize(Decimal('0.01'))
     total_payable = base_amount + platform_fee
     return base_amount, platform_fee, total_payable
 
@@ -151,6 +152,7 @@ def _async_send_recharge_email_task(app, to_email, user_name, company_name, clie
         msg["To"] = to_email
 
         # Body Alternative Container
+        fee_percent, fee_name = get_platform_fee_config()
         alt_part = MIMEMultipart("alternative")
         try:
             html_content = render_template(
@@ -159,6 +161,8 @@ def _async_send_recharge_email_task(app, to_email, user_name, company_name, clie
                 company_name=company_name,
                 amount=amount,
                 platform_fee=platform_fee,
+                fee_name=fee_name,
+                fee_percent=fee_percent,
                 total_paid=total_paid,
                 updated_balance=updated_balance,
                 reference_id=reference_id,
@@ -183,7 +187,9 @@ def _async_send_recharge_email_task(app, to_email, user_name, company_name, clie
                 platform_fee=platform_fee,
                 total_paid=total_paid,
                 reference_id=reference_id,
-                txn_date=txn_date
+                txn_date=txn_date,
+                fee_name=fee_name,
+                fee_percent=fee_percent
             )
             pdf_attachment = MIMEApplication(pdf_data, _subtype="pdf")
             filename = f"ZoiKYC_Invoice_{reference_id}.pdf"

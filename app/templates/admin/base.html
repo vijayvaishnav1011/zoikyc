@@ -51,6 +51,11 @@
                 <i class="bi bi-receipt-cutoff"></i> Global Transactions
               </a>
             </li>
+            <li class="nav-item {% if request.endpoint == 'admin.settings' %}active{% endif %}">
+              <a href="{{ url_for('admin.settings') }}">
+                <i class="bi bi-sliders"></i> Platform Fee & Settings
+              </a>
+            </li>
           </ul>
         </div>
 

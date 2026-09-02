@@ -1,0 +1,188 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}Platform Fee & Settings — Super Admin{% endblock %}
+{% block page_title %}Platform Fee & Settings{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto; width: 100%;">
+
+  <!-- Header Banner -->
+  <div class="dashboard-hero-banner" style="background: linear-gradient(135deg, #2e0854 0%, #4c1d95 60%, #7e22ce 100%); margin-bottom: 24px;">
+    <div style="position: relative; z-index: 10;">
+      <span class="metric-badge" style="background: rgba(250, 204, 21, 0.2); color: #fef08a; border: 1px solid rgba(250, 204, 21, 0.4); margin-bottom: 12px; display: inline-block;">
+        <i class="bi bi-shield-lock-fill" style="color: #facc15;"></i> Platform Billing Configuration
+      </span>
+      <h1 style="font-size: 1.65rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px;">
+        Platform Fee & Invoice Settings
+      </h1>
+      <p style="font-size: 0.92rem; opacity: 0.9; max-width: 650px; line-height: 1.6;">
+        Set the platform fee percentage and customize how fee line items are named on customer wallet recharges, checkout screens, and PDF tax invoices.
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <form method="POST" action="{{ url_for('admin.settings') }}" id="settingsForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <!-- 1. Fee Percentage Setting -->
+      <div class="ref-form-group" style="margin-bottom: 24px;">
+        <label class="ref-form-label" style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Platform Fee Rate (%) *</span>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Supports decimals (e.g. 2, 2.5, 3, 4)</span>
+        </label>
+
+        <!-- Quick Select Pills -->
+        <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
+          <button type="button" class="btn-fee-preset" data-pct="2.0">2.0%</button>
+          <button type="button" class="btn-fee-preset" data-pct="3.0">3.0%</button>
+          <button type="button" class="btn-fee-preset" data-pct="4.0">4.0%</button>
+          <button type="button" class="btn-fee-preset" data-pct="5.0">5.0%</button>
+          <button type="button" class="btn-fee-preset" data-pct="0.0">0% (Free)</button>
+        </div>
+
+        <div style="position: relative;">
+          <input type="number" step="0.01" min="0" max="100" name="platform_fee_percent" id="feePercentInput"
+            value="{{ '%.2f'|format(fee_percent) }}" class="ref-form-control" required
+            style="font-size: 1.25rem; font-weight: 800; color: #7e22ce; padding-right: 44px;">
+          <span style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 1.2rem; font-weight: 800; color: #94a3b8;">%</span>
+        </div>
+        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 6px;">
+          This percentage will be automatically calculated on top of base recharge amounts at checkout.
+        </div>
+      </div>
+
+      <!-- 2. Fee Name / Label Setting -->
+      <div class="ref-form-group" style="margin-bottom: 28px;">
+        <label class="ref-form-label" style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Fee Label / Display Name *</span>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">As seen by clients & on invoices</span>
+        </label>
+
+        <!-- Quick Name Suggestion Pills -->
+        <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
+          <button type="button" class="btn-name-preset" data-name="Platform Processing Fee">Platform Processing Fee</button>
+          <button type="button" class="btn-name-preset" data-name="Platform Fee & GST">Platform Fee & GST</button>
+          <button type="button" class="btn-name-preset" data-name="Convenience Fee & GST">Convenience Fee & GST</button>
+          <button type="button" class="btn-name-preset" data-name="Gateway & Facilitation Fee">Gateway & Facilitation Fee</button>
+        </div>
+
+        <input type="text" name="platform_fee_name" id="feeNameInput"
+          value="{{ fee_name }}" class="ref-form-control" placeholder="e.g. Platform Fee & GST" required
+          style="font-size: 1rem; font-weight: 700; color: var(--text-dark);">
+        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 6px;">
+          This title will be printed on the customer checkout screen, recharge receipt email, and PDF Tax Invoice.
+        </div>
+      </div>
+
+      <!-- 3. Live Customer Preview Box -->
+      <div style="background: #faf5ff; border: 1.5px solid #e9d5ff; border-radius: var(--radius-lg); padding: 20px; margin-bottom: 28px;">
+        <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: #7e22ce; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+          <i class="bi bi-eye-fill"></i> Live Customer Experience Preview (Example ₹10,000 Recharge)
+        </div>
+
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; font-size: 0.9rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--text-muted);">
+            <span>Base Float Amount:</span>
+            <span style="font-weight: 700; color: var(--text-dark);">₹10,000.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px dashed #e2e8f0; color: var(--text-muted);">
+            <span id="previewLabel">Platform Processing Fee (2.00%):</span>
+            <span id="previewFee" style="font-weight: 700; color: #7e22ce;">₹200.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 1.05rem; font-weight: 800;">
+            <span>Total Client Pays:</span>
+            <span id="previewTotal" style="color: #059669;">₹10,200.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; justify-content: flex-end; gap: 12px;">
+        <a href="{{ url_for('admin.index') }}" class="btn-zoi-ghost" style="padding: 11px 24px; text-decoration: none;">
+          Cancel
+        </a>
+        <button type="submit" class="btn-purple-pill" style="width: auto; padding: 11px 32px;">
+          <i class="bi bi-check2-circle"></i> Save Settings
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<style>
+.btn-fee-preset, .btn-name-preset {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-fee-preset:hover, .btn-name-preset:hover {
+  background: #faf5ff;
+  border-color: #c084fc;
+  color: #7e22ce;
+}
+.btn-fee-preset.active {
+  background: #7e22ce;
+  border-color: #7e22ce;
+  color: #ffffff;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const feePercentInput = document.getElementById('feePercentInput');
+  const feeNameInput = document.getElementById('feeNameInput');
+  const previewLabel = document.getElementById('previewLabel');
+  const previewFee = document.getElementById('previewFee');
+  const previewTotal = document.getElementById('previewTotal');
+  const feePresets = document.querySelectorAll('.btn-fee-preset');
+  const namePresets = document.querySelectorAll('.btn-name-preset');
+
+  function updatePreview() {
+    const pct = parseFloat(feePercentInput.value) || 0;
+    const name = feeNameInput.value.trim() || 'Platform Processing Fee';
+    const feeAmt = 10000 * (pct / 100);
+    const totalAmt = 10000 + feeAmt;
+
+    previewLabel.textContent = `${name} (${pct.toFixed(2)}%):`;
+    previewFee.textContent = '₹' + feeAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    previewTotal.textContent = '₹' + totalAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    feePresets.forEach(btn => {
+      if (parseFloat(btn.dataset.pct) === pct) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  feePresets.forEach(btn => {
+    btn.addEventListener('click', () => {
+      feePercentInput.value = parseFloat(btn.dataset.pct).toFixed(2);
+      updatePreview();
+    });
+  });
+
+  namePresets.forEach(btn => {
+    btn.addEventListener('click', () => {
+      feeNameInput.value = btn.dataset.name;
+      updatePreview();
+    });
+  });
+
+  feePercentInput.addEventListener('input', updatePreview);
+  feeNameInput.addEventListener('input', updatePreview);
+  updatePreview();
+});
+</script>
+{% endblock %}

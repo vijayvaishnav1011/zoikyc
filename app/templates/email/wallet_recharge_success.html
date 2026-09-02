@@ -53,7 +53,7 @@
         <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
           style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 22px; font-size: 13px;">
           <tr>
-            <td style="padding: 10px 14px; color: #64748b; border-bottom: 1px solid #e2e8f0;">Total Paid (with 2% fee):</td>
+            <td style="padding: 10px 14px; color: #64748b; border-bottom: 1px solid #e2e8f0;">Total Paid (with {{ fee_name or 'Platform Fee' }}):</td>
             <td style="padding: 10px 14px; color: #0f172a; font-weight: 700; text-align: right; border-bottom: 1px solid #e2e8f0;">₹{{ "%.2f"|format(total_paid) }}</td>
           </tr>
           <tr>

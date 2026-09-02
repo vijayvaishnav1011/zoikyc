@@ -79,20 +79,22 @@
     <span class="metric-badge badge-credit">INR Float</span>
   </div>
 
-  <!-- Total Platform Transactions Volume -->
+  <!-- Platform Fee Configuration Card -->
   <div class="metric-card">
     <div>
       <div class="metric-title">
-        <i class="bi bi-graph-up-arrow" style="color: #7e22ce;"></i> Total Credit Volume
+        <i class="bi bi-percent" style="color: #7e22ce;"></i> {{ fee_name }}
       </div>
       <div class="metric-value" style="color: #7e22ce;">
-        {{ total_credit_volume | currency }}
+        {{ "%.2f"|format(fee_percent) }}%
       </div>
       <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
-        Across {{ total_transactions }} platform transactions
+        Applied to wallet float recharges
       </div>
     </div>
-    <span class="metric-badge" style="background: rgba(126, 34, 206, 0.12); color: #7e22ce;">Audited</span>
+    <a href="{{ url_for('admin.settings') }}" class="metric-badge" style="background: rgba(126, 34, 206, 0.12); color: #7e22ce; text-decoration: none; font-weight: 700;">
+      <i class="bi bi-gear-fill"></i> Change
+    </a>
   </div>
 </div>
 

@@ -6,12 +6,19 @@ from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, Image as RLImage
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+from app.models.setting import get_platform_fee_config
 
-def generate_recharge_pdf_invoice(company_name, client_id, gstin, address, user_name, amount, platform_fee, total_paid, reference_id, txn_date):
+def generate_recharge_pdf_invoice(company_name, client_id, gstin, address, user_name, amount, platform_fee, total_paid, reference_id, txn_date, fee_name=None, fee_percent=None):
     """
     Generates a professional PDF Tax Invoice / Recharge Receipt in memory using ReportLab.
     Returns bytes of the generated PDF document.
     """
+    if fee_percent is None or fee_name is None:
+        cfg_percent, cfg_name = get_platform_fee_config()
+        if fee_percent is None:
+            fee_percent = cfg_percent
+        if fee_name is None:
+            fee_name = cfg_name
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -179,9 +186,9 @@ def generate_recharge_pdf_invoice(company_name, client_id, gstin, address, user_
 
     items_row_2 = [
         Paragraph("2", body_text),
-        Paragraph("<b>Platform & Gateway Processing Fee (2%)</b><br/><font color='#64748b' size='8'>Payment processing and platform facilitation fee</font>", body_text),
+        Paragraph(f"<b>{fee_name} ({fee_percent:g}%)</b><br/><font color='#64748b' size='8'>Payment processing and platform facilitation fee</font>", body_text),
         Paragraph("998314", body_text),
-        Paragraph("2.00%", body_text),
+        Paragraph(f"{fee_percent:.2f}%", body_text),
         Paragraph(f"Rs. {platform_fee:,.2f}", bold_text)
     ]
 
@@ -202,7 +209,7 @@ def generate_recharge_pdf_invoice(company_name, client_id, gstin, address, user_
     # 4. Totals Summary Table
     totals_data = [
         [Paragraph("", body_text), Paragraph("Subtotal (Recharge):", bold_text), Paragraph(f"Rs. {amount:,.2f}", bold_text)],
-        [Paragraph("", body_text), Paragraph("Platform Fee (2%):", body_text), Paragraph(f"Rs. {platform_fee:,.2f}", body_text)],
+        [Paragraph("", body_text), Paragraph(f"{fee_name} ({fee_percent:g}%):", body_text), Paragraph(f"Rs. {platform_fee:,.2f}", body_text)],
         [Paragraph("", body_text), Paragraph("<b>Total Paid via Razorpay:</b>", section_header), Paragraph(f"<b>Rs. {total_paid:,.2f}</b>", total_style)],
     ]
     totals_table = Table(totals_data, colWidths=[250, 150, 140])

@@ -12,6 +12,7 @@ from app.models.user import User
 from app.models.wallet import Wallet
 from app.models.transaction import WalletTransaction
 from app.models.document import CompanyDocument
+from app.models.setting import SystemSetting, get_platform_fee_config
 
 REQUIRED_KYC_DOCS = [
     ('certificate_of_incorporation', 'Certificate of Incorporation'),
@@ -62,6 +63,8 @@ def index():
         WalletTransaction.created_at.desc()
     ).limit(6).all()
 
+    fee_percent, fee_name = get_platform_fee_config()
+
     return render_template(
         'admin/index.html',
         total_companies=total_companies,
@@ -71,6 +74,8 @@ def index():
         total_wallet_reserves=total_wallet_reserves,
         total_transactions=total_transactions,
         total_credit_volume=total_credit_volume,
+        fee_percent=fee_percent,
+        fee_name=fee_name,
         recent_companies=recent_companies,
         pending_docs=pending_docs,
         recent_transactions=recent_transactions
@@ -414,4 +419,32 @@ def send_low_balance_alert(company_id):
         flash(f"Failed to dispatch alert email: {str(e)}", "danger")
 
     return redirect(request.referrer or url_for('admin.company_detail', company_id=company.id))
+
+@admin_bp.route('/settings', methods=['GET', 'POST'])
+@admin_required
+def settings():
+    if request.method == 'POST':
+        fee_percent_val = request.form.get('platform_fee_percent', '').strip()
+        fee_name_val = request.form.get('platform_fee_name', '').strip()
+
+        try:
+            fee_percent_float = float(fee_percent_val)
+            if fee_percent_float < 0 or fee_percent_float > 100:
+                raise ValueError()
+        except (ValueError, TypeError):
+            flash('Please enter a valid percentage rate between 0 and 100.', 'danger')
+            return redirect(url_for('admin.settings'))
+
+        if not fee_name_val:
+            fee_name_val = 'Platform Processing Fee'
+
+        SystemSetting.set_val('platform_fee_percent', f"{fee_percent_float:.2f}", 'Platform fee percentage applied to recharges')
+        SystemSetting.set_val('platform_fee_name', fee_name_val, 'Custom display name for platform fee')
+
+        flash(f'Platform fee configuration updated successfully! Fee: {fee_percent_float:.2f}%, Label: "{fee_name_val}"', 'success')
+        return redirect(url_for('admin.settings'))
+
+    fee_percent, fee_name = get_platform_fee_config()
+    return render_template('admin/settings.html', fee_percent=fee_percent, fee_name=fee_name)
+
 

@@ -14,6 +14,7 @@ from app.wallet.services import (
     send_wallet_recharge_email
 )
 from app.models.transaction import WalletTransaction
+from app.models.setting import get_platform_fee_config
 
 def get_current_razorpay_key():
     load_dotenv(override=True)
@@ -60,12 +61,15 @@ def recharge():
     form = RechargeWalletForm()
     wallet = current_user.company.wallet if current_user.company else None
     key_id = get_current_razorpay_key()
+    fee_percent, fee_name = get_platform_fee_config()
 
     return render_template(
         'wallet/recharge.html',
         form=form,
         wallet=wallet,
-        razorpay_key_id=key_id
+        razorpay_key_id=key_id,
+        fee_percent=fee_percent,
+        fee_name=fee_name
     )
 
 @wallet_bp.route('/wallet/create-razorpay-order', methods=['POST'])
@@ -81,8 +85,9 @@ def create_order():
 
         company = current_user.company
         key_id = get_current_razorpay_key()
+        fee_percent, fee_name = get_platform_fee_config()
 
-        # Create Order with Razorpay SDK (including 2% Platform Fee)
+        # Create Order with Razorpay SDK (including configured Platform Fee)
         order, err, base_amount, platform_fee, total_payable = create_razorpay_order(amount, company.id, company.name)
         
         if order:
@@ -92,6 +97,8 @@ def create_order():
                 'amount': order['amount'],
                 'base_amount': float(base_amount),
                 'platform_fee': float(platform_fee),
+                'fee_percent': float(fee_percent),
+                'fee_name': fee_name,
                 'total_payable': float(total_payable),
                 'currency': order.get('currency', 'INR'),
                 'key_id': key_id,
