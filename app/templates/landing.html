@@ -7,382 +7,501 @@
   <title>ZoiKYC — Enterprise Corporate KYC, KRA & E-Sign Platform</title>
   <meta name="description" content="Seamlessly verify Indian companies, directors, PAN, GSTIN, and execute legally binding Aadhaar E-Sign with unified APIs and prepaid wallet float.">
   
-  <!-- Google Fonts & Bootstrap Icons -->
+  <!-- Google Fonts (Comfortaa) & Bootstrap Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   
   <!-- Core Design System -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
   <style>
-    /* Dedicated Landing Page Styles */
-    .landing-body {
-      background-color: #ffffff;
-      color: var(--text-dark);
-      overflow-x: hidden;
-      font-family: 'Comfortaa', var(--font-main), cursive, sans-serif;
+    /* ==========================================================================
+       ZOIBIT-INSPIRED MODERN AESTHETICS & DESIGN SYSTEM
+       ========================================================================== */
+    :root {
+      --zoi-font: 'Comfortaa', cursive, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --zoi-dark-bg: #0D0218;
+      --zoi-dark-surface: #140326;
+      --zoi-card-dark: rgba(26, 4, 46, 0.7);
+      --zoi-purple-primary: #8B00B8;
+      --zoi-purple-vibrant: #A855F7;
+      --zoi-magenta-accent: #C026D3;
+      --zoi-pink-glow: #F472B6;
+      --zoi-gradient-primary: linear-gradient(135deg, #8B00B8 0%, #C026D3 100%);
+      --zoi-gradient-text: linear-gradient(135deg, #F472B6 0%, #C026D3 45%, #A855F7 100%);
+      --zoi-border-glow: rgba(192, 38, 211, 0.25);
+      --zoi-border-glass: rgba(255, 255, 255, 0.12);
+      --zoi-text-light: #F8FAFC;
+      --zoi-text-muted: #94A3B8;
+      --zoi-text-subtle: #64748B;
+      --zoi-shadow-glow: 0 8px 32px rgba(139, 0, 184, 0.4);
     }
 
-    /* Floating Navigation Bar */
-    .landing-header {
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body.landing-body {
+      background-color: var(--zoi-dark-bg);
+      color: var(--zoi-text-light);
+      font-family: var(--zoi-font);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+      position: relative;
+    }
+
+    /* Ambient Background Diamond Glow Grid (Inspired by Zoibit) */
+    .bg-ambient-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+      background: 
+        radial-gradient(circle at 50% 15%, rgba(139, 0, 184, 0.25) 0%, transparent 60%),
+        radial-gradient(circle at 10% 40%, rgba(192, 38, 211, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 90% 70%, rgba(168, 85, 247, 0.12) 0%, transparent 55%),
+        #0D0218;
+    }
+
+    .bg-mesh-pattern {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.6;
+      mask-image: radial-gradient(circle at 50% 30%, black 40%, transparent 80%);
+      -webkit-mask-image: radial-gradient(circle at 50% 30%, black 40%, transparent 80%);
+    }
+
+    /* ==========================================================================
+       FLOATING PILL NAVIGATION BAR (MATCHING ZOIBIT.COM)
+       ========================================================================== */
+    .landing-header-wrap {
       position: sticky;
       top: 0;
       z-index: 1000;
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-      padding: 16px 0;
-      transition: var(--transition);
+      padding: 18px 24px;
+      width: 100%;
     }
 
-    .landing-nav-container {
-      max-width: 1240px;
+    .landing-navbar-pill {
+      max-width: 1200px;
       margin: 0 auto;
-      padding: 0 24px;
+      background: rgba(20, 3, 38, 0.72);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 9999px;
+      padding: 10px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      transition: all 0.3s ease;
     }
 
+    .landing-navbar-pill:hover {
+      border-color: rgba(192, 38, 211, 0.35);
+    }
+
+    /* Brand Logo */
     .landing-brand {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       text-decoration: none;
       font-size: 1.45rem;
-      font-weight: 800;
-      color: var(--tiancai-purple-dark);
+      font-weight: 700;
+      color: #ffffff;
       letter-spacing: -0.5px;
     }
 
-    .landing-brand-icon {
+    .landing-brand-badge {
       width: 38px;
       height: 38px;
-      background: var(--tiancai-purple-gradient);
-      border-radius: 10px;
+      border-radius: 12px;
+      background: var(--zoi-gradient-primary);
       display: flex;
       align-items: center;
       justify-content: center;
       color: #ffffff;
-      font-size: 1.25rem;
-      box-shadow: 0 4px 14px rgba(126, 34, 206, 0.3);
+      font-size: 1.2rem;
+      box-shadow: 0 4px 14px rgba(139, 0, 184, 0.5);
     }
 
+    .brand-accent {
+      color: var(--zoi-magenta-accent);
+    }
+
+    /* Center Nav Links */
     .landing-nav-links {
       display: flex;
       align-items: center;
-      gap: 28px;
+      gap: 12px;
       list-style: none;
     }
 
     .landing-nav-links a {
       text-decoration: none;
-      color: var(--text-muted);
+      color: #CBD5E1;
+      font-size: 0.9rem;
       font-weight: 600;
-      font-size: 0.92rem;
-      transition: var(--transition);
+      padding: 8px 18px;
+      border-radius: 9999px;
+      transition: all 0.2s ease;
     }
 
     .landing-nav-links a:hover {
-      color: var(--tiancai-purple-light);
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
     }
 
+    .landing-nav-links a.active {
+      background: rgba(139, 0, 184, 0.35);
+      color: #ffffff;
+      border: 1px solid rgba(192, 38, 211, 0.3);
+    }
+
+    /* Auth Buttons */
     .landing-auth-actions {
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    .btn-login-outline {
-      padding: 9px 20px;
-      border-radius: var(--radius-pill);
-      border: 1.5px solid var(--border-input);
-      color: var(--text-dark);
+    .btn-zoi-ghost {
+      padding: 8px 20px;
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #ffffff;
       text-decoration: none;
-      font-weight: 700;
       font-size: 0.88rem;
-      transition: var(--transition);
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.04);
+      transition: all 0.25s ease;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: #ffffff;
     }
 
-    .btn-login-outline:hover {
-      border-color: var(--tiancai-purple-light);
-      color: var(--tiancai-purple-dark);
-      background: #faf5ff;
+    .btn-zoi-ghost:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.35);
+      color: #ffffff;
     }
 
-    .btn-cta-purple {
-      padding: 10px 22px;
-      border-radius: var(--radius-pill);
-      background: var(--tiancai-purple-gradient);
+    .btn-zoi-primary {
+      padding: 9px 24px;
+      border-radius: 9999px;
+      background: var(--zoi-gradient-primary);
       color: #ffffff;
       text-decoration: none;
-      font-weight: 700;
       font-size: 0.88rem;
-      transition: var(--transition);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      box-shadow: 0 4px 14px rgba(126, 34, 206, 0.35);
-    }
-
-    .btn-cta-purple:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(126, 34, 206, 0.45);
-      color: #ffffff;
-    }
-
-    /* Hero Section */
-    .hero-section {
-      padding: 80px 24px 70px;
-      position: relative;
-      overflow: hidden;
-      background: radial-gradient(circle at 50% 0%, rgba(126, 34, 206, 0.08) 0%, #ffffff 70%);
-    }
-
-    .hero-container {
-      max-width: 1240px;
-      margin: 0 auto;
-      text-align: center;
-    }
-
-    .hero-eyebrow {
+      font-weight: 700;
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: #faf5ff;
-      border: 1px solid #f3e8ff;
-      color: var(--tiancai-purple-medium);
-      padding: 6px 16px;
-      border-radius: 30px;
-      font-size: 0.82rem;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      margin-bottom: 24px;
-      text-transform: uppercase;
+      box-shadow: var(--zoi-shadow-glow);
+      transition: all 0.25s ease;
+      border: none;
+      cursor: pointer;
     }
 
-    .hero-title {
-      font-size: clamp(2.2rem, 5vw, 3.8rem);
-      font-weight: 800;
-      color: var(--tiancai-purple-dark);
+    .btn-zoi-primary:hover {
+      filter: brightness(1.15);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 36px rgba(192, 38, 211, 0.6);
+      color: #ffffff;
+    }
+
+    /* ==========================================================================
+       HERO SECTION (ZOIBIT VIBRANT STYLE)
+       ========================================================================== */
+    .hero-section {
+      position: relative;
+      z-index: 10;
+      padding: 70px 24px 80px;
+      text-align: center;
+    }
+
+    .hero-content {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* Zoibit Outlined Eyebrow Chip */
+    .zoi-pill-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 20px;
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #ffffff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 28px;
+    }
+
+    .zoi-chip-icon {
+      color: var(--zoi-pink-glow);
+      font-size: 0.95rem;
+    }
+
+    .hero-main-title {
+      font-size: clamp(2.4rem, 5.5vw, 4.4rem);
+      font-weight: 700;
       line-height: 1.15;
       letter-spacing: -1.5px;
-      max-width: 920px;
-      margin: 0 auto 20px;
+      color: #ffffff;
+      margin-bottom: 24px;
     }
 
-    .hero-title span.gradient-text {
-      background: linear-gradient(135deg, #7e22ce 0%, #2563eb 100%);
+    .gradient-text {
+      background: var(--zoi-gradient-text);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      display: inline-block;
     }
 
-    .hero-subtitle {
-      font-size: clamp(1rem, 2vw, 1.22rem);
-      color: var(--text-muted);
-      line-height: 1.6;
-      max-width: 760px;
-      margin: 0 auto 36px;
+    .hero-description {
+      font-size: clamp(1rem, 1.8vw, 1.25rem);
+      color: var(--zoi-text-muted);
+      line-height: 1.7;
+      max-width: 820px;
+      margin: 0 auto 40px;
+      font-weight: 400;
     }
 
-    .hero-buttons {
+    .hero-cta-group {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 16px;
       flex-wrap: wrap;
-      margin-bottom: 48px;
+      margin-bottom: 50px;
     }
 
     .btn-hero-primary {
-      padding: 14px 32px;
-      border-radius: 30px;
-      background: var(--tiancai-purple-gradient);
+      padding: 14px 36px;
+      font-size: 1rem;
+      border-radius: 9999px;
+      background: var(--zoi-gradient-primary);
       color: #ffffff;
       text-decoration: none;
       font-weight: 700;
-      font-size: 1rem;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      box-shadow: 0 10px 30px rgba(126, 34, 206, 0.4);
-      transition: var(--transition);
+      gap: 10px;
+      box-shadow: 0 8px 30px rgba(139, 0, 184, 0.5);
+      transition: all 0.25s ease;
     }
 
     .btn-hero-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 14px 36px rgba(126, 34, 206, 0.5);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 38px rgba(192, 38, 211, 0.65);
+      filter: brightness(1.15);
       color: #ffffff;
     }
 
     .btn-hero-secondary {
-      padding: 14px 28px;
-      border-radius: 30px;
-      background: #ffffff;
-      border: 1.5px solid var(--border-input);
-      color: var(--text-dark);
-      text-decoration: none;
-      font-weight: 700;
+      padding: 14px 32px;
       font-size: 1rem;
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 600;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      transition: var(--transition);
+      gap: 10px;
+      transition: all 0.25s ease;
     }
 
     .btn-hero-secondary:hover {
-      border-color: var(--tiancai-purple-light);
-      background: #faf5ff;
-      color: var(--tiancai-purple-dark);
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.45);
+      color: #ffffff;
     }
 
     /* Trust Chips Strip */
-    .trust-chips-row {
+    .trust-chips-strip {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 24px;
+      gap: 14px;
       flex-wrap: wrap;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      font-weight: 600;
     }
 
-    .trust-chip {
-      display: flex;
+    .trust-pill {
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(8px);
+      font-size: 0.85rem;
+      color: #E2E8F0;
+      font-weight: 500;
+      transition: all 0.2s ease;
     }
 
-    .trust-chip i {
-      color: #059669;
-      font-size: 1rem;
+    .trust-pill:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(192, 38, 211, 0.3);
     }
 
-    @media (max-width: 768px) {
-      .landing-nav-links {
-        display: none;
-      }
+    .trust-pill i {
+      color: #10B981;
+      font-size: 0.95rem;
     }
 
-    /* Feature Grid Section */
+    .trust-pill i.accent-purple {
+      color: var(--zoi-magenta-accent);
+    }
+
+    /* ==========================================================================
+       FEATURES SECTION (ZOIBIT-STYLE DARK CARDS WITH PURPLE GLOW)
+       ========================================================================== */
     .features-section {
-      padding: 90px 24px;
-      background: #f8fafc;
-      border-top: 1px solid var(--border-input);
-      border-bottom: 1px solid var(--border-input);
+      position: relative;
+      z-index: 10;
+      padding: 100px 24px;
+      background: rgba(13, 2, 24, 0.85);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
 
-    .section-header {
+    .section-header-box {
       text-align: center;
-      max-width: 700px;
-      margin: 0 auto 56px;
-    }
-
-    .section-eyebrow {
-      font-size: 0.8rem;
-      font-weight: 800;
-      color: var(--tiancai-blue);
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
-      margin-bottom: 8px;
+      max-width: 760px;
+      margin: 0 auto 60px;
     }
 
     .section-title {
-      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
-      font-weight: 800;
-      color: var(--tiancai-purple-dark);
+      font-size: clamp(2rem, 3.8vw, 2.8rem);
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.25;
       letter-spacing: -0.8px;
-      line-height: 1.2;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
 
     .section-subtitle {
-      font-size: 1rem;
-      color: var(--text-muted);
-      line-height: 1.6;
+      font-size: 1.05rem;
+      color: var(--zoi-text-muted);
+      line-height: 1.65;
     }
 
     .features-grid {
-      max-width: 1240px;
+      max-width: 1200px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 28px;
     }
 
-    .feature-card {
-      background: #ffffff;
-      border: 1px solid var(--border-input);
-      border-radius: var(--radius-xl);
-      padding: 32px 28px;
-      transition: var(--transition);
+    /* Zoibit Style Glassmorphic Cards */
+    .zoi-card {
+      background: rgba(26, 4, 46, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 36px 30px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      position: relative;
+      overflow: hidden;
     }
 
-    .feature-card:hover {
-      transform: translateY(-4px);
-      border-color: #c084fc;
-      box-shadow: 0 16px 36px rgba(126, 34, 206, 0.1);
+    .zoi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(192, 38, 211, 0.4), transparent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
 
-    .feature-icon-box {
-      width: 52px;
-      height: 52px;
-      border-radius: 14px;
+    .zoi-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(192, 38, 211, 0.4);
+      box-shadow: 0 18px 40px rgba(139, 0, 184, 0.25);
+      background: rgba(35, 6, 62, 0.7);
+    }
+
+    .zoi-card:hover::before {
+      opacity: 1;
+    }
+
+    .card-icon-wrapper {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: rgba(139, 0, 184, 0.15);
+      border: 1px solid rgba(192, 38, 211, 0.3);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 1.6rem;
-      margin-bottom: 20px;
+      color: var(--zoi-magenta-accent);
+      margin-bottom: 24px;
     }
 
-    .feature-icon-purple {
-      background: rgba(126, 34, 206, 0.1);
-      color: var(--tiancai-purple-light);
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 12px;
     }
 
-    .feature-icon-blue {
-      background: rgba(37, 99, 235, 0.1);
-      color: var(--tiancai-blue);
+    .card-desc {
+      font-size: 0.92rem;
+      color: var(--zoi-text-muted);
+      line-height: 1.65;
+      margin-bottom: 24px;
     }
 
-    .feature-icon-green {
-      background: rgba(5, 150, 105, 0.1);
-      color: #059669;
+    .card-footer-link {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--zoi-pink-glow);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    .feature-icon-amber {
-      background: rgba(217, 119, 6, 0.1);
-      color: #d97706;
-    }
-
-    .feature-title {
-      font-size: 1.2rem;
-      font-weight: 800;
-      color: var(--text-dark);
-      margin-bottom: 10px;
-    }
-
-    .feature-desc {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      line-height: 1.6;
-    }
-
-    /* Workflow Section */
+    /* ==========================================================================
+       HOW IT WORKS SECTION
+       ========================================================================== */
     .steps-section {
-      padding: 90px 24px;
-      background: #ffffff;
+      position: relative;
+      z-index: 10;
+      padding: 100px 24px;
     }
 
     .steps-grid {
@@ -391,121 +510,194 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 32px;
-      position: relative;
     }
 
     .step-card {
+      background: rgba(26, 4, 46, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 36px 28px;
       text-align: center;
-      padding: 20px;
+      transition: all 0.3s ease;
     }
 
-    .step-number {
-      width: 48px;
-      height: 48px;
+    .step-card:hover {
+      border-color: rgba(192, 38, 211, 0.35);
+      background: rgba(35, 6, 62, 0.6);
+      transform: translateY(-4px);
+    }
+
+    .step-badge {
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
-      background: var(--tiancai-purple-gradient);
+      background: var(--zoi-gradient-primary);
       color: #ffffff;
-      font-weight: 800;
-      font-size: 1.25rem;
+      font-size: 1.3rem;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 20px;
-      box-shadow: 0 8px 20px rgba(126, 34, 206, 0.3);
+      margin: 0 auto 24px;
+      box-shadow: 0 6px 20px rgba(139, 0, 184, 0.4);
     }
 
     .step-title {
-      font-size: 1.15rem;
-      font-weight: 800;
-      color: var(--text-dark);
-      margin-bottom: 10px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 12px;
     }
 
     .step-desc {
-      font-size: 0.88rem;
-      color: var(--text-muted);
-      line-height: 1.6;
+      font-size: 0.9rem;
+      color: var(--zoi-text-muted);
+      line-height: 1.65;
     }
 
-
-    /* Footer */
-    .landing-footer {
-      background: #0f172a;
-      color: #94a3b8;
-      padding: 24px 20px;
+    /* ==========================================================================
+       SECURITY & TRUST BANNER
+       ========================================================================== */
+    .security-strip {
+      position: relative;
+      z-index: 10;
+      padding: 60px 24px;
+      background: rgba(20, 3, 38, 0.6);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       text-align: center;
-      font-size: 0.88rem;
+    }
+
+    .security-box {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .security-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .security-title i {
+      color: var(--zoi-magenta-accent);
+    }
+
+    .security-desc {
+      font-size: 0.92rem;
+      color: var(--zoi-text-muted);
+      line-height: 1.7;
+    }
+
+    /* ==========================================================================
+       FOOTER (ONLY REQUESTED LINE)
+       ========================================================================== */
+    .landing-footer {
+      position: relative;
+      z-index: 10;
+      background: #08010F;
+      padding: 26px 20px;
+      text-align: center;
+      font-size: 0.9rem;
       font-weight: 500;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      color: #64748B;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Responsive Queries */
+    @media (max-width: 860px) {
+      .landing-nav-links {
+        display: none;
+      }
+      .landing-navbar-pill {
+        padding: 8px 18px;
+      }
+      .hero-section {
+        padding: 50px 16px 60px;
+      }
     }
   </style>
 </head>
 
 <body class="landing-body">
 
-  <!-- Floating Sticky Header -->
-  <header class="landing-header">
-    <div class="landing-nav-container">
+  <!-- Ambient Zoibit Mesh & Radial Glow Background -->
+  <div class="bg-ambient-layer">
+    <div class="bg-mesh-pattern"></div>
+  </div>
+
+  <!-- Floating Pill Header (Zoibit Style) -->
+  <header class="landing-header-wrap">
+    <nav class="landing-navbar-pill">
       
       <!-- Brand Logo -->
       <a href="{{ url_for('landing') }}" class="landing-brand">
-        <div class="landing-brand-icon">
+        <div class="landing-brand-badge">
           <i class="bi bi-shield-check"></i>
         </div>
-        <span>ZoiKYC</span>
+        <span>Zoi<span class="brand-accent">KYC</span></span>
       </a>
 
       <!-- Center Nav Links -->
       <ul class="landing-nav-links">
-        <li><a href="#features">Platform Features</a></li>
+        <li><a href="#features" class="active">Platform Features</a></li>
         <li><a href="#how-it-works">How It Works</a></li>
         <li><a href="#security">Compliance & Trust</a></li>
       </ul>
 
-      <!-- Right Auth Actions (Login / Register) -->
+      <!-- Auth Actions -->
       <div class="landing-auth-actions">
         {% if current_user.is_authenticated %}
           {% if current_user.role == 'super_admin' %}
-            <a href="{{ url_for('admin.index') }}" class="btn-cta-purple">
+            <a href="{{ url_for('admin.index') }}" class="btn-zoi-primary">
               <i class="bi bi-speedometer2"></i> Admin Panel
             </a>
           {% else %}
-            <a href="{{ url_for('dashboard.index') }}" class="btn-cta-purple">
+            <a href="{{ url_for('dashboard.index') }}" class="btn-zoi-primary">
               <i class="bi bi-grid-fill"></i> Go to Dashboard
             </a>
           {% endif %}
         {% else %}
-          <a href="{{ url_for('auth.login') }}" class="btn-login-outline">
+          <a href="{{ url_for('auth.login') }}" class="btn-zoi-ghost">
             <i class="bi bi-box-arrow-in-right"></i> Log In
           </a>
-          <a href="{{ url_for('auth.register') }}" class="btn-cta-purple">
-            <i class="bi bi-building-add"></i> Get Started
+          <a href="{{ url_for('auth.register') }}" class="btn-zoi-primary">
+            <i class="bi bi-building-add"></i> Get Started &rarr;
           </a>
         {% endif %}
       </div>
 
-    </div>
+    </nav>
   </header>
 
   <!-- Hero Section -->
   <section class="hero-section">
-    <div class="hero-container">
+    <div class="hero-content">
 
-      <div class="hero-eyebrow">
-        <i class="bi bi-stars" style="color: #f59e0b;"></i> Next-Gen Corporate KYC & E-Sign Gateway
+      <!-- Zoibit Outlined Eyebrow Chip -->
+      <div class="zoi-pill-chip">
+        <i class="bi bi-cpu zoi-chip-icon"></i>
+        <span>Next-Gen Corporate KYC & E-Sign Platform</span>
       </div>
 
-      <h1 class="hero-title">
-        Automated Business <span class="gradient-text">KYC, KRA & Aadhaar E-Sign</span> for Modern Enterprises
+      <h1 class="hero-main-title">
+        Automated Business <br />
+        <span class="gradient-text">KYC, KRA & Aadhaar E-Sign</span><br />
+        for Modern Enterprises
       </h1>
 
-      <p class="hero-subtitle">
+      <p class="hero-description">
         Accelerate client onboarding with real-time Indian corporate entity verification, director proofs, automated KRA retrieval, and legally binding digital signatures backed by a transparent prepaid wallet float.
       </p>
 
-      <div class="hero-buttons">
+      <div class="hero-cta-group">
         <a href="{{ url_for('auth.register') }}" class="btn-hero-primary">
-          <i class="bi bi-rocket-takeoff-fill"></i> Register Organisation
+          <i class="bi bi-rocket-takeoff-fill"></i> Register Organisation &rarr;
         </a>
         <a href="{{ url_for('auth.login') }}" class="btn-hero-secondary">
           <i class="bi bi-shield-lock"></i> Access Client Portal
@@ -513,17 +705,17 @@
       </div>
 
       <!-- Trust Badges -->
-      <div class="trust-chips-row">
-        <div class="trust-chip">
+      <div class="trust-chips-strip">
+        <div class="trust-pill">
           <i class="bi bi-patch-check-fill"></i> MCA & GSTIN Verified
         </div>
-        <div class="trust-chip">
+        <div class="trust-pill">
           <i class="bi bi-shield-fill-check"></i> IT Act 2000 Compliant E-Sign
         </div>
-        <div class="trust-chip">
-          <i class="bi bi-wallet2"></i> Instant Razorpay Float Recharge
+        <div class="trust-pill">
+          <i class="bi bi-wallet2 accent-purple"></i> Instant Razorpay Float Recharge
         </div>
-        <div class="trust-chip">
+        <div class="trust-pill">
           <i class="bi bi-file-earmark-pdf-fill"></i> Automated PDF Tax Invoices
         </div>
       </div>
@@ -531,78 +723,80 @@
     </div>
   </section>
 
-  <!-- Features Grid -->
+  <!-- Features Grid Section -->
   <section id="features" class="features-section">
-    <div class="section-header">
-      <div class="section-eyebrow">Everything You Need</div>
+    <div class="section-header-box">
+      <div class="zoi-pill-chip" style="margin-bottom: 16px;">
+        <i class="bi bi-stars zoi-chip-icon"></i> Everything You Need
+      </div>
       <h2 class="section-title">Built for Scalable Business Verification</h2>
       <p class="section-subtitle">
-        Replace slow manual compliance checks with instant digital APIs, verified signatory authorizations, and seamless paperless contracts.
+        Replace slow manual compliance checks with instant digital verification, authenticated signatory proofs, and seamless paperless contracts.
       </p>
     </div>
 
     <div class="features-grid">
       
       <!-- Feature 1 -->
-      <div class="feature-card">
+      <div class="zoi-card">
         <div>
-          <div class="feature-icon-box feature-icon-purple">
+          <div class="card-icon-wrapper">
             <i class="bi bi-building-check"></i>
           </div>
-          <h3 class="feature-title">Corporate KYC Engine</h3>
-          <p class="feature-desc">
+          <h3 class="card-title">Corporate KYC Engine</h3>
+          <p class="card-desc">
             Instantly authenticate legal business entities, GSTIN, Company PAN, and MCA registration records with strict regulatory audit logging.
           </p>
         </div>
-        <div style="margin-top: 20px; font-size: 0.82rem; font-weight: 700; color: var(--tiancai-purple-light);">
+        <div class="card-footer-link">
           Instant MCA Data Validation &rarr;
         </div>
       </div>
 
       <!-- Feature 2 -->
-      <div class="feature-card">
+      <div class="zoi-card">
         <div>
-          <div class="feature-icon-box feature-icon-blue">
+          <div class="card-icon-wrapper">
             <i class="bi bi-person-vcard-fill"></i>
           </div>
-          <h3 class="feature-title">Real-Time KRA Retrieval</h3>
-          <p class="feature-desc">
+          <h3 class="card-title">Real-Time KRA Retrieval</h3>
+          <p class="card-desc">
             Fetch verified KYC records from national KRAs without asking your customers to fill out duplicate compliance forms.
           </p>
         </div>
-        <div style="margin-top: 20px; font-size: 0.82rem; font-weight: 700; color: var(--tiancai-blue);">
+        <div class="card-footer-link">
           Zero Duplicate Entry &rarr;
         </div>
       </div>
 
       <!-- Feature 3 -->
-      <div class="feature-card">
+      <div class="zoi-card">
         <div>
-          <div class="feature-icon-box feature-icon-green">
+          <div class="card-icon-wrapper">
             <i class="bi bi-pen-fill"></i>
           </div>
-          <h3 class="feature-title">Aadhaar E-Sign Gateway</h3>
-          <p class="feature-desc">
+          <h3 class="card-title">Aadhaar E-Sign Gateway</h3>
+          <p class="card-desc">
             Execute tamper-proof agreements, NDAs, and onboarding contracts in seconds using legally recognized Aadhaar OTP verification.
           </p>
         </div>
-        <div style="margin-top: 20px; font-size: 0.82rem; font-weight: 700; color: #059669;">
+        <div class="card-footer-link">
           IT Act 2000 Compliant &rarr;
         </div>
       </div>
 
       <!-- Feature 4 -->
-      <div class="feature-card">
+      <div class="zoi-card">
         <div>
-          <div class="feature-icon-box feature-icon-amber">
+          <div class="card-icon-wrapper">
             <i class="bi bi-wallet2"></i>
           </div>
-          <h3 class="feature-title">Prepaid Wallet Float</h3>
-          <p class="feature-desc">
+          <h3 class="card-title">Prepaid Wallet Float</h3>
+          <p class="card-desc">
             No expensive monthly lock-ins. Top up your organisation wallet float anytime via Razorpay (UPI, NetBanking, Cards) with automated PDF tax invoices.
           </p>
         </div>
-        <div style="margin-top: 20px; font-size: 0.82rem; font-weight: 700; color: #d97706;">
+        <div class="card-footer-link">
           Recharge From ₹1 &rarr;
         </div>
       </div>
@@ -612,8 +806,10 @@
 
   <!-- How It Works Section -->
   <section id="how-it-works" class="steps-section">
-    <div class="section-header">
-      <div class="section-eyebrow">Streamlined Onboarding</div>
+    <div class="section-header-box">
+      <div class="zoi-pill-chip" style="margin-bottom: 16px;">
+        <i class="bi bi-lightning-charge-fill zoi-chip-icon"></i> Streamlined Onboarding
+      </div>
       <h2 class="section-title">Get Started in 3 Simple Steps</h2>
       <p class="section-subtitle">
         Zero red tape. Complete organization verification and start issuing verification requests in minutes.
@@ -622,7 +818,7 @@
 
     <div class="steps-grid">
       <div class="step-card">
-        <div class="step-number">1</div>
+        <div class="step-badge">1</div>
         <h3 class="step-title">Register Your Company</h3>
         <p class="step-desc">
           Sign up with your organisation details and receive your fixed permanent Client ID (<code>ZOI-XXXXX</code>) instantly.
@@ -630,7 +826,7 @@
       </div>
 
       <div class="step-card">
-        <div class="step-number">2</div>
+        <div class="step-badge">2</div>
         <h3 class="step-title">Upload 4 Verification Docs</h3>
         <p class="step-desc">
           Upload Incorporation Certificate, Company PAN, GSTIN, and Signatory proof for compliance verification.
@@ -638,7 +834,7 @@
       </div>
 
       <div class="step-card">
-        <div class="step-number">3</div>
+        <div class="step-badge">3</div>
         <h3 class="step-title">Recharge Float & Verify</h3>
         <p class="step-desc">
           Recharge your prepaid wallet with your desired balance and execute corporate KYC, KRA, and E-Sign via portal or API.
@@ -647,20 +843,19 @@
     </div>
   </section>
 
-
   <!-- Security & Trust Strip -->
-  <section id="security" style="padding: 60px 24px; background: #ffffff; text-align: center; border-bottom: 1px solid var(--border-input);">
-    <div style="max-width: 900px; margin: 0 auto;">
-      <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-dark); margin-bottom: 16px;">
-        <i class="bi bi-shield-lock-fill" style="color: var(--tiancai-blue);"></i> Bank-Grade Security & Regulatory Compliance
+  <section id="security" class="security-strip">
+    <div class="security-box">
+      <h3 class="security-title">
+        <i class="bi bi-shield-lock-fill"></i> Bank-Grade Security & Regulatory Compliance
       </h3>
-      <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.6;">
+      <p class="security-desc">
         All API requests and document transmissions are protected with AES 256-bit encryption in transit and at rest. Identity data is audited and verified in strict accordance with the Information Technology Act (2000) and UIDAI regulatory guidelines.
       </p>
     </div>
   </section>
 
-  <!-- Footer -->
+  <!-- Footer (Strictly only the requested line) -->
   <footer class="landing-footer">
     <div>&copy; 2026 ZoiKYC. All Rights Reserved.</div>
   </footer>
