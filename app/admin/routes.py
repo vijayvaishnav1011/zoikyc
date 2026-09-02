@@ -20,7 +20,7 @@ REQUIRED_KYC_DOCS = [
     ('board_resolution', 'Authorised Signatory / Director Proof')
 ]
 
-ADMIN_SYSTEM_EMAILS = ['info@zoibit.com', 'admin@zoikyc.com']
+ADMIN_SYSTEM_EMAILS = ['info@zoibit.com', 'admin@zoikyc.com', 'info@zoikyc.com']
 
 @admin_bp.route('/')
 @admin_required

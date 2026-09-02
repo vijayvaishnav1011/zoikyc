@@ -41,10 +41,10 @@ def generate_otp():
 def _async_send_email_task(app, to_email, otp_code, user_name):
     """Internal worker task that sends clean HTML email without attachment chips."""
     with app.app_context():
-        smtp_server = os.environ.get("MAIL_SERVER", "smtpout.secureserver.net")
+        smtp_server = os.environ.get("MAIL_SERVER", "smtp.hostinger.com")
         port = int(os.environ.get("MAIL_PORT", 465))
-        sender_email = os.environ.get("MAIL_USERNAME", "info@zoibit.com")
-        password = os.environ.get("MAIL_PASSWORD", "Admin@12312123")
+        sender_email = os.environ.get("MAIL_USERNAME", "info@zoikyc.com")
+        password = os.environ.get("MAIL_PASSWORD", "Zoikyc@32132321")
 
         msg = MIMEMultipart("alternative")
         msg["Subject"] = f"ZoiKYC Email Verification Code: {otp_code}"
