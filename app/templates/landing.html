@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZoiKYC — Enterprise Corporate KYC, KRA & E-Sign Platform</title>
+  <meta name="description" content="Seamlessly verify Indian companies, directors, PAN, GSTIN, and execute legally binding Aadhaar E-Sign with unified APIs and prepaid wallet float.">
+  
+  <!-- Google Fonts & Bootstrap Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <!-- Core Design System -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  <style>
+    /* Dedicated Landing Page Styles */
+    .landing-body {
+      background-color: #ffffff;
+      color: var(--text-dark);
+      overflow-x: hidden;
+      font-family: var(--font-main);
+    }
+
+    /* Floating Navigation Bar */
+    .landing-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+      padding: 16px 0;
+      transition: var(--transition);
+    }
+
+    .landing-nav-container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .landing-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--tiancai-purple-dark);
+      letter-spacing: -0.5px;
+    }
+
+    .landing-brand-icon {
+      width: 38px;
+      height: 38px;
+      background: var(--tiancai-purple-gradient);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 1.25rem;
+      box-shadow: 0 4px 14px rgba(126, 34, 206, 0.3);
+    }
+
+    .landing-nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .landing-nav-links a {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.92rem;
+      transition: var(--transition);
+    }
+
+    .landing-nav-links a:hover {
+      color: var(--tiancai-purple-light);
+    }
+
+    .landing-auth-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-login-outline {
+      padding: 9px 20px;
+      border-radius: var(--radius-pill);
+      border: 1.5px solid var(--border-input);
+      color: var(--text-dark);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.88rem;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #ffffff;
+    }
+
+    .btn-login-outline:hover {
+      border-color: var(--tiancai-purple-light);
+      color: var(--tiancai-purple-dark);
+      background: #faf5ff;
+    }
+
+    .btn-cta-purple {
+      padding: 10px 22px;
+      border-radius: var(--radius-pill);
+      background: var(--tiancai-purple-gradient);
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.88rem;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 14px rgba(126, 34, 206, 0.35);
+    }
+
+    .btn-cta-purple:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(126, 34, 206, 0.45);
+      color: #ffffff;
+    }
+
+    /* Hero Section */
+    .hero-section {
+      padding: 80px 24px 70px;
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 0%, rgba(126, 34, 206, 0.08) 0%, #ffffff 70%);
+    }
+
+    .hero-container {
+      max-width: 1240px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #faf5ff;
+      border: 1px solid #f3e8ff;
+      color: var(--tiancai-purple-medium);
+      padding: 6px 16px;
+      border-radius: 30px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+    }
+
+    .hero-title {
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-weight: 800;
+      color: var(--tiancai-purple-dark);
+      line-height: 1.15;
+      letter-spacing: -1.5px;
+      max-width: 920px;
+      margin: 0 auto 20px;
+    }
+
+    .hero-title span.gradient-text {
+      background: linear-gradient(135deg, #7e22ce 0%, #2563eb 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(1rem, 2vw, 1.22rem);
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 760px;
+      margin: 0 auto 36px;
+    }
+
+    .hero-buttons {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 48px;
+    }
+
+    .btn-hero-primary {
+      padding: 14px 32px;
+      border-radius: 30px;
+      background: var(--tiancai-purple-gradient);
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 10px 30px rgba(126, 34, 206, 0.4);
+      transition: var(--transition);
+    }
+
+    .btn-hero-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 36px rgba(126, 34, 206, 0.5);
+      color: #ffffff;
+    }
+
+    .btn-hero-secondary {
+      padding: 14px 28px;
+      border-radius: 30px;
+      background: #ffffff;
+      border: 1.5px solid var(--border-input);
+      color: var(--text-dark);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+    }
+
+    .btn-hero-secondary:hover {
+      border-color: var(--tiancai-purple-light);
+      background: #faf5ff;
+      color: var(--tiancai-purple-dark);
+    }
+
+    /* Trust Chips Strip */
+    .trust-chips-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .trust-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .trust-chip i {
+      color: #059669;
+      font-size: 1rem;
+    }
+
+    /* Mockup Showcase Card */
+    .mockup-wrapper {
+      max-width: 1040px;
+      margin: 40px auto 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.95) 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 25px 60px rgba(76, 29, 149, 0.12);
+      text-align: left;
+    }
+
+    .mockup-header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+
+    .mockup-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .mockup-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #e2e8f0;
+    }
+
+    .mockup-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .mockup-grid {
+        grid-template-columns: 1fr;
+      }
+      .landing-nav-links {
+        display: none;
+      }
+    }
+
+    /* Feature Grid Section */
+    .features-section {
+      padding: 90px 24px;
+      background: #f8fafc;
+      border-top: 1px solid var(--border-input);
+      border-bottom: 1px solid var(--border-input);
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto 56px;
+    }
+
+    .section-eyebrow {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--tiancai-blue);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin-bottom: 8px;
+    }
+
+    .section-title {
+      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+      font-weight: 800;
+      color: var(--tiancai-purple-dark);
+      letter-spacing: -0.8px;
+      line-height: 1.2;
+      margin-bottom: 14px;
+    }
+
+    .section-subtitle {
+      font-size: 1rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .features-grid {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: #ffffff;
+      border: 1px solid var(--border-input);
+      border-radius: var(--radius-xl);
+      padding: 32px 28px;
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: #c084fc;
+      box-shadow: 0 16px 36px rgba(126, 34, 206, 0.1);
+    }
+
+    .feature-icon-box {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      margin-bottom: 20px;
+    }
+
+    .feature-icon-purple {
+      background: rgba(126, 34, 206, 0.1);
+      color: var(--tiancai-purple-light);
+    }
+
+    .feature-icon-blue {
+      background: rgba(37, 99, 235, 0.1);
+      color: var(--tiancai-blue);
+    }
+
+    .feature-icon-green {
+      background: rgba(5, 150, 105, 0.1);
+      color: #059669;
+    }
+
+    .feature-icon-amber {
+      background: rgba(217, 119, 6, 0.1);
+      color: #d97706;
+    }
+
+    .feature-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--text-dark);
+      margin-bottom: 10px;
+    }
+
+    .feature-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* Workflow Section */
+    .steps-section {
+      padding: 90px 24px;
+      background: #ffffff;
+    }
+
+    .steps-grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 32px;
+      position: relative;
+    }
+
+    .step-card {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .step-number {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--tiancai-purple-gradient);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      box-shadow: 0 8px 20px rgba(126, 34, 206, 0.3);
+    }
+
+    .step-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-dark);
+      margin-bottom: 10px;
+    }
+
+    .step-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* API Developer CTA Banner */
+    .api-banner-section {
+      padding: 80px 24px;
+      background: var(--tiancai-purple-gradient);
+      color: #ffffff;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .api-banner-container {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 40px;
+      align-items: center;
+    }
+
+    @media (max-width: 900px) {
+      .api-banner-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .code-preview-box {
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 14px;
+      padding: 20px;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.85rem;
+      color: #38bdf8;
+      overflow-x: auto;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Footer */
+    .landing-footer {
+      background: #0f172a;
+      color: #94a3b8;
+      padding: 60px 24px 30px;
+      font-size: 0.88rem;
+    }
+
+    .footer-container {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 768px) {
+      .footer-container {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 500px) {
+      .footer-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .footer-col h4 {
+      color: #ffffff;
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .footer-col ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .footer-col ul a {
+      color: #94a3b8;
+      text-decoration: none;
+      transition: var(--transition);
+    }
+
+    .footer-col ul a:hover {
+      color: #ffffff;
+    }
+
+    .footer-bottom {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+
+<body class="landing-body">
+
+  <!-- Floating Sticky Header -->
+  <header class="landing-header">
+    <div class="landing-nav-container">
+      
+      <!-- Brand Logo -->
+      <a href="{{ url_for('landing') }}" class="landing-brand">
+        <div class="landing-brand-icon">
+          <i class="bi bi-shield-check"></i>
+        </div>
+        <span>ZoiKYC</span>
+      </a>
+
+      <!-- Center Nav Links -->
+      <ul class="landing-nav-links">
+        <li><a href="#features">Platform Features</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#developers">Enterprise API</a></li>
+        <li><a href="#security">Compliance & Trust</a></li>
+      </ul>
+
+      <!-- Right Auth Actions (Login / Register) -->
+      <div class="landing-auth-actions">
+        {% if current_user.is_authenticated %}
+          {% if current_user.role == 'super_admin' %}
+            <a href="{{ url_for('admin.index') }}" class="btn-cta-purple">
+              <i class="bi bi-speedometer2"></i> Admin Panel
+            </a>
+          {% else %}
+            <a href="{{ url_for('dashboard.index') }}" class="btn-cta-purple">
+              <i class="bi bi-grid-fill"></i> Go to Dashboard
+            </a>
+          {% endif %}
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="btn-login-outline">
+            <i class="bi bi-box-arrow-in-right"></i> Log In
+          </a>
+          <a href="{{ url_for('auth.register') }}" class="btn-cta-purple">
+            <i class="bi bi-building-add"></i> Get Started
+          </a>
+        {% endif %}
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-container">
+
+      <div class="hero-eyebrow">
+        <i class="bi bi-stars" style="color: #f59e0b;"></i> Next-Gen Corporate KYC & E-Sign Gateway
+      </div>
+
+      <h1 class="hero-title">
+        Automated Business <span class="gradient-text">KYC, KRA & Aadhaar E-Sign</span> for Modern Enterprises
+      </h1>
+
+      <p class="hero-subtitle">
+        Accelerate client onboarding with real-time Indian corporate entity verification, director proofs, automated KRA retrieval, and legally binding digital signatures backed by a transparent prepaid wallet float.
+      </p>
+
+      <div class="hero-buttons">
+        <a href="{{ url_for('auth.register') }}" class="btn-hero-primary">
+          <i class="bi bi-rocket-takeoff-fill"></i> Register Organisation
+        </a>
+        <a href="{{ url_for('auth.login') }}" class="btn-hero-secondary">
+          <i class="bi bi-shield-lock"></i> Access Client Portal
+        </a>
+      </div>
+
+      <!-- Trust Badges -->
+      <div class="trust-chips-row">
+        <div class="trust-chip">
+          <i class="bi bi-patch-check-fill"></i> MCA & GSTIN Verified
+        </div>
+        <div class="trust-chip">
+          <i class="bi bi-shield-fill-check"></i> IT Act 2000 Compliant E-Sign
+        </div>
+        <div class="trust-chip">
+          <i class="bi bi-wallet2"></i> Instant Razorpay Float Recharge
+        </div>
+        <div class="trust-chip">
+          <i class="bi bi-file-earmark-pdf-fill"></i> Automated PDF Tax Invoices
+        </div>
+      </div>
+
+      <!-- Interactive Product Mockup Preview -->
+      <div class="mockup-wrapper">
+        <div class="mockup-header-bar">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="mockup-dots">
+              <div class="mockup-dot" style="background: #ef4444;"></div>
+              <div class="mockup-dot" style="background: #f59e0b;"></div>
+              <div class="mockup-dot" style="background: #10b981;"></div>
+            </div>
+            <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; margin-left: 8px;">ZoiKYC Enterprise Portal &bull; Live Client Dashboard Preview</span>
+          </div>
+          <span class="metric-badge badge-active"><i class="bi bi-patch-check-fill"></i> Regulatory Active</span>
+        </div>
+
+        <div class="mockup-grid">
+          <!-- Mockup Left: Document Compliance Matrix -->
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px;">
+            <div style="font-size: 0.85rem; font-weight: 800; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+              <i class="bi bi-file-earmark-check-fill" style="color: #7e22ce;"></i> 4-Point Document Compliance
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.82rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
+                <span>Certificate of Incorporation</span>
+                <span style="color: #059669; font-weight: 700;">✓ Verified</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
+                <span>Company PAN Card</span>
+                <span style="color: #059669; font-weight: 700;">✓ Verified</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
+                <span>GSTIN Registration Certificate</span>
+                <span style="color: #059669; font-weight: 700;">✓ Verified</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
+                <span>Authorised Signatory Proof</span>
+                <span style="color: #059669; font-weight: 700;">✓ Verified</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mockup Right: Wallet & API Usage Preview -->
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="font-size: 0.85rem; font-weight: 800; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                <i class="bi bi-wallet2" style="color: #059669;"></i> Prepaid Wallet Float Balance
+              </div>
+              <div style="font-size: 2rem; font-weight: 800; color: #059669; margin-bottom: 4px;">
+                ₹25,480.00
+              </div>
+              <div style="font-size: 0.78rem; color: #64748b;">
+                Auto-deducted per API verification &bull; 2% transparent platform fee
+              </div>
+            </div>
+
+            <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: #0f172a;">Permanent Client ID</div>
+                <div style="font-size: 0.8rem; color: #2563eb; font-weight: 800;">ZOI-DEMO2026</div>
+              </div>
+              <span class="lang-toggle-pill" style="padding: 4px 10px; font-size: 0.72rem;">API Gateway Ready</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Features Grid -->
+  <section id="features" class="features-section">
+    <div class="section-header">
+      <div class="section-eyebrow">Everything You Need</div>
+      <h2 class="section-title">Built for Scalable Business Verification</h2>
+      <p class="section-subtitle">
+        Replace slow manual compliance checks with instant digital APIs, verified signatory authorizations, and seamless paperless contracts.
+      </p>
+    </div>
+
+    <div class="features-grid">
+      
+      <!-- Feature 1 -->
+      <div class="feature-card">
+        <div>
+          <div class="feature-icon-box feature-icon-purple">
+            <i class="bi bi-building-check"></i>
+          </div>
+          <h3 class="feature-title">Corporate KYC Engine</h3>
+          <p class="feature-desc">
+            Instantly authenticate legal business entities, GSTIN, Company PAN, and MCA registration records with strict regulatory audit logging.
+          </p>
+        </div>
+        <div style="margin-top: 20px; font-size: 0.82rem; font-weight: 700; color: var(--tiancai-purple-light);">
+          Instant MCA Data Validation &rarr;
+        </div>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="feature-card">
+        <div>
+          <div class="feature-icon-box feature-icon-blue">
+            <i class="bi bi-person-vcard-fill"></i>
+          </div>
+          <h3 class="feature-title">Real-Time KRA Retrieval</h3>
+          <p class="feature-desc">
+            Fetch verified KYC records from national KRAs without asking your customers to fill out duplicate compliance forms.
+          </p>
+        </div>
+        <div style="margin-top: 20px; font-size: 0.82rem; font-weight: 700; color: var(--tiancai-blue);">
+          Zero Duplicate Entry &rarr;
+        </div>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="feature-card">
+        <div>
+          <div class="feature-icon-box feature-icon-green">
+            <i class="bi bi-pen-fill"></i>
+          </div>
+          <h3 class="feature-title">Aadhaar E-Sign Gateway</h3>
+          <p class="feature-desc">
+            Execute tamper-proof agreements, NDAs, and onboarding contracts in seconds using legally recognized Aadhaar OTP verification.
+          </p>
+        </div>
+        <div style="margin-top: 20px; font-size: 0.82rem; font-weight: 700; color: #059669;">
+          IT Act 2000 Compliant &rarr;
+        </div>
+      </div>
+
+      <!-- Feature 4 -->
+      <div class="feature-card">
+        <div>
+          <div class="feature-icon-box feature-icon-amber">
+            <i class="bi bi-wallet2"></i>
+          </div>
+          <h3 class="feature-title">Prepaid Wallet Float</h3>
+          <p class="feature-desc">
+            No expensive monthly lock-ins. Top up your organisation wallet float anytime via Razorpay (UPI, NetBanking, Cards) with automated PDF tax invoices.
+          </p>
+        </div>
+        <div style="margin-top: 20px; font-size: 0.82rem; font-weight: 700; color: #d97706;">
+          Recharge From ₹1 &rarr;
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section id="how-it-works" class="steps-section">
+    <div class="section-header">
+      <div class="section-eyebrow">Streamlined Onboarding</div>
+      <h2 class="section-title">Get Started in 3 Simple Steps</h2>
+      <p class="section-subtitle">
+        Zero red tape. Complete organization verification and start issuing verification requests in minutes.
+      </p>
+    </div>
+
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <h3 class="step-title">Register Your Company</h3>
+        <p class="step-desc">
+          Sign up with your organisation details and receive your fixed permanent Client ID (<code>ZOI-XXXXX</code>) instantly.
+        </p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <h3 class="step-title">Upload 4 Verification Docs</h3>
+        <p class="step-desc">
+          Upload Incorporation Certificate, Company PAN, GSTIN, and Signatory proof for compliance verification.
+        </p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <h3 class="step-title">Recharge Float & Verify</h3>
+        <p class="step-desc">
+          Recharge your prepaid wallet with your desired balance and execute corporate KYC, KRA, and E-Sign via portal or API.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- API Integration Banner -->
+  <section id="developers" class="api-banner-section">
+    <div class="api-banner-container">
+      
+      <div>
+        <div style="font-size: 0.8rem; font-weight: 800; color: #fef08a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
+          <i class="bi bi-code-slash"></i> Developer-First Integration
+        </div>
+        <h2 style="font-size: clamp(1.8rem, 3.5vw, 2.5rem); font-weight: 800; line-height: 1.2; margin-bottom: 16px;">
+          Plug ZoiKYC Directly into Your Enterprise Application
+        </h2>
+        <p style="font-size: 0.95rem; opacity: 0.9; line-height: 1.6; margin-bottom: 28px;">
+          Use our unified REST APIs with your permanent Client ID to verify entities, check KRA status, and initiate Aadhaar e-sign directly inside your CRM or onboarding funnel.
+        </p>
+
+        <a href="{{ url_for('auth.register') }}" style="display: inline-flex; align-items: center; gap: 8px; background: #ffffff; color: var(--tiancai-purple-dark); padding: 12px 28px; border-radius: 30px; text-decoration: none; font-weight: 800; font-size: 0.95rem; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+          Get Enterprise API Access &rarr;
+        </a>
+      </div>
+
+      <div class="code-preview-box">
+        <div style="color: #94a3b8; margin-bottom: 12px; font-size: 0.75rem;">// Sample Corporate Verification Request</div>
+        <span style="color: #f43f5e;">POST</span> <span style="color: #ffffff;">https://zoikyc.com/api/v1/kyc/verify</span><br>
+        <span style="color: #a855f7;">Headers:</span><br>
+        &nbsp;&nbsp;X-Client-ID: <span style="color: #facc15;">"ZOI-YOURCOMPANY"</span><br>
+        &nbsp;&nbsp;Authorization: <span style="color: #facc15;">"Bearer zoi_live_key_..."</span><br><br>
+        <span style="color: #a855f7;">Body:</span> {<br>
+        &nbsp;&nbsp;<span style="color: #38bdf8;">"gstin"</span>: <span style="color: #4ade80;">"07AAAAA0000A1Z0"</span>,<br>
+        &nbsp;&nbsp;<span style="color: #38bdf8;">"pan"</span>: <span style="color: #4ade80;">"ABCDE1234F"</span>,<br>
+        &nbsp;&nbsp;<span style="color: #38bdf8;">"service"</span>: <span style="color: #4ade80;">"CORPORATE_VERIFICATION"</span><br>
+        }
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Security & Trust Strip -->
+  <section id="security" style="padding: 60px 24px; background: #ffffff; text-align: center; border-bottom: 1px solid var(--border-input);">
+    <div style="max-width: 900px; margin: 0 auto;">
+      <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-dark); margin-bottom: 16px;">
+        <i class="bi bi-shield-lock-fill" style="color: var(--tiancai-blue);"></i> Bank-Grade Security & Regulatory Compliance
+      </h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.6;">
+        All API requests and document transmissions are protected with AES 256-bit encryption in transit and at rest. Identity data is audited and verified in strict accordance with the Information Technology Act (2000) and UIDAI regulatory guidelines.
+      </p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="landing-footer">
+    <div class="footer-container">
+      
+      <div class="footer-col">
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 1.35rem; font-weight: 800; color: #ffffff; margin-bottom: 14px;">
+          <div class="landing-brand-icon" style="width: 32px; height: 32px; font-size: 1.1rem;">
+            <i class="bi bi-shield-check"></i>
+          </div>
+          ZoiKYC
+        </div>
+        <p style="line-height: 1.6; max-width: 320px; font-size: 0.85rem;">
+          Enterprise Identity, KRA, and E-Sign Gateway for Indian corporations, fintechs, and high-growth businesses.
+        </p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="#features">Corporate KYC</a></li>
+          <li><a href="#features">KRA Retrieval</a></li>
+          <li><a href="#features">Aadhaar E-Sign</a></li>
+          <li><a href="#features">Prepaid Wallet Float</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Portals</h4>
+        <ul>
+          <li><a href="{{ url_for('auth.login') }}">Client Login</a></li>
+          <li><a href="{{ url_for('auth.register') }}">Register Organisation</a></li>
+          <li><a href="{{ url_for('auth.forgot_password') }}">Reset Password</a></li>
+          <li><a href="{{ url_for('admin.index') }}">Platform Admin</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Support & Contact</h4>
+        <ul>
+          <li><a href="mailto:info@zoikyc.com">info@zoikyc.com</a></li>
+          <li><span style="color: #64748b;">ZoiKYC HQ, New Delhi, India</span></li>
+          <li><span style="color: #64748b;">Mon - Sat (9:00 AM - 7:00 PM)</span></li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="footer-bottom">
+      <div>&copy; 2026 ZoiKYC Technologies Pvt. Ltd. All Rights Reserved.</div>
+      <div style="display: flex; gap: 20px;">
+        <span>GSTIN: 07AAAAA0000A1Z0</span>
+        <span>Secure HTTPS Portal</span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+
+</html>

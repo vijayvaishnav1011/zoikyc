@@ -1,5 +1,5 @@
 import os
-from flask import Flask, redirect, url_for
+from flask import Flask, redirect, url_for, render_template
 from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import config_by_name
 from app.extensions import db, migrate, login_manager, csrf
@@ -49,10 +49,15 @@ def create_app(config_name=None):
     def health_check():
         return {'status': 'healthy', 'service': 'ZoiKYC'}, 200
 
-    # Root route redirect
+    # Root route - Public Landing Page for zoikyc.com
     @app.route('/')
-    def index_redirect():
-        return redirect(url_for('dashboard.index'))
+    def landing():
+        from flask_login import current_user
+        if current_user.is_authenticated:
+            if current_user.role == 'super_admin':
+                return redirect(url_for('admin.index'))
+            return redirect(url_for('dashboard.index'))
+        return render_template('landing.html')
 
     # Auto-create missing database tables & seed Super Admin on startup
     with app.app_context():
