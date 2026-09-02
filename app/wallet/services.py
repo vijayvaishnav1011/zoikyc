@@ -1,10 +1,14 @@
 import os
 import uuid
+import smtplib
+import threading
 import razorpay
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 from decimal import Decimal
 from datetime import datetime, timezone
-from flask import current_app
+from flask import current_app, render_template
 from app.extensions import db
 from app.models.wallet import Wallet
 from app.models.transaction import WalletTransaction
@@ -128,3 +132,59 @@ def process_wallet_recharge(company_id, amount, payment_method='razorpay', refer
     except Exception as e:
         db.session.rollback()
         return False, None, f"Failed to process transaction: {str(e)}"
+
+
+def _async_send_recharge_email_task(app, to_email, user_name, company_name, amount, platform_fee, total_paid, updated_balance, reference_id, txn_date):
+    """Worker task that dispatches responsive confirmation receipt email."""
+    with app.app_context():
+        smtp_server = os.environ.get("MAIL_SERVER", "smtp.hostinger.com")
+        port = int(os.environ.get("MAIL_PORT", 465))
+        sender_email = os.environ.get("MAIL_USERNAME", "info@zoikyc.com")
+        password = os.environ.get("MAIL_PASSWORD", "Zoikyc@32132321")
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"Wallet Recharge Successful — ₹{amount:,.2f} Credited | ZoiKYC"
+        msg["From"] = f"ZoiKYC <{sender_email}>"
+        msg["To"] = to_email
+
+        try:
+            html_content = render_template(
+                'email/wallet_recharge_success.html',
+                user_name=user_name,
+                company_name=company_name,
+                amount=amount,
+                platform_fee=platform_fee,
+                total_paid=total_paid,
+                updated_balance=updated_balance,
+                reference_id=reference_id,
+                txn_date=txn_date
+            )
+        except Exception as te:
+            print(f"⚠️ Recharge email template render notice: {te}")
+            html_content = f"<h2>Wallet Recharge Successful: ₹{amount:,.2f} credited. Ref: {reference_id}</h2>"
+
+        msg.attach(MIMEText(html_content, "html"))
+
+        try:
+            with smtplib.SMTP_SSL(smtp_server, port, timeout=15) as server:
+                server.login(sender_email, password)
+                server.sendmail(sender_email, to_email, msg.as_string())
+            print(f"✅ [RECHARGE EMAIL SUCCESS] Sent confirmation receipt to {to_email}")
+        except Exception as e:
+            print(f"❌ [RECHARGE EMAIL FAIL] Failed sending to {to_email}: {str(e)}")
+
+
+def send_wallet_recharge_email(to_email, user_name, company_name, amount, platform_fee, total_paid, updated_balance, reference_id):
+    """
+    Asynchronously dispatches a branded HTML email confirmation to the user upon wallet recharge.
+    """
+    app = current_app._get_current_object()
+    txn_date = datetime.now().strftime("%d %b %Y, %I:%M %p IST")
+    thread = threading.Thread(
+        target=_async_send_recharge_email_task,
+        args=(app, to_email, user_name, company_name, amount, platform_fee, total_paid, updated_balance, reference_id, txn_date)
+    )
+    thread.daemon = True
+    thread.start()
+    return True
+

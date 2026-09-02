@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wallet Recharge Successful — ZoiKYC</title>
+</head>
+
+<body
+  style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 40px 16px; color: #0f172a;">
+
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
+    style="max-width: 540px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.04); overflow: hidden;">
+
+    <!-- Header -->
+    <tr>
+      <td style="padding: 28px 32px 18px 32px; border-bottom: 1px solid #f1f5f9; background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);">
+        <table role="presentation" border="0" cellspacing="0" cellpadding="0" width="100%">
+          <tr>
+            <td style="vertical-align: middle;">
+              <table role="presentation" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="width: 36px; height: 36px; background: linear-gradient(135deg, #7e22ce 0%, #3b0764 100%); border-radius: 10px; text-align: center; vertical-align: middle; color: #ffffff; font-weight: 800; font-size: 18px;">
+                    Z
+                  </td>
+                  <td style="padding-left: 12px; vertical-align: middle;">
+                    <div style="font-size: 20px; font-weight: 800; color: #3b0764; letter-spacing: -0.5px;">ZoiKYC</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+            <td style="text-align: right; vertical-align: middle;">
+              <span style="background: rgba(5, 150, 105, 0.12); color: #059669; font-weight: 800; font-size: 12px; padding: 6px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">
+                ✓ Payment Confirmed
+              </span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Body Section -->
+    <tr>
+      <td style="padding: 32px;">
+        <h1 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">
+          Wallet Recharge Successful!
+        </h1>
+        <p style="font-size: 14px; color: #475569; line-height: 1.5; margin: 0 0 24px 0;">
+          Hello <strong>{{ user_name }}</strong>,<br>
+          Your organisation <strong>{{ company_name }}</strong> wallet has been credited successfully via Razorpay.
+        </p>
+
+        <!-- Big Amount Card -->
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+          <tr>
+            <td align="center" style="background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 14px; padding: 22px 20px;">
+              <div style="font-size: 12px; font-weight: 700; color: #15803d; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px;">
+                Amount Credited To Wallet
+              </div>
+              <div style="font-size: 34px; font-weight: 800; color: #15803d; letter-spacing: -0.5px;">
+                ₹{{ "%.2f"|format(amount) }}
+              </div>
+              <div style="font-size: 13px; color: #166534; margin-top: 6px; font-weight: 600;">
+                New Balance: ₹{{ "%.2f"|format(updated_balance) }}
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Receipt Table -->
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
+          style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 24px; font-size: 13px;">
+          
+          <tr>
+            <td style="padding: 12px 16px; color: #64748b; border-bottom: 1px solid #e2e8f0;">Transaction Reference:</td>
+            <td style="padding: 12px 16px; color: #0f172a; font-weight: 700; text-align: right; border-bottom: 1px solid #e2e8f0; font-family: monospace;">{{ reference_id }}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 16px; color: #64748b; border-bottom: 1px solid #e2e8f0;">Wallet Credit Amount:</td>
+            <td style="padding: 12px 16px; color: #0f172a; font-weight: 700; text-align: right; border-bottom: 1px solid #e2e8f0;">₹{{ "%.2f"|format(amount) }}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 16px; color: #64748b; border-bottom: 1px solid #e2e8f0;">Platform Fee (2%):</td>
+            <td style="padding: 12px 16px; color: #7e22ce; font-weight: 700; text-align: right; border-bottom: 1px solid #e2e8f0;">₹{{ "%.2f"|format(platform_fee) }}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 16px; color: #0f172a; font-weight: 800; border-bottom: 1px solid #e2e8f0;">Total Amount Paid:</td>
+            <td style="padding: 12px 16px; color: #059669; font-weight: 800; text-align: right; border-bottom: 1px solid #e2e8f0;">₹{{ "%.2f"|format(total_paid) }}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 16px; color: #64748b; border-bottom: 1px solid #e2e8f0;">Payment Method:</td>
+            <td style="padding: 12px 16px; color: #0f172a; font-weight: 600; text-align: right; border-bottom: 1px solid #e2e8f0;">Razorpay Online Gateway</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 16px; color: #64748b;">Transaction Date:</td>
+            <td style="padding: 12px 16px; color: #0f172a; font-weight: 600; text-align: right;">{{ txn_date }}</td>
+          </tr>
+        </table>
+
+        <!-- CTA Button -->
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+          <tr>
+            <td align="center">
+              <a href="https://zoikyc.com/wallet" target="_blank"
+                style="display: inline-block; background: linear-gradient(135deg, #7e22ce 0%, #3b0764 100%); color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 12px 28px; border-radius: 24px; box-shadow: 0 4px 12px rgba(126, 34, 206, 0.25);">
+                View Wallet & Transactions &rarr;
+              </a>
+            </td>
+          </tr>
+        </table>
+
+        <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0; text-align: center;">
+          If you did not authorize this transaction, please contact our security team immediately at
+          <a href="mailto:info@zoikyc.com" style="color: #7e22ce; text-decoration: none; font-weight: 600;">info@zoikyc.com</a>.
+        </p>
+      </td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+      <td style="background-color: #f8fafc; padding: 16px 32px; text-align: center; border-top: 1px solid #f1f5f9; font-size: 12px; color: #64748b; font-weight: 600;">
+        &copy; 2026 ZoiKYC &bull; Secure Digital Verification Platform
+      </td>
+    </tr>
+
+  </table>
+
+</body>
+
+</html>

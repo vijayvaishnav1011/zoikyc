@@ -10,7 +10,8 @@ from app.wallet.services import (
     process_wallet_recharge,
     create_razorpay_order,
     verify_razorpay_payment,
-    calculate_recharge_amounts
+    calculate_recharge_amounts,
+    send_wallet_recharge_email
 )
 from app.models.transaction import WalletTransaction
 
@@ -141,6 +142,21 @@ def verify_payment():
         )
 
         if success:
+            # Asynchronously dispatch confirmation receipt email to user's mailbox
+            try:
+                send_wallet_recharge_email(
+                    to_email=current_user.email,
+                    user_name=current_user.name,
+                    company_name=current_user.company.name if current_user.company else "Organisation",
+                    amount=base_amount,
+                    platform_fee=platform_fee,
+                    total_paid=total_payable,
+                    updated_balance=txn.balance_after,
+                    reference_id=razorpay_payment_id
+                )
+            except Exception as mail_err:
+                current_app.logger.warning(f"Recharge email dispatch error: {mail_err}")
+
             flash(f"Payment Verified! ₹{base_amount:,.2f} credited to your wallet. (Ref: {razorpay_payment_id})", "success")
             return jsonify({
                 'success': True,
