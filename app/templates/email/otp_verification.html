@@ -4,71 +4,81 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZoiKYC Verification Code</title>
+  <title>Verification Code — ZoiKYC</title>
 </head>
 
-<body
-  style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 40px 16px; color: #0f172a;">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 36px 16px; color: #0f172a;">
 
   <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
-    style="max-width: 520px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.04); overflow: hidden;">
+    style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 12px 36px rgba(15, 23, 42, 0.08); overflow: hidden;">
 
-    <!-- Top Header -->
+    <!-- Brand Header with Login Page Theme Gradient -->
     <tr>
-      <td style="padding: 28px 32px 16px 32px; border-bottom: 1px solid #f1f5f9;">
-        <table role="presentation" border="0" cellspacing="0" cellpadding="0">
+      <td style="padding: 22px 28px; background: linear-gradient(135deg, #3b0764 0%, #581c87 50%, #7e22ce 100%);">
+        <table role="presentation" border="0" cellspacing="0" cellpadding="0" width="100%">
           <tr>
-            <td
-              style="width: 38px; height: 38px; background: #2563eb; border-radius: 10px; text-align: center; vertical-align: middle; color: #ffffff; font-weight: 800; font-size: 18px;">
-              Z
+            <td style="vertical-align: middle;">
+              <table role="presentation" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="vertical-align: middle;">
+                    <img src="https://zoikyc.com/static/images/zoi_icon.jpg" alt="Zoi" width="34" height="34"
+                      style="border-radius: 9px; display: block; border: 1.5px solid rgba(255,255,255,0.3); box-shadow: 0 4px 10px rgba(0,0,0,0.25);">
+                  </td>
+                  <td style="padding-left: 10px; vertical-align: middle;">
+                    <span style="font-size: 19px; font-weight: 800; color: #ffffff; letter-spacing: -0.4px;">Zoi<span style="color: #f0abfc;">KYC</span></span>
+                  </td>
+                </tr>
+              </table>
             </td>
-            <td style="padding-left: 12px; vertical-align: middle;">
-              <div style="font-size: 20px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">ZoiKYC</div>
+            <td style="text-align: right; vertical-align: middle;">
+              <span style="background: rgba(254, 240, 138, 0.2); border: 1px solid rgba(254, 240, 138, 0.4); color: #fef08a; font-weight: 700; font-size: 11px; padding: 5px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">
+                Security
+              </span>
             </td>
           </tr>
         </table>
       </td>
     </tr>
 
-    <!-- Body Section -->
+    <!-- Body Section (Clean & Minimal) -->
     <tr>
-      <td style="padding: 32px;">
-        <h1 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">
+      <td style="padding: 30px 28px;">
+        <h1 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; letter-spacing: -0.3px;">
           Email Verification Code
         </h1>
-
-        <p style="font-size: 15px; color: #475569; line-height: 1.5; margin: 0 0 24px 0;">
-          Hello <strong>{{ user_name }}</strong>,<br>
-          We received a request to verify your business email address for your ZoiKYC organisation account. Please enter
-          the 6-digit security code below:
+        
+        <p style="font-size: 14px; font-weight: 700; color: #7e22ce; margin: 0 0 20px 0;">
+          Use this code to verify your account
         </p>
 
-        <!-- 6-Digit OTP Box -->
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+        <!-- 6-Digit OTP Box in Lavender Accent Card -->
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 22px;">
           <tr>
-            <td align="center">
-              <div
-                style="background-color: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 18px 32px; display: inline-block;">
-                <div
-                  style="font-size: 34px; font-weight: 800; letter-spacing: 10px; color: #2563eb; font-family: monospace; text-indent: 10px;">
-                  {{ otp_code }}
-                </div>
+            <td align="center" style="background: #faf5ff; border: 1.5px solid #e9d5ff; border-radius: 14px; padding: 22px;">
+              <div style="font-size: 11px; font-weight: 700; color: #7e22ce; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px;">
+                Your One-Time Password
+              </div>
+              <div style="font-size: 36px; font-weight: 800; letter-spacing: 12px; color: #3b0764; font-family: monospace; text-indent: 12px;">
+                {{ otp_code }}
+              </div>
+              <div style="font-size: 12px; color: #64748b; margin-top: 8px; font-weight: 600;">
+                Valid for 15 minutes &bull; Do not share with anyone
               </div>
             </td>
           </tr>
         </table>
 
-        <p style="font-size: 13px; color: #64748b; margin: 0; text-align: center;">
-          This code is valid for 15 minutes.
+        <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0; text-align: center;">
+          If you did not request this verification code, please ignore this email or contact support at
+          <a href="mailto:info@zoikyc.com" style="color: #2563eb; text-decoration: none; font-weight: 600;">info@zoikyc.com</a>.
         </p>
       </td>
     </tr>
 
     <!-- Footer -->
     <tr>
-      <td
-        style="background-color: #f8fafc; padding: 16px 32px; text-align: center; border-top: 1px solid #f1f5f9; font-size: 12px; color: #64748b; font-weight: 600;">
-        &copy; 2026 ZoiKYC. All rights reserved.
+      <td style="background-color: #f8fafc; padding: 16px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; font-weight: 600;">
+        &copy; 2026 ZoiKYC. All Rights Reserved.
       </td>
     </tr>
 
