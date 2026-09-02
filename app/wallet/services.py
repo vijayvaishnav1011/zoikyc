@@ -134,19 +134,24 @@ def process_wallet_recharge(company_id, amount, payment_method='razorpay', refer
         return False, None, f"Failed to process transaction: {str(e)}"
 
 
-def _async_send_recharge_email_task(app, to_email, user_name, company_name, amount, platform_fee, total_paid, updated_balance, reference_id, txn_date):
-    """Worker task that dispatches responsive confirmation receipt email."""
+from email.mime.application import MIMEApplication
+from app.wallet.invoice import generate_recharge_pdf_invoice
+
+def _async_send_recharge_email_task(app, to_email, user_name, company_name, client_id, gstin, address, amount, platform_fee, total_paid, updated_balance, reference_id, txn_date):
+    """Worker task that dispatches responsive confirmation receipt email with PDF Tax Invoice attachment."""
     with app.app_context():
         smtp_server = os.environ.get("MAIL_SERVER", "smtp.hostinger.com")
         port = int(os.environ.get("MAIL_PORT", 465))
         sender_email = os.environ.get("MAIL_USERNAME", "info@zoikyc.com")
         password = os.environ.get("MAIL_PASSWORD", "Zoikyc@32132321")
 
-        msg = MIMEMultipart("alternative")
+        msg = MIMEMultipart("mixed")
         msg["Subject"] = f"Wallet Recharge Successful — ₹{amount:,.2f} Credited | ZoiKYC"
         msg["From"] = f"ZoiKYC <{sender_email}>"
         msg["To"] = to_email
 
+        # Body Alternative Container
+        alt_part = MIMEMultipart("alternative")
         try:
             html_content = render_template(
                 'email/wallet_recharge_success.html',
@@ -163,28 +168,103 @@ def _async_send_recharge_email_task(app, to_email, user_name, company_name, amou
             print(f"⚠️ Recharge email template render notice: {te}")
             html_content = f"<h2>Wallet Recharge Successful: ₹{amount:,.2f} credited. Ref: {reference_id}</h2>"
 
+        alt_part.attach(MIMEText(html_content, "html"))
+        msg.attach(alt_part)
+
+        # Generate and attach PDF Tax Invoice / Receipt
+        try:
+            pdf_data = generate_recharge_pdf_invoice(
+                company_name=company_name,
+                client_id=client_id,
+                gstin=gstin,
+                address=address,
+                user_name=user_name,
+                amount=amount,
+                platform_fee=platform_fee,
+                total_paid=total_paid,
+                reference_id=reference_id,
+                txn_date=txn_date
+            )
+            pdf_attachment = MIMEApplication(pdf_data, _subtype="pdf")
+            filename = f"ZoiKYC_Invoice_{reference_id}.pdf"
+            pdf_attachment.add_header('Content-Disposition', 'attachment', filename=filename)
+            msg.attach(pdf_attachment)
+            print(f"📄 Attached PDF Invoice: {filename}")
+        except Exception as pe:
+            print(f"⚠️ PDF Invoice generation failed: {pe}")
+
+        try:
+            with smtplib.SMTP_SSL(smtp_server, port, timeout=15) as server:
+                server.login(sender_email, password)
+                server.sendmail(sender_email, to_email, msg.as_string())
+            print(f"✅ [RECHARGE EMAIL + PDF SUCCESS] Sent confirmation receipt & PDF invoice to {to_email}")
+        except Exception as e:
+            print(f"❌ [RECHARGE EMAIL FAIL] Failed sending to {to_email}: {str(e)}")
+
+
+def send_wallet_recharge_email(to_email, user_name, company_name, amount, platform_fee, total_paid, updated_balance, reference_id, client_id=None, gstin=None, address=None):
+    """
+    Asynchronously dispatches a branded HTML email confirmation and PDF invoice to the user upon wallet recharge.
+    """
+    app = current_app._get_current_object()
+    txn_date = datetime.now().strftime("%d %b %Y, %I:%M %p IST")
+    thread = threading.Thread(
+        target=_async_send_recharge_email_task,
+        args=(app, to_email, user_name, company_name, client_id, gstin, address, amount, platform_fee, total_paid, updated_balance, reference_id, txn_date)
+    )
+    thread.daemon = True
+    thread.start()
+    return True
+
+
+def _async_send_low_balance_task(app, to_email, user_name, company_name, client_id, balance):
+    """Worker task that dispatches a low wallet balance warning email."""
+    with app.app_context():
+        smtp_server = os.environ.get("MAIL_SERVER", "smtp.hostinger.com")
+        port = int(os.environ.get("MAIL_PORT", 465))
+        sender_email = os.environ.get("MAIL_USERNAME", "info@zoikyc.com")
+        password = os.environ.get("MAIL_PASSWORD", "Zoikyc@32132321")
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"Action Required: Low Wallet Balance Alert (₹{balance:,.2f}) — ZoiKYC"
+        msg["From"] = f"ZoiKYC <{sender_email}>"
+        msg["To"] = to_email
+
+        try:
+            html_content = render_template(
+                'email/low_wallet_balance_alert.html',
+                user_name=user_name,
+                company_name=company_name,
+                client_id=client_id,
+                balance=balance
+            )
+        except Exception as te:
+            print(f"⚠️ Low balance template error: {te}")
+            html_content = f"<h2>Action Required: Low Wallet Balance Alert</h2><p>Your wallet balance is ₹{balance:,.2f}. Please recharge at https://zoikyc.com/wallet/recharge</p>"
+
         msg.attach(MIMEText(html_content, "html"))
 
         try:
             with smtplib.SMTP_SSL(smtp_server, port, timeout=15) as server:
                 server.login(sender_email, password)
                 server.sendmail(sender_email, to_email, msg.as_string())
-            print(f"✅ [RECHARGE EMAIL SUCCESS] Sent confirmation receipt to {to_email}")
+            print(f"✅ [LOW BALANCE ALERT SUCCESS] Sent low balance notice to {to_email}")
         except Exception as e:
-            print(f"❌ [RECHARGE EMAIL FAIL] Failed sending to {to_email}: {str(e)}")
+            print(f"❌ [LOW BALANCE ALERT FAIL] Failed sending to {to_email}: {str(e)}")
 
 
-def send_wallet_recharge_email(to_email, user_name, company_name, amount, platform_fee, total_paid, updated_balance, reference_id):
+def send_low_balance_alert_email(to_email, user_name, company_name, client_id, balance):
     """
-    Asynchronously dispatches a branded HTML email confirmation to the user upon wallet recharge.
+    Asynchronously dispatches a branded Low Wallet Balance Alert email to a company.
     """
     app = current_app._get_current_object()
-    txn_date = datetime.now().strftime("%d %b %Y, %I:%M %p IST")
     thread = threading.Thread(
-        target=_async_send_recharge_email_task,
-        args=(app, to_email, user_name, company_name, amount, platform_fee, total_paid, updated_balance, reference_id, txn_date)
+        target=_async_send_low_balance_task,
+        args=(app, to_email, user_name, company_name, client_id, balance)
     )
     thread.daemon = True
     thread.start()
     return True
+
+
 

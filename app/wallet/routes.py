@@ -142,12 +142,16 @@ def verify_payment():
         )
 
         if success:
-            # Asynchronously dispatch confirmation receipt email to user's mailbox
+            # Asynchronously dispatch confirmation receipt email and PDF invoice to user's mailbox
             try:
+                comp = current_user.company
                 send_wallet_recharge_email(
                     to_email=current_user.email,
                     user_name=current_user.name,
-                    company_name=current_user.company.name if current_user.company else "Organisation",
+                    company_name=comp.name if comp else "Organisation",
+                    client_id=comp.client_id if comp else None,
+                    gstin=comp.gstin if comp else None,
+                    address=comp.address if comp else None,
                     amount=base_amount,
                     platform_fee=platform_fee,
                     total_paid=total_payable,

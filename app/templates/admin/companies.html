@@ -77,8 +77,11 @@
             <div>{{ comp.email }}</div>
             <div style="font-size: 0.75rem; color: var(--text-muted);">{{ comp.phone }}</div>
           </td>
-          <td style="font-weight: 800; color: #059669;">
+          <td style="font-weight: 800; color: {% if comp.wallet and comp.wallet.balance < 500 %}#d97706{% else %}#059669{% endif %};">
             {{ comp.wallet.balance | currency if comp.wallet else '₹0.00' }}
+            {% if comp.wallet and comp.wallet.balance < 500 %}
+              <div style="font-size: 0.68rem; color: #d97706; font-weight: 700;">Low Balance</div>
+            {% endif %}
           </td>
           <td>
             {% if comp.status == 'active' %}
@@ -93,9 +96,19 @@
             {{ comp.created_at.strftime('%b %d, %Y') if comp.created_at else '' }}
           </td>
           <td>
-            <a href="{{ url_for('admin.company_detail', company_id=comp.id) }}" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 14px; font-size: 0.78rem;">
-              <i class="bi bi-gear-fill"></i> Manage
-            </a>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="{{ url_for('admin.company_detail', company_id=comp.id) }}" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 12px; font-size: 0.78rem;">
+                <i class="bi bi-gear-fill"></i> Manage
+              </a>
+              {% if comp.wallet and comp.wallet.balance < 500 %}
+              <form method="POST" action="{{ url_for('admin.send_low_balance_alert', company_id=comp.id) }}" style="display: inline;" onsubmit="return confirm('Send Low Balance alert to {{ comp.name }} ({{ comp.email }})?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" title="Send Low Balance Alert Email" class="lang-toggle-pill" style="background: rgba(245, 158, 11, 0.15); color: #b45309; border: 1px solid #fde68a; cursor: pointer; padding: 6px 10px; font-size: 0.78rem;">
+                  <i class="bi bi-bell-fill"></i>
+                </button>
+              </form>
+              {% endif %}
+            </div>
           </td>
         </tr>
         {% endfor %}

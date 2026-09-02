@@ -378,3 +378,40 @@ def adjust_wallet(company_id):
         flash(f"Error adjusting wallet: {str(e)}", "danger")
 
     return redirect(url_for('admin.company_detail', company_id=company.id))
+
+@admin_bp.route('/companies/<int:company_id>/send-low-balance-alert', methods=['POST'])
+@admin_required
+def send_low_balance_alert(company_id):
+    from app.wallet.services import send_low_balance_alert_email
+    company = Company.query.get_or_404(company_id)
+    wallet = company.wallet
+    balance = wallet.balance if wallet else Decimal('0.00')
+
+    # Send low balance alert to company primary email and admin signatory
+    primary_user = company.users.filter_by(role='company_admin').first()
+    recipient_email = company.email
+    recipient_name = company.authorised_signatory_name
+
+    try:
+        send_low_balance_alert_email(
+            to_email=recipient_email,
+            user_name=recipient_name,
+            company_name=company.name,
+            client_id=company.client_id,
+            balance=balance
+        )
+        if primary_user and primary_user.email.lower() != recipient_email.lower():
+            send_low_balance_alert_email(
+                to_email=primary_user.email,
+                user_name=primary_user.name,
+                company_name=company.name,
+                client_id=company.client_id,
+                balance=balance
+            )
+
+        flash(f"Low balance alert email sent to '{company.name}' ({recipient_email}) with current balance ₹{balance:,.2f}.", "success")
+    except Exception as e:
+        flash(f"Failed to dispatch alert email: {str(e)}", "danger")
+
+    return redirect(request.referrer or url_for('admin.company_detail', company_id=company.id))
+
