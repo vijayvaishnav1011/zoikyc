@@ -692,6 +692,13 @@ body {
   margin-bottom: 28px;
 }
 
+.doc-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
 @media (max-width: 1280px) {
   .admin-metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -710,6 +717,10 @@ body {
   }
   .admin-split-grid {
     grid-template-columns: 1fr;
+  }
+  .doc-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
   }
 }
 
@@ -927,7 +938,98 @@ body {
   .auth-split-right {
     width: 100%;
     flex: 0 0 auto;
-    padding: 32px 24px;
+/* Global Mobile & Overflow Protection */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 16px;
+  border-radius: var(--radius-md);
+}
+
+.table-responsive::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: rgba(126, 34, 206, 0.25);
+  border-radius: 4px;
+}
+
+.custom-table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+}
+
+.break-word, .code-ref, .api-key-text {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+/* Medium Devices (Tablets & Small Laptops <= 992px) */
+@media (max-width: 992px) {
+  .sidebar {
+    transform: translateX(-100%);
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.15);
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-close-btn {
+    display: flex;
+  }
+
+  .mobile-toggle-btn {
+    display: flex;
+  }
+
+  .main-wrapper {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .auth-master-card {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .auth-split-left {
+    width: 100%;
+    flex: 0 0 auto;
+    padding: 28px 24px;
+    min-height: 200px;
+  }
+
+  .auth-illustration-container {
+    margin: 14px 0;
+  }
+
+  .illustration-svg-box {
+    max-width: 180px;
+    margin-bottom: 10px;
+  }
+
+  .auth-split-right {
+    width: 100%;
+    flex: 0 0 auto;
+    padding: 30px 24px;
   }
 }
 
@@ -942,15 +1044,16 @@ body {
   }
 
   .auth-split-left {
-    padding: 24px 18px;
+    padding: 22px 16px;
+    min-height: 160px;
   }
 
   .auth-split-right {
-    padding: 28px 18px;
+    padding: 24px 16px;
   }
 
   .auth-ref-title {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
   }
 
   .ref-form-grid {
@@ -960,14 +1063,30 @@ body {
 
   .preset-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 
   .top-navbar {
-    padding: 0 16px;
+    padding: 0 14px;
+    height: 60px;
+    gap: 8px;
+  }
+
+  .top-navbar-left {
+    gap: 8px;
+    min-width: 0;
   }
 
   .top-navbar-left h2 {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .top-navbar-right {
+    gap: 8px;
+    flex-shrink: 0;
   }
 
   .wallet-pill-label {
@@ -979,56 +1098,92 @@ body {
   }
 
   .page-container {
-    padding: 18px 14px;
+    padding: 16px 12px;
   }
 
   .dashboard-hero-banner {
-    padding: 24px 18px;
+    padding: 20px 16px;
+  }
+
+  .dashboard-hero-banner h1 {
+    font-size: 1.35rem !important;
   }
 
   .card {
-    padding: 20px 16px;
+    padding: 18px 14px;
     border-radius: var(--radius-lg);
-    margin-bottom: 18px;
+    margin-bottom: 16px;
   }
 
   .metric-grid {
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 12px;
   }
 
   .metric-card {
-    padding: 18px;
+    padding: 16px;
   }
 
   .metric-value {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
+  }
+
+  /* Admin Header Buttons & Filter Stacks */
+  .admin-action-bar, .filter-bar-wrap {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .admin-action-bar > *, .filter-bar-wrap > * {
+    width: 100% !important;
   }
 }
 
 /* Extra Small Devices (Phones <= 480px) */
 @media (max-width: 480px) {
   .auth-left-caption {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .auth-left-subcaption {
-    font-size: 0.78rem;
+    font-size: 0.75rem;
   }
 
   .btn-tiancai-pill, .btn-purple-pill {
-    padding: 13px 18px;
-    font-size: 0.92rem;
+    padding: 12px 16px;
+    font-size: 0.9rem;
   }
 
   .wallet-pill {
-    padding: 5px 10px;
-    font-size: 0.78rem;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    gap: 4px;
   }
 
   .avatar-circle {
-    width: 34px;
-    height: 34px;
-    font-size: 0.85rem;
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+
+  .ref-form-control {
+    font-size: 0.92rem;
+    padding: 9px 12px;
+  }
+
+  .preset-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .btn-preset {
+    padding: 10px 8px;
+    font-size: 0.88rem;
+  }
+
+  .top-navbar-left h2 {
+    font-size: 0.95rem;
   }
 }
+
