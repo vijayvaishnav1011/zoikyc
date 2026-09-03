@@ -48,7 +48,15 @@
   padding: 0;
 }
 
+html {
+  font-size: 14px; /* Decreased font size by 2px across the entire application (from standard 16px to 14px) */
+  scroll-behavior: smooth;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
+  font-size: 14px;
   font-family: var(--font-main);
   background-color: var(--bg-body);
   color: var(--text-dark);
@@ -938,6 +946,10 @@ body {
   .auth-split-right {
     width: 100%;
     flex: 0 0 auto;
+    padding: 30px 24px;
+  }
+}
+
 /* Global Mobile & Overflow Protection */
 html, body {
   max-width: 100%;
