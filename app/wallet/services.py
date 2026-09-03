@@ -139,7 +139,7 @@ from email.mime.application import MIMEApplication
 from app.wallet.invoice import generate_recharge_pdf_invoice
 
 def _async_send_recharge_email_task(app, to_email, user_name, company_name, client_id, gstin, address, amount, platform_fee, total_paid, updated_balance, reference_id, txn_date):
-    """Worker task that dispatches responsive confirmation receipt email with PDF Tax Invoice attachment."""
+    """Worker task that dispatches responsive confirmation receipt email upon wallet recharge."""
     with app.app_context():
         smtp_server = os.environ.get("MAIL_SERVER", "smtp.hostinger.com")
         port = int(os.environ.get("MAIL_PORT", 465))
@@ -175,42 +175,18 @@ def _async_send_recharge_email_task(app, to_email, user_name, company_name, clie
         alt_part.attach(MIMEText(html_content, "html"))
         msg.attach(alt_part)
 
-        # Generate and attach PDF Tax Invoice / Receipt
-        try:
-            pdf_data = generate_recharge_pdf_invoice(
-                company_name=company_name,
-                client_id=client_id,
-                gstin=gstin,
-                address=address,
-                user_name=user_name,
-                amount=amount,
-                platform_fee=platform_fee,
-                total_paid=total_paid,
-                reference_id=reference_id,
-                txn_date=txn_date,
-                fee_name=fee_name,
-                fee_percent=fee_percent
-            )
-            pdf_attachment = MIMEApplication(pdf_data, _subtype="pdf")
-            filename = f"ZoiKYC_Invoice_{reference_id}.pdf"
-            pdf_attachment.add_header('Content-Disposition', 'attachment', filename=filename)
-            msg.attach(pdf_attachment)
-            print(f"📄 Attached PDF Invoice: {filename}")
-        except Exception as pe:
-            print(f"⚠️ PDF Invoice generation failed: {pe}")
-
         try:
             with smtplib.SMTP_SSL(smtp_server, port, timeout=15) as server:
                 server.login(sender_email, password)
                 server.sendmail(sender_email, to_email, msg.as_string())
-            print(f"✅ [RECHARGE EMAIL + PDF SUCCESS] Sent confirmation receipt & PDF invoice to {to_email}")
+            print(f"✅ [RECHARGE EMAIL SUCCESS] Sent confirmation receipt to {to_email}")
         except Exception as e:
             print(f"❌ [RECHARGE EMAIL FAIL] Failed sending to {to_email}: {str(e)}")
 
 
 def send_wallet_recharge_email(to_email, user_name, company_name, amount, platform_fee, total_paid, updated_balance, reference_id, client_id=None, gstin=None, address=None):
     """
-    Asynchronously dispatches a branded HTML email confirmation and PDF invoice to the user upon wallet recharge.
+    Asynchronously dispatches a branded HTML email confirmation to the user upon wallet recharge.
     """
     app = current_app._get_current_object()
     txn_date = datetime.now().strftime("%d %b %Y, %I:%M %p IST")
