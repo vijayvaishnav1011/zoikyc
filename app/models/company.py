@@ -18,6 +18,9 @@ class Company(db.Model):
     gstin = db.Column(db.String(20), nullable=True)
     address = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(30), nullable=False, default='active') # active, pending_verification, suspended
+    # Custom per-client pricing and float rules configured by Super Admin
+    per_kyc_price = db.Column(db.Numeric(10, 2), nullable=False, default=20.00)
+    min_recharge_amount = db.Column(db.Numeric(10, 2), nullable=False, default=1000.00)
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 

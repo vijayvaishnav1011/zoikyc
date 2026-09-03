@@ -72,20 +72,20 @@
     {% endif %}
   </div>
 
-  <!-- API Services Status Metric Card -->
+  <!-- API Pricing & Verification Metric Card -->
   <div class="metric-card">
     <div>
       <div class="metric-title">
-        <i class="bi bi-cpu" style="color: var(--tiancai-purple-light);"></i> FinTech Middleware
+        <i class="bi bi-tag-fill" style="color: var(--tiancai-purple-light);"></i> Verification Pricing
       </div>
       <div class="metric-value" style="font-size: 1.25rem; color: var(--text-dark);">
-        Phase 1 Active
+        ₹{{ "%.2f"|format(company.per_kyc_price) if company else '20.00' }} <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">/ KYC check</span>
       </div>
       <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
-        KYC, KRA, E-Sign APIs
+        Min. Recharge Top-up: <strong style="color: #059669;">₹{{ "%.2f"|format(company.min_recharge_amount) if company else '1000.00' }}</strong>
       </div>
     </div>
-    <span class="metric-badge" style="background: rgba(126, 34, 206, 0.1); color: var(--tiancai-purple-medium); font-weight: 800;">Ready</span>
+    <span class="metric-badge" style="background: rgba(126, 34, 206, 0.1); color: var(--tiancai-purple-medium); font-weight: 800;">Your Tier</span>
   </div>
 </div>
 

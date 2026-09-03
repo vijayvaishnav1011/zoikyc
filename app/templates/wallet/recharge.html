@@ -38,8 +38,16 @@
 
       <!-- Custom Amount Field -->
       <div class="ref-form-group" style="margin-bottom: 20px;">
-        <label class="ref-form-label" for="amount">Or Enter Custom Amount (₹) *</label>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
+          <label class="ref-form-label" for="amount" style="margin-bottom: 0;">Recharge Amount (₹) *</label>
+          <span style="font-size: 0.76rem; font-weight: 700; color: #059669; background: rgba(5, 150, 105, 0.1); padding: 3px 10px; border-radius: 12px;">
+            Min. Top-up: ₹{{ "%.2f"|format(min_recharge_amount) }}
+          </span>
+        </div>
         {{ form.amount(class="ref-form-control", id="amount", value="10000.00", placeholder="e.g. 10000.00", style="font-size: 1.2rem; font-weight: 800; color: #059669;") }}
+        <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 5px;">
+          Your KYC Verification Rate: <strong style="color: #7e22ce;">₹{{ "%.2f"|format(per_kyc_price) }} / KYC</strong>
+        </div>
         {% if form.amount.errors %}
           <span style="color: var(--accent-rose); font-size: 0.8rem;">{{ form.amount.errors[0] }}</span>
         {% endif %}
@@ -96,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const summaryTotal = document.getElementById('summaryTotal');
 
   const platformFeePercent = {{ fee_percent }};
+  const minRechargeLimit = {{ min_recharge_amount }};
 
   function updateBreakdown() {
     const rawVal = parseFloat(amountInput.value) || 0;
@@ -123,9 +132,9 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const amountVal = parseFloat(amountInput.value);
 
-    if (!amountVal || amountVal <= 0) {
+    if (!amountVal || amountVal < minRechargeLimit) {
       paymentAlert.className = "alert alert-danger";
-      paymentAlert.textContent = "Please enter a valid recharge amount greater than ₹0.";
+      paymentAlert.textContent = `Please enter at least ₹${minRechargeLimit.toLocaleString('en-IN', { minimumFractionDigits: 2 })} (minimum recharge limit for your organisation).`;
       paymentAlert.style.display = "block";
       return;
     }

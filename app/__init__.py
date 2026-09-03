@@ -66,6 +66,10 @@ def create_app(config_name=None):
             try:
                 db.session.execute(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS client_id VARCHAR(50);"))
                 db.session.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_companies_client_id ON companies(client_id);"))
+                db.session.execute(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS per_kyc_price NUMERIC(10, 2) DEFAULT 20.00;"))
+                db.session.execute(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS min_recharge_amount NUMERIC(10, 2) DEFAULT 1000.00;"))
+                db.session.execute(text("UPDATE companies SET per_kyc_price = 20.00 WHERE per_kyc_price IS NULL;"))
+                db.session.execute(text("UPDATE companies SET min_recharge_amount = 1000.00 WHERE min_recharge_amount IS NULL;"))
                 db.session.commit()
             except Exception as se:
                 db.session.rollback()

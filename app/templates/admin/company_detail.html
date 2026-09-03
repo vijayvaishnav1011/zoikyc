@@ -12,28 +12,30 @@
 </div>
 
 <!-- Company Header Card -->
-<div class="card" style="background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%); border-color: #e9d5ff; margin-bottom: 24px;">
-  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
-    <div>
-      <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--tiancai-purple-light); font-weight: 800; letter-spacing: 1px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-        <i class="bi bi-building"></i> Client Organization
-        <span class="metric-badge" style="background: var(--tiancai-purple-gradient); color: #ffffff; font-size: 0.75rem; padding: 2px 8px;">
+<div class="card company-detail-header-card">
+  <div class="company-header-flex">
+    <div class="company-header-meta">
+      <div class="company-badge-row">
+        <span><i class="bi bi-building"></i> Client Organization</span>
+        <span class="metric-badge company-client-id-badge">
           {{ company.client_id or 'ZOI-CLIENT' }}
         </span>
       </div>
-      <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--tiancai-purple-dark); margin-bottom: 6px;">
+      <h1 class="company-header-name">
         {{ company.name }}
       </h1>
-      <p style="color: var(--text-muted); font-size: 0.88rem;">
-        Signatory: <strong>{{ company.authorised_signatory_name }}</strong> &bull; Email: <strong>{{ company.email }}</strong> &bull; Phone: <strong>{{ company.phone }}</strong>
-      </p>
-      <p style="color: var(--text-light); font-size: 0.8rem; margin-top: 4px;">
-        Address: {{ company.address }}, {{ company.city }}, {{ company.state }} - {{ company.zip_code }}, {{ company.country }} &bull; GSTIN: {{ company.gstin or 'Not Provided' }}
-      </p>
+      <div class="company-header-contact">
+        <span>Signatory: <strong>{{ company.authorised_signatory_name }}</strong></span>
+        <span>Email: <strong>{{ company.email }}</strong></span>
+        <span>Phone: <strong>{{ company.phone }}</strong></span>
+      </div>
+      <div class="company-header-address">
+        Address: {{ company.address }}, {{ company.city }}, {{ company.state }} - {{ company.zip_code }}, {{ company.country }} &bull; GSTIN: <strong>{{ company.gstin or 'Not Provided' }}</strong>
+      </div>
     </div>
 
     <!-- Status Change Action Form -->
-    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
+    <div class="company-header-status-box">
       <div>
         {% if company.status == 'active' %}
           <span class="metric-badge badge-active" style="padding: 8px 16px; font-size: 0.85rem;"><i class="bi bi-check-circle-fill"></i> Active (Verified)</span>
@@ -44,14 +46,14 @@
         {% endif %}
       </div>
 
-      <form method="POST" action="{{ url_for('admin.update_company_status', company_id=company.id) }}" style="display: flex; gap: 8px; align-items: center;">
+      <form method="POST" action="{{ url_for('admin.update_company_status', company_id=company.id) }}" class="company-status-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <select name="status" class="ref-form-control" style="padding: 6px 12px; font-size: 0.8rem; height: auto;">
+        <select name="status" class="ref-form-control" style="padding: 8px 12px; font-size: 0.82rem; height: auto;">
           <option value="active" {% if company.status == 'active' %}selected{% endif %}>Active</option>
           <option value="pending_verification" {% if company.status == 'pending_verification' %}selected{% endif %}>Pending Verification</option>
           <option value="suspended" {% if company.status == 'suspended' %}selected{% endif %}>Suspended</option>
         </select>
-        <button type="submit" class="btn-tiancai-pill" style="padding: 6px 14px; font-size: 0.8rem; width: auto; min-height: auto;">
+        <button type="submit" class="btn-tiancai-pill" style="padding: 8px 16px; font-size: 0.82rem; width: auto; min-height: auto; white-space: nowrap;">
           Update Status
         </button>
       </form>
@@ -59,15 +61,15 @@
   </div>
 </div>
 
-<!-- 5 Compliance Documents Matrix (With Direct One-Click Approval / Rejection) -->
+<!-- 4 Compliance Documents Matrix -->
 <div class="card" style="margin-bottom: 24px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+  <div class="admin-doc-card-header">
     <div>
       <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark);">Mandatory Compliance Documents Verification (4)</h3>
       <p style="font-size: 0.82rem; color: var(--text-muted);">Review uploaded legal documents. Approving all 4 automatically verifies the organization.</p>
     </div>
 
-    <form method="POST" action="{{ url_for('admin.approve_all_documents', company_id=company.id) }}" style="display: inline;">
+    <form method="POST" action="{{ url_for('admin.approve_all_documents', company_id=company.id) }}" class="admin-approve-all-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <button type="submit" class="btn-tiancai-pill" style="padding: 8px 18px; font-size: 0.82rem; width: auto; min-height: auto; background: #059669; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);">
         <i class="bi bi-check-all"></i> Approve All 4 Documents & Activate
@@ -78,9 +80,9 @@
   <div class="admin-doc-grid">
     {% for doc_key, title in required_doc_types %}
     {% set doc = docs_by_type.get(doc_key) %}
-    <div style="background: #f8fafc; border: 1px solid var(--border-input); border-radius: var(--radius-lg); padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+    <div class="admin-doc-card-item">
       <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 6px;">
           <span style="font-weight: 800; font-size: 0.9rem; color: var(--text-dark);">{{ title }}</span>
           {% if doc %}
             {% if doc.status == 'approved' %}
@@ -97,8 +99,8 @@
 
         {% if doc %}
         <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">
-          <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--tiancai-purple-dark);">
-            <i class="bi bi-file-earmark-pdf"></i> {{ doc.document_name }}
+          <div class="admin-doc-file-info">
+            <i class="bi bi-file-earmark-pdf"></i> <span>{{ doc.document_name }}</span>
           </div>
           <div style="font-size: 0.72rem; color: var(--text-light); margin-top: 4px;">
             Uploaded: {{ doc.created_at.strftime('%b %d, %Y %H:%M') if doc.created_at else '' }}
@@ -115,26 +117,26 @@
       </div>
 
       {% if doc %}
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <div class="admin-doc-actions">
         <a href="{{ url_for('admin.download_document', doc_id=doc.id) }}" target="_blank" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 12px; font-size: 0.78rem;">
           <i class="bi bi-eye"></i> View
         </a>
 
         {% if doc.status != 'approved' %}
-        <form method="POST" action="{{ url_for('admin.document_action', doc_id=doc.id) }}" style="display: inline;">
+        <form method="POST" action="{{ url_for('admin.document_action', doc_id=doc.id) }}" style="display: inline; flex: 1 1 auto;">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <input type="hidden" name="action" value="approve">
-          <button type="submit" class="lang-toggle-pill" style="background: #d1fae5; color: #065f46; border: none; cursor: pointer; padding: 6px 12px; font-size: 0.78rem;">
+          <button type="submit" class="lang-toggle-pill" style="background: #d1fae5; color: #065f46; border: none; cursor: pointer; padding: 6px 12px; font-size: 0.78rem; width: 100%;">
             <i class="bi bi-check-lg"></i> Approve
           </button>
         </form>
         {% endif %}
 
         {% if doc.status != 'rejected' %}
-        <form method="POST" action="{{ url_for('admin.document_action', doc_id=doc.id) }}" style="display: inline;">
+        <form method="POST" action="{{ url_for('admin.document_action', doc_id=doc.id) }}" style="display: inline; flex: 1 1 auto;">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <input type="hidden" name="action" value="reject">
-          <button type="submit" class="lang-toggle-pill" style="background: #ffe4e6; color: #9f1239; border: none; cursor: pointer; padding: 6px 12px; font-size: 0.78rem;">
+          <button type="submit" class="lang-toggle-pill" style="background: #ffe4e6; color: #9f1239; border: none; cursor: pointer; padding: 6px 12px; font-size: 0.78rem; width: 100%;">
             <i class="bi bi-x-lg"></i> Reject
           </button>
         </form>
@@ -146,12 +148,89 @@
   </div>
 </div>
 
+<!-- Client Pricing & Minimum Recharge Card -->
+<div class="card pricing-limits-card">
+  <div class="pricing-card-header">
+    <div>
+      <span class="metric-badge" style="background: rgba(126, 34, 206, 0.12); color: #7e22ce; font-weight: 800; font-size: 0.72rem; margin-bottom: 6px; display: inline-block;">
+        <i class="bi bi-tag-fill"></i> Commercial Terms
+      </span>
+      <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+        <i class="bi bi-cash-coin" style="color: #7e22ce;"></i> Per-KYC Pricing & Recharge Limits
+      </h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 2px;">
+        Define custom verification billing and minimum float recharge requirements specific to this client organisation.
+      </p>
+    </div>
+
+    <!-- Quick Live Status Pill -->
+    <div class="pricing-live-badges">
+      <div class="pricing-pill-item">
+        <span style="color: var(--text-muted);">Per KYC:</span> <strong style="color: #7e22ce;">₹{{ "%.2f"|format(company.per_kyc_price) }}</strong>
+      </div>
+      <div class="pricing-pill-item">
+        <span style="color: var(--text-muted);">Min Recharge:</span> <strong style="color: #059669;">₹{{ "%.2f"|format(company.min_recharge_amount) }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <form method="POST" action="{{ url_for('admin.update_company_pricing', company_id=company.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+    <div class="ref-form-grid" style="margin-bottom: 18px;">
+      <!-- 1. Per-KYC Verification Price -->
+      <div class="ref-form-group">
+        <label class="ref-form-label" style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+          <span>Per-KYC Price (₹) *</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">Charged per successful check</span>
+        </label>
+        <div class="pricing-preset-pills-row">
+          <button type="button" class="btn-preset-kyc" data-val="10.00">₹10</button>
+          <button type="button" class="btn-preset-kyc" data-val="15.00">₹15</button>
+          <button type="button" class="btn-preset-kyc" data-val="20.00">₹20</button>
+          <button type="button" class="btn-preset-kyc" data-val="25.00">₹25</button>
+          <button type="button" class="btn-preset-kyc" data-val="30.00">₹30</button>
+        </div>
+        <div style="position: relative;">
+          <span class="currency-prefix" style="color: #7e22ce;">₹</span>
+          <input type="number" step="0.01" min="0" name="per_kyc_price" id="perKycInput" value="{{ '%.2f'|format(company.per_kyc_price) }}" required class="ref-form-control" style="padding-left: 30px; font-weight: 800; color: #7e22ce;">
+        </div>
+      </div>
+
+      <!-- 2. Minimum Wallet Recharge Amount -->
+      <div class="ref-form-group">
+        <label class="ref-form-label" style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+          <span>Minimum Recharge Amount (₹) *</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">Floor limit for client top-ups</span>
+        </label>
+        <div class="pricing-preset-pills-row">
+          <button type="button" class="btn-preset-rech" data-val="500.00">₹500</button>
+          <button type="button" class="btn-preset-rech" data-val="1000.00">₹1,000</button>
+          <button type="button" class="btn-preset-rech" data-val="2000.00">₹2,000</button>
+          <button type="button" class="btn-preset-rech" data-val="5000.00">₹5,000</button>
+          <button type="button" class="btn-preset-rech" data-val="10000.00">₹10,000</button>
+        </div>
+        <div style="position: relative;">
+          <span class="currency-prefix" style="color: #059669;">₹</span>
+          <input type="number" step="0.01" min="1" name="min_recharge_amount" id="minRechInput" value="{{ '%.2f'|format(company.min_recharge_amount) }}" required class="ref-form-control" style="padding-left: 30px; font-weight: 800; color: #059669;">
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end;">
+      <button type="submit" class="btn-purple-pill pricing-save-btn">
+        <i class="bi bi-check2-circle"></i> Save Pricing & Limits
+      </button>
+    </div>
+  </form>
+</div>
+
 <!-- Two Columns: Manual Wallet Adjustment & Team Users -->
 <div class="admin-split-grid">
   
   <!-- Manual Wallet Adjustment Card -->
   <div class="card" style="margin-bottom: 0;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
+    <div class="wallet-adj-header">
       <div>
         <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
           <i class="bi bi-wallet2" style="color: #059669;"></i> Wallet Balance & Adjustment
@@ -228,14 +307,14 @@
 </div>
 
 <!-- Recent Transactions of This Client -->
-<div class="card">
+<div class="card" style="margin-top: 24px;">
   <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin-bottom: 18px;">
     Recent Transaction Ledger ({{ company.name }})
   </h3>
 
   {% if transactions %}
   <div class="table-responsive">
-    <table class="custom-table">
+    <table class="custom-table admin-txn-table">
       <thead>
         <tr>
           <th>Reference ID</th>
@@ -274,4 +353,31 @@
   </div>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const perKycInput = document.getElementById('perKycInput');
+  const minRechInput = document.getElementById('minRechInput');
+
+  document.querySelectorAll('.btn-preset-kyc').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (perKycInput) {
+        perKycInput.value = btn.dataset.val;
+        perKycInput.focus();
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-preset-rech').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (minRechInput) {
+        minRechInput.value = btn.dataset.val;
+        minRechInput.focus();
+      }
+    });
+  });
+});
+</script>
 {% endblock %}

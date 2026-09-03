@@ -114,6 +114,7 @@ def companies():
     )
 
 @admin_bp.route('/companies/<int:company_id>')
+@admin_bp.route('/company/<int:company_id>')
 @admin_required
 def company_detail(company_id):
     company = Company.query.get_or_404(company_id)
@@ -446,5 +447,37 @@ def settings():
 
     fee_percent, fee_name = get_platform_fee_config()
     return render_template('admin/settings.html', fee_percent=fee_percent, fee_name=fee_name)
+
+@admin_bp.route('/company/<int:company_id>/pricing', methods=['POST'])
+@admin_bp.route('/companies/<int:company_id>/pricing', methods=['POST'])
+@admin_required
+def update_company_pricing(company_id):
+    company = Company.query.get_or_404(company_id)
+    per_kyc_val = request.form.get('per_kyc_price', '').strip()
+    min_rech_val = request.form.get('min_recharge_amount', '').strip()
+
+    try:
+        per_kyc = Decimal(per_kyc_val)
+        if per_kyc < Decimal('0.00'):
+            raise ValueError()
+    except Exception:
+        flash('Please enter a valid non-negative per-KYC verification price.', 'danger')
+        return redirect(url_for('admin.company_detail', company_id=company.id))
+
+    try:
+        min_rech = Decimal(min_rech_val)
+        if min_rech < Decimal('1.00'):
+            raise ValueError()
+    except Exception:
+        flash('Please enter a valid minimum recharge amount (at least ₹1.00).', 'danger')
+        return redirect(url_for('admin.company_detail', company_id=company.id))
+
+    company.per_kyc_price = per_kyc
+    company.min_recharge_amount = min_rech
+    db.session.commit()
+
+    flash(f"Updated commercial rules for '{company.name}' — Per KYC: ₹{per_kyc:,.2f} | Min Recharge: ₹{min_rech:,.2f}.", "success")
+    return redirect(url_for('admin.company_detail', company_id=company.id))
+
 
 

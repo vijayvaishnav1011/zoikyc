@@ -946,10 +946,13 @@ html, body {
 
 .table-responsive {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   margin-bottom: 16px;
   border-radius: var(--radius-md);
+  border: 1px solid var(--border-input);
+  background: #ffffff;
 }
 
 .table-responsive::-webkit-scrollbar {
@@ -967,8 +970,33 @@ html, body {
 
 .custom-table {
   width: 100%;
-  min-width: 620px;
+  min-width: 680px;
   border-collapse: collapse;
+}
+
+.custom-table th, .custom-table td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-input);
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+
+.custom-table th {
+  background: #f8fafc;
+  color: var(--text-dark);
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-companies-table {
+  min-width: 880px;
+}
+
+.admin-txn-table {
+  min-width: 780px;
 }
 
 .break-word, .code-ref, .api-key-text {
@@ -976,8 +1004,244 @@ html, body {
   overflow-wrap: anywhere;
 }
 
-/* Medium Devices (Tablets & Small Laptops <= 992px) */
-@media (max-width: 992px) {
+/* ==========================================================================
+   SUPER ADMIN PORTAL RESPONSIVE COMPONENT CLASSES
+   ========================================================================== */
+
+/* 1. Admin Companies Directory Header & Filter Pills */
+.admin-hero-btn-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-companies-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.admin-filter-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-search-form {
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.admin-search-wrap {
+  display: flex;
+  gap: 10px;
+  max-width: 480px;
+  width: 100%;
+}
+
+/* 2. Company 360° Profile Detail Header */
+.company-detail-header-card {
+  background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
+  border-color: #e9d5ff;
+  margin-bottom: 24px;
+}
+
+.company-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.company-header-meta {
+  flex: 1 1 340px;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.company-badge-row {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--tiancai-purple-light);
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.company-client-id-badge {
+  background: var(--tiancai-purple-gradient);
+  color: #ffffff;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+}
+
+.company-header-name {
+  font-size: clamp(1.35rem, 2.8vw, 1.85rem);
+  font-weight: 800;
+  color: var(--tiancai-purple-dark);
+  margin-bottom: 8px;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.company-header-contact {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.company-header-address {
+  color: var(--text-light);
+  font-size: 0.82rem;
+  margin-top: 4px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.company-header-status-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+
+.company-status-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* 3. Compliance Document Verification Cards */
+.admin-doc-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.admin-doc-card-item {
+  background: #f8fafc;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.admin-doc-file-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--tiancai-purple-dark);
+}
+
+.admin-doc-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.admin-doc-actions > * {
+  flex: 1 1 auto;
+  text-align: center;
+}
+
+/* 4. Pricing & Limits Card */
+.pricing-limits-card {
+  margin-bottom: 24px;
+  border: 1.5px solid #e9d5ff;
+  background: linear-gradient(to bottom, #faf5ff 0%, #ffffff 80px);
+}
+
+.pricing-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pricing-live-badges {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pricing-pill-item {
+  background: #ffffff;
+  border: 1px solid #e9d5ff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+}
+
+.pricing-preset-pills-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-preset-kyc, .btn-preset-rech {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-preset-kyc:hover, .btn-preset-rech:hover {
+  background: #f5f3ff;
+  border-color: #a855f7;
+  color: #7e22ce;
+}
+
+.currency-prefix {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 700;
+}
+
+.wallet-adj-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Medium Devices (Tablets & Small Laptops <= 1024px) */
+@media (max-width: 1024px) {
   .sidebar {
     transform: translateX(-100%);
     box-shadow: 10px 0 30px rgba(0, 0, 0, 0.15);
@@ -998,6 +1262,15 @@ html, body {
   .main-wrapper {
     margin-left: 0;
     width: 100%;
+  }
+
+  .page-container {
+    padding: 20px 16px;
+  }
+
+  .admin-split-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
   }
 
   .metric-grid {
@@ -1067,8 +1340,8 @@ html, body {
   }
 
   .top-navbar {
-    padding: 0 14px;
-    height: 60px;
+    padding: 0 12px;
+    height: 58px;
     gap: 8px;
   }
 
@@ -1078,7 +1351,7 @@ html, body {
   }
 
   .top-navbar-left h2 {
-    font-size: 1.05rem;
+    font-size: 0.98rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1098,11 +1371,11 @@ html, body {
   }
 
   .page-container {
-    padding: 16px 12px;
+    padding: 14px 10px;
   }
 
   .dashboard-hero-banner {
-    padding: 20px 16px;
+    padding: 20px 14px;
   }
 
   .dashboard-hero-banner h1 {
@@ -1110,12 +1383,22 @@ html, body {
   }
 
   .card {
-    padding: 18px 14px;
+    padding: 16px 12px;
     border-radius: var(--radius-lg);
     margin-bottom: 16px;
   }
 
   .metric-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .admin-metric-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .admin-doc-grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
@@ -1126,6 +1409,94 @@ html, body {
 
   .metric-value {
     font-size: 1.5rem;
+  }
+
+  /* Admin Hero Buttons */
+  .admin-hero-btn-group {
+    width: 100%;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .admin-hero-btn-group > * {
+    width: 100% !important;
+    justify-content: center;
+  }
+
+  /* Admin Companies Directory */
+  .admin-companies-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .admin-filter-pills {
+    width: 100%;
+  }
+
+  .admin-search-wrap {
+    max-width: 100%;
+  }
+
+  /* Admin Company Detail Header */
+  .company-header-flex {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .company-header-meta {
+    width: 100%;
+  }
+
+  .company-header-status-box {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .company-status-form {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .company-status-form select,
+  .company-status-form button {
+    width: 100% !important;
+  }
+
+  /* Admin Document Header & Action */
+  .admin-doc-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .admin-approve-all-form {
+    width: 100%;
+  }
+
+  .admin-approve-all-form button {
+    width: 100% !important;
+  }
+
+  /* Pricing Card */
+  .pricing-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .pricing-live-badges {
+    width: 100%;
+  }
+
+  .pricing-pill-item {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  .pricing-save-btn {
+    width: 100% !important;
   }
 
   /* Admin Header Buttons & Filter Stacks */
@@ -1142,6 +1513,15 @@ html, body {
 
 /* Extra Small Devices (Phones <= 480px) */
 @media (max-width: 480px) {
+  .page-container {
+    padding: 10px 6px;
+  }
+
+  .card {
+    padding: 14px 10px;
+    border-radius: 12px;
+  }
+
   .auth-left-caption {
     font-size: 1rem;
   }
@@ -1182,8 +1562,25 @@ html, body {
     font-size: 0.88rem;
   }
 
+  .admin-filter-pills .lang-toggle-pill {
+    padding: 5px 8px;
+    font-size: 0.75rem;
+  }
+
+  .company-header-name {
+    font-size: 1.25rem;
+  }
+
+  .btn-preset-kyc, .btn-preset-rech {
+    flex: 1 1 28%;
+    text-align: center;
+    padding: 4px 6px;
+    font-size: 0.72rem;
+  }
+
   .top-navbar-left h2 {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
   }
 }
+
 

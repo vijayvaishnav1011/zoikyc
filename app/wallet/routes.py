@@ -62,6 +62,9 @@ def recharge():
     wallet = current_user.company.wallet if current_user.company else None
     key_id = get_current_razorpay_key()
     fee_percent, fee_name = get_platform_fee_config()
+    company = current_user.company
+    min_recharge = float(company.min_recharge_amount) if company and company.min_recharge_amount else 1000.0
+    per_kyc = float(company.per_kyc_price) if company and company.per_kyc_price else 20.0
 
     return render_template(
         'wallet/recharge.html',
@@ -69,7 +72,9 @@ def recharge():
         wallet=wallet,
         razorpay_key_id=key_id,
         fee_percent=fee_percent,
-        fee_name=fee_name
+        fee_name=fee_name,
+        min_recharge_amount=min_recharge,
+        per_kyc_price=per_kyc
     )
 
 @wallet_bp.route('/wallet/create-razorpay-order', methods=['POST'])
@@ -80,10 +85,14 @@ def create_order():
         amount_val = data.get('amount', 1000)
         amount = Decimal(str(amount_val))
         
-        if amount <= 0:
-            return jsonify({'success': False, 'message': 'Amount must be greater than zero.'}), 400
-
         company = current_user.company
+        min_recharge = float(company.min_recharge_amount) if company and company.min_recharge_amount else 1000.0
+        if amount < Decimal(str(min_recharge)):
+            return jsonify({
+                'success': False,
+                'message': f'Minimum recharge amount for your organisation is ₹{min_recharge:,.2f}.'
+            }), 400
+
         key_id = get_current_razorpay_key()
         fee_percent, fee_name = get_platform_fee_config()
 

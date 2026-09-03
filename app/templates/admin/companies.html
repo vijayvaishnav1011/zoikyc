@@ -6,39 +6,39 @@
 {% block content %}
 <div class="card">
   <!-- Search and Filter Bar -->
-  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+  <div class="admin-companies-header">
     <div>
       <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark);">All Registered Companies</h3>
       <p style="font-size: 0.82rem; color: var(--text-muted);">Manage client accounts, compliance statuses, and wallet allocations.</p>
     </div>
 
     <!-- Status Filters -->
-    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-      <a href="{{ url_for('admin.companies', status='all', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'all' %}background: var(--tiancai-purple-gradient); color: #fff;{% endif %}">
+    <div class="admin-filter-pills">
+      <a href="{{ url_for('admin.companies', status='all', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'all' %}background: var(--tiancai-purple-gradient); color: #fff; border-color: transparent;{% endif %}">
         All
       </a>
-      <a href="{{ url_for('admin.companies', status='active', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'active' %}background: #059669; color: #fff;{% endif %}">
+      <a href="{{ url_for('admin.companies', status='active', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'active' %}background: #059669; color: #fff; border-color: transparent;{% endif %}">
         Active (Verified)
       </a>
-      <a href="{{ url_for('admin.companies', status='pending_verification', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'pending_verification' %}background: #d97706; color: #fff;{% endif %}">
+      <a href="{{ url_for('admin.companies', status='pending_verification', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'pending_verification' %}background: #d97706; color: #fff; border-color: transparent;{% endif %}">
         Pending Verification
       </a>
-      <a href="{{ url_for('admin.companies', status='suspended', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'suspended' %}background: #dc2626; color: #fff;{% endif %}">
+      <a href="{{ url_for('admin.companies', status='suspended', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'suspended' %}background: #dc2626; color: #fff; border-color: transparent;{% endif %}">
         Suspended
       </a>
     </div>
   </div>
 
   <!-- Search Input Form -->
-  <form method="GET" action="{{ url_for('admin.companies') }}" style="margin-bottom: 20px;">
+  <form method="GET" action="{{ url_for('admin.companies') }}" class="admin-search-form">
     <input type="hidden" name="status" value="{{ status_filter }}">
-    <div style="display: flex; gap: 10px; max-width: 460px;">
+    <div class="admin-search-wrap">
       <input type="text" name="q" value="{{ search_query }}" placeholder="Search company, signatory, email, GSTIN..." class="ref-form-control" style="font-size: 0.88rem;">
-      <button type="submit" class="btn-tiancai-pill" style="width: auto; padding: 0 20px; font-size: 0.88rem;">
+      <button type="submit" class="btn-tiancai-pill" style="width: auto; padding: 0 20px; font-size: 0.88rem; flex-shrink: 0;">
         <i class="bi bi-search"></i>
       </button>
       {% if search_query %}
-        <a href="{{ url_for('admin.companies', status=status_filter) }}" class="lang-toggle-pill" style="text-decoration: none; display: flex; align-items: center;">Clear</a>
+        <a href="{{ url_for('admin.companies', status=status_filter) }}" class="lang-toggle-pill" style="text-decoration: none; display: flex; align-items: center; flex-shrink: 0;">Clear</a>
       {% endif %}
     </div>
   </form>
@@ -46,13 +46,14 @@
   <!-- Companies Table -->
   {% if companies %}
   <div class="table-responsive">
-    <table class="custom-table">
+    <table class="custom-table admin-companies-table">
       <thead>
         <tr>
           <th>Company Name</th>
           <th>Authorised Signatory</th>
           <th>Email & Phone</th>
           <th>Wallet Balance</th>
+          <th>Pricing & Limits</th>
           <th>Compliance Status</th>
           <th>Registered</th>
           <th>Actions</th>
@@ -82,6 +83,14 @@
             {% if comp.wallet and comp.wallet.balance < 500 %}
               <div style="font-size: 0.68rem; color: #d97706; font-weight: 700;">Low Balance</div>
             {% endif %}
+          </td>
+          <td>
+            <div style="font-weight: 700; color: #7e22ce; font-size: 0.85rem;">
+              ₹{{ "%.2f"|format(comp.per_kyc_price) }} <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal;">/ KYC</span>
+            </div>
+            <div style="font-size: 0.75rem; color: #059669; font-weight: 600; margin-top: 2px;">
+              Min: ₹{{ "%.0f"|format(comp.min_recharge_amount) }}
+            </div>
           </td>
           <td>
             {% if comp.status == 'active' %}
