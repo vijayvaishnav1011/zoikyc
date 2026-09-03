@@ -5,54 +5,70 @@
 
 {% block content %}
 <div class="card">
-  <!-- Header & Filters -->
-  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
-    <div>
-      <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark);">Global Financial Ledger</h3>
-      <p style="font-size: 0.82rem; color: var(--text-muted);">Real-time immutable audit trail for all company wallet credits and debits.</p>
+  <!-- Header Bar -->
+  <div class="saas-page-header">
+    <div class="saas-page-title-group">
+      <h3>
+        <span>Global Financial Ledger</span>
+      </h3>
+      <div class="saas-page-subtitle">
+        Real-time immutable audit trail for all client organisation wallet credits and debits.
+      </div>
     </div>
+  </div>
 
-    <!-- Type Filters -->
-    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-      <a href="{{ url_for('admin.transactions', type='all', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if txn_type == 'all' %}background: var(--tiancai-purple-gradient); color: #fff;{% endif %}">
-        All Types
+  <!-- Unified Controls Bar -->
+  <div class="saas-controls-bar">
+    <form method="GET" action="{{ url_for('admin.transactions') }}" class="saas-search-form">
+      <input type="hidden" name="type" value="{{ txn_type }}">
+      <div class="saas-search-box">
+        <i class="bi bi-search saas-search-icon"></i>
+        <input 
+          type="text" 
+          name="q" 
+          value="{{ search_query }}" 
+          placeholder="Search reference ID, company name, remark..." 
+          class="saas-search-field"
+          autocomplete="off"
+        >
+        {% if search_query %}
+          <a href="{{ url_for('admin.transactions', type=txn_type) }}" class="saas-search-clear" title="Clear search">
+            <i class="bi bi-x-circle-fill"></i>
+          </a>
+        {% endif %}
+      </div>
+    </form>
+
+    <!-- Type Filter Tabs -->
+    <div class="saas-filter-tabs">
+      <a href="{{ url_for('admin.transactions', type='all', q=search_query) }}" class="saas-tab-link {% if txn_type == 'all' %}active{% endif %}">
+        <i class="bi bi-receipt" style="font-size: 0.75rem;"></i>
+        <span>All Types</span>
       </a>
-      <a href="{{ url_for('admin.transactions', type='credit', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if txn_type == 'credit' %}background: #059669; color: #fff;{% endif %}">
-        Credits (+)
+      <a href="{{ url_for('admin.transactions', type='credit', q=search_query) }}" class="saas-tab-link {% if txn_type == 'credit' %}active{% endif %}">
+        <span class="status-dot dot-emerald"></span>
+        <span>Credits (+)</span>
       </a>
-      <a href="{{ url_for('admin.transactions', type='debit', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if txn_type == 'debit' %}background: #dc2626; color: #fff;{% endif %}">
-        Debits (-)
+      <a href="{{ url_for('admin.transactions', type='debit', q=search_query) }}" class="saas-tab-link {% if txn_type == 'debit' %}active{% endif %}">
+        <span class="status-dot dot-rose"></span>
+        <span>Debits (-)</span>
       </a>
     </div>
   </div>
 
-  <!-- Search Form -->
-  <form method="GET" action="{{ url_for('admin.transactions') }}" style="margin-bottom: 20px;">
-    <input type="hidden" name="type" value="{{ txn_type }}">
-    <div style="display: flex; gap: 10px; max-width: 460px;">
-      <input type="text" name="q" value="{{ search_query }}" placeholder="Search reference ID, company name, description..." class="ref-form-control" style="font-size: 0.88rem;">
-      <button type="submit" class="btn-tiancai-pill" style="width: auto; padding: 0 20px; font-size: 0.88rem;">
-        <i class="bi bi-search"></i>
-      </button>
-      {% if search_query %}
-        <a href="{{ url_for('admin.transactions', type=txn_type) }}" class="lang-toggle-pill" style="text-decoration: none; display: flex; align-items: center;">Clear</a>
-      {% endif %}
-    </div>
-  </form>
-
   <!-- Transactions Table -->
   {% if transactions %}
-  <div class="table-responsive">
-    <table class="custom-table">
+  <div class="saas-table-card">
+    <table class="saas-table">
       <thead>
         <tr>
           <th>Reference ID</th>
-          <th>Company Client</th>
+          <th>Client Organisation</th>
           <th>Type</th>
           <th>Amount</th>
           <th>Balance Before</th>
           <th>Balance After</th>
-          <th>Description & Audit Trail</th>
+          <th>Description / Audit Trail</th>
           <th>Status</th>
           <th>Timestamp</th>
         </tr>
@@ -60,28 +76,32 @@
       <tbody>
         {% for txn in transactions %}
         <tr>
-          <td><code style="color: var(--tiancai-blue); font-weight: 700;">{{ txn.reference_id }}</code></td>
+          <td>
+            <span class="chip-client-id" style="background: #f1f5f9; color: #1e293b; font-size: 0.76rem;">
+              {{ txn.reference_id }}
+            </span>
+          </td>
           <td style="font-weight: 700;">
-            <a href="{{ url_for('admin.company_detail', company_id=txn.company_id) }}" style="color: var(--tiancai-purple-dark); text-decoration: none;">
+            <a href="{{ url_for('admin.company_detail', company_id=txn.company_id) }}" class="company-name-link">
               {{ txn.company.name if txn.company else 'N/A' }}
             </a>
           </td>
           <td>
-            <span class="metric-badge {% if txn.type == 'credit' %}badge-credit{% else %}badge-debit{% endif %}">
+            <span class="saas-status-badge {% if txn.type == 'credit' %}badge-active{% else %}badge-suspended{% endif %}">
               {{ txn.type | upper }}
             </span>
           </td>
-          <td style="font-weight: 800; color: {% if txn.type == 'credit' %}#059669{% else %}#dc2626{% endif %};">
+          <td style="font-weight: 800; font-size: 0.92rem; color: {% if txn.type == 'credit' %}#059669{% else %}#dc2626{% endif %};">
             {% if txn.type == 'credit' %}+{% else %}-{% endif %} {{ txn.amount | currency }}
           </td>
-          <td style="color: var(--text-muted);">{{ txn.balance_before | currency }}</td>
-          <td style="font-weight: 700;">{{ txn.balance_after | currency }}</td>
-          <td style="font-size: 0.85rem;">{{ txn.description }}</td>
+          <td style="color: #64748b; font-size: 0.85rem;">{{ txn.balance_before | currency }}</td>
+          <td style="font-weight: 700; color: #1e293b;">{{ txn.balance_after | currency }}</td>
+          <td style="font-size: 0.84rem; color: #475569;">{{ txn.description }}</td>
           <td>
-            <span class="metric-badge badge-active">{{ txn.status | capitalize }}</span>
+            <span class="saas-status-badge badge-active"><i class="bi bi-check-circle-fill"></i> {{ txn.status | capitalize }}</span>
           </td>
-          <td style="color: var(--text-muted); font-size: 0.82rem; white-space: nowrap;">
-            {{ txn.created_at.strftime('%b %d, %Y %H:%M:%S') if txn.created_at else '' }}
+          <td style="color: #64748b; font-size: 0.8rem; white-space: nowrap;">
+            {{ txn.created_at.strftime('%b %d, %Y %H:%M:%S') if txn.created_at else 'N/A' }}
           </td>
         </tr>
         {% endfor %}
@@ -105,8 +125,23 @@
   {% endif %}
 
   {% else %}
-  <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-    <p>No transaction history found matching your filters.</p>
+  <div style="text-align: center; padding: 50px 20px; background: #f8fafc; border-radius: 12px; border: 1.5px dashed #cbd5e1; margin: 10px 0;">
+    <div style="width: 52px; height: 52px; border-radius: 50%; background: #f1f5f9; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #94a3b8; margin-bottom: 14px;">
+      <i class="bi bi-receipt"></i>
+    </div>
+    <h4 style="font-size: 1.05rem; font-weight: 700; color: #1e293b; margin-bottom: 6px;">No Transactions Found</h4>
+    <p style="font-size: 0.85rem; color: #64748b; max-width: 380px; margin: 0 auto 18px;">
+      {% if search_query %}
+        No transaction matches "<strong>{{ search_query }}</strong>" in the selected type filter.
+      {% else %}
+        There are currently no recorded wallet transactions matching this filter.
+      {% endif %}
+    </p>
+    {% if search_query or txn_type != 'all' %}
+      <a href="{{ url_for('admin.transactions') }}" class="btn-table-manage" style="display: inline-flex;">
+        <i class="bi bi-arrow-counterclockwise"></i> Reset Filters
+      </a>
+    {% endif %}
   </div>
   {% endif %}
 </div>

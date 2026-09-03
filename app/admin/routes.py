@@ -88,9 +88,14 @@ def companies():
     search_query = request.args.get('q', '').strip()
     page = request.args.get('page', 1, type=int)
 
-    # Exclude internal admin tenant from client companies directory
-    query = Company.query.filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS))
+    # Base query excluding internal admin
+    base_query = Company.query.filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS))
+    total_count = base_query.count()
+    active_count = base_query.filter_by(status='active').count()
+    pending_count = base_query.filter_by(status='pending_verification').count()
+    suspended_count = base_query.filter_by(status='suspended').count()
 
+    query = base_query
     if status_filter != 'all':
         query = query.filter_by(status=status_filter)
 
@@ -110,7 +115,11 @@ def companies():
         companies=pagination.items,
         pagination=pagination,
         status_filter=status_filter,
-        search_query=search_query
+        search_query=search_query,
+        total_count=total_count,
+        active_count=active_count,
+        pending_count=pending_count,
+        suspended_count=suspended_count
     )
 
 @admin_bp.route('/companies/<int:company_id>')

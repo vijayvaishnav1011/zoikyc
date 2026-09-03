@@ -4,115 +4,183 @@
 {% block page_title %}Client Organisations Directory{% endblock %}
 
 {% block content %}
-<div class="card">
-  <!-- Search and Filter Bar -->
-  <div class="admin-companies-header">
-    <div>
-      <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark);">All Registered Companies</h3>
-      <p style="font-size: 0.82rem; color: var(--text-muted);">Manage client accounts, compliance statuses, and wallet allocations.</p>
-    </div>
-
-    <!-- Status Filters -->
-    <div class="admin-filter-pills">
-      <a href="{{ url_for('admin.companies', status='all', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'all' %}background: var(--tiancai-purple-gradient); color: #fff; border-color: transparent;{% endif %}">
-        All
-      </a>
-      <a href="{{ url_for('admin.companies', status='active', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'active' %}background: #059669; color: #fff; border-color: transparent;{% endif %}">
-        Active (Verified)
-      </a>
-      <a href="{{ url_for('admin.companies', status='pending_verification', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'pending_verification' %}background: #d97706; color: #fff; border-color: transparent;{% endif %}">
-        Pending Verification
-      </a>
-      <a href="{{ url_for('admin.companies', status='suspended', q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; {% if status_filter == 'suspended' %}background: #dc2626; color: #fff; border-color: transparent;{% endif %}">
-        Suspended
-      </a>
+<div class="card" style="padding: 24px; border: 1px solid #e2e8f0; border-radius: var(--radius-xl); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);">
+  
+  <!-- Header Bar -->
+  <div class="saas-page-header">
+    <div class="saas-page-title-group">
+      <h3>
+        <span>All Registered Companies</span>
+        <span class="saas-count-badge">{{ total_count }} Total</span>
+      </h3>
+      <div class="saas-page-subtitle">
+        Review client compliance statuses, commercial billing rates, and multi-tenant prepaid float allocations.
+      </div>
     </div>
   </div>
 
-  <!-- Search Input Form -->
-  <form method="GET" action="{{ url_for('admin.companies') }}" class="admin-search-form">
-    <input type="hidden" name="status" value="{{ status_filter }}">
-    <div class="admin-search-wrap">
-      <input type="text" name="q" value="{{ search_query }}" placeholder="Search company, signatory, email, GSTIN..." class="ref-form-control" style="font-size: 0.88rem;">
-      <button type="submit" class="btn-tiancai-pill" style="width: auto; padding: 0 20px; font-size: 0.88rem; flex-shrink: 0;">
-        <i class="bi bi-search"></i>
-      </button>
-      {% if search_query %}
-        <a href="{{ url_for('admin.companies', status=status_filter) }}" class="lang-toggle-pill" style="text-decoration: none; display: flex; align-items: center; flex-shrink: 0;">Clear</a>
-      {% endif %}
-    </div>
-  </form>
+  <!-- Unified Controls Bar (Integrated Search + Segmented Filter Tabs) -->
+  <div class="saas-controls-bar">
+    
+    <!-- Search Input Form with Embedded Icon -->
+    <form method="GET" action="{{ url_for('admin.companies') }}" class="saas-search-form">
+      <input type="hidden" name="status" value="{{ status_filter }}">
+      <div class="saas-search-box">
+        <i class="bi bi-search saas-search-icon"></i>
+        <input 
+          type="text" 
+          name="q" 
+          value="{{ search_query }}" 
+          placeholder="Search organisation, signatory, email, GSTIN..." 
+          class="saas-search-field"
+          autocomplete="off"
+        >
+        {% if search_query %}
+          <a href="{{ url_for('admin.companies', status=status_filter) }}" class="saas-search-clear" title="Clear search">
+            <i class="bi bi-x-circle-fill"></i>
+          </a>
+        {% endif %}
+      </div>
+    </form>
 
-  <!-- Companies Table -->
+    <!-- Segmented Status Filter Tabs -->
+    <div class="saas-filter-tabs">
+      <a href="{{ url_for('admin.companies', status='all', q=search_query) }}" class="saas-tab-link {% if status_filter == 'all' %}active{% endif %}">
+        <i class="bi bi-grid-fill" style="font-size: 0.72rem;"></i>
+        <span>All</span>
+        <span class="tab-badge">{{ total_count }}</span>
+      </a>
+      
+      <a href="{{ url_for('admin.companies', status='active', q=search_query) }}" class="saas-tab-link {% if status_filter == 'active' %}active{% endif %}">
+        <span class="status-dot dot-emerald"></span>
+        <span>Active</span>
+        <span class="tab-badge">{{ active_count }}</span>
+      </a>
+      
+      <a href="{{ url_for('admin.companies', status='pending_verification', q=search_query) }}" class="saas-tab-link {% if status_filter == 'pending_verification' %}active{% endif %}">
+        <span class="status-dot dot-amber"></span>
+        <span>Under Review</span>
+        <span class="tab-badge">{{ pending_count }}</span>
+      </a>
+      
+      <a href="{{ url_for('admin.companies', status='suspended', q=search_query) }}" class="saas-tab-link {% if status_filter == 'suspended' %}active{% endif %}">
+        <span class="status-dot dot-rose"></span>
+        <span>Suspended</span>
+        <span class="tab-badge">{{ suspended_count }}</span>
+      </a>
+    </div>
+
+  </div>
+
+  <!-- Companies Table Container -->
   {% if companies %}
-  <div class="table-responsive">
-    <table class="custom-table admin-companies-table">
+  <div class="saas-table-card">
+    <table class="saas-table">
       <thead>
         <tr>
-          <th>Company Name</th>
+          <th>Organisation & Client ID</th>
           <th>Authorised Signatory</th>
-          <th>Email & Phone</th>
+          <th>Contact Info</th>
           <th>Wallet Balance</th>
           <th>Pricing & Limits</th>
           <th>Compliance Status</th>
           <th>Registered</th>
-          <th>Actions</th>
+          <th style="text-align: right; padding-right: 22px;">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for comp in companies %}
         <tr>
-          <td style="font-weight: 800;">
-            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-              <a href="{{ url_for('admin.company_detail', company_id=comp.id) }}" style="color: var(--tiancai-purple-dark); text-decoration: none;">
+          <!-- 1. Organisation & ID -->
+          <td>
+            <div>
+              <a href="{{ url_for('admin.company_detail', company_id=comp.id) }}" class="company-name-link">
                 {{ comp.name }}
               </a>
-              <span class="metric-badge" style="background: rgba(37, 99, 235, 0.1); color: var(--tiancai-blue); font-size: 0.68rem; padding: 2px 6px;">
-                {{ comp.client_id or 'ZOI-CLIENT' }}
-              </span>
             </div>
-            <div style="font-size: 0.72rem; color: var(--text-light); font-weight: normal; margin-top: 2px;">GSTIN: {{ comp.gstin if comp.gstin else 'N/A' }}</div>
+            <div class="company-sub-meta">
+              <span class="chip-client-id">{{ comp.client_id or 'ZOI-CLIENT' }}</span>
+              <span>GSTIN: {{ comp.gstin if comp.gstin else 'Not Provided' }}</span>
+            </div>
           </td>
-          <td>{{ comp.authorised_signatory_name }}</td>
+
+          <!-- 2. Authorised Signatory -->
           <td>
-            <div>{{ comp.email }}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ comp.phone }}</div>
+            <div class="signatory-row">
+              <div class="signatory-avatar">
+                {{ comp.authorised_signatory_name[:1].upper() if comp.authorised_signatory_name else 'S' }}
+              </div>
+              <span>{{ comp.authorised_signatory_name or 'N/A' }}</span>
+            </div>
           </td>
-          <td style="font-weight: 800; color: {% if comp.wallet and comp.wallet.balance < 500 %}#d97706{% else %}#059669{% endif %};">
-            {{ comp.wallet.balance | currency if comp.wallet else '₹0.00' }}
+
+          <!-- 3. Contact Info -->
+          <td>
+            <div class="contact-email">{{ comp.email }}</div>
+            <div class="contact-phone"><i class="bi bi-telephone"></i> {{ comp.phone or 'N/A' }}</div>
+          </td>
+
+          <!-- 4. Wallet Balance -->
+          <td>
+            <div class="balance-val {% if comp.wallet and comp.wallet.balance < 500 %}low{% else %}healthy{% endif %}">
+              {{ comp.wallet.balance | currency if comp.wallet else '₹0.00' }}
+            </div>
             {% if comp.wallet and comp.wallet.balance < 500 %}
-              <div style="font-size: 0.68rem; color: #d97706; font-weight: 700;">Low Balance</div>
+              <div class="balance-pill balance-pill-low">
+                <i class="bi bi-exclamation-triangle-fill"></i> Low Float
+              </div>
+            {% else %}
+              <div class="balance-pill balance-pill-healthy">
+                <i class="bi bi-check-circle-fill"></i> Healthy
+              </div>
             {% endif %}
           </td>
+
+          <!-- 5. Commercial Pricing & Limits -->
           <td>
-            <div style="font-weight: 700; color: #7e22ce; font-size: 0.85rem;">
-              ₹{{ "%.2f"|format(comp.per_kyc_price) }} <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal;">/ KYC</span>
-            </div>
-            <div style="font-size: 0.75rem; color: #059669; font-weight: 600; margin-top: 2px;">
-              Min: ₹{{ "%.0f"|format(comp.min_recharge_amount) }}
+            <div class="pricing-cell-tag">
+              <div>
+                <span class="pricing-rate-val">₹{{ "%.2f"|format(comp.per_kyc_price) }}</span>
+                <span class="pricing-unit-val">/ KYC</span>
+              </div>
+              <div class="pricing-min-val">
+                Min: ₹{{ "%.0f"|format(comp.min_recharge_amount) }}
+              </div>
             </div>
           </td>
+
+          <!-- 6. Compliance Status Badge -->
           <td>
             {% if comp.status == 'active' %}
-              <span class="metric-badge badge-active"><i class="bi bi-check-circle-fill"></i> Active</span>
+              <span class="saas-status-badge badge-active">
+                <i class="bi bi-check-circle-fill"></i> Active
+              </span>
             {% elif comp.status == 'suspended' %}
-              <span class="metric-badge" style="background: rgba(220, 38, 38, 0.12); color: #dc2626;"><i class="bi bi-x-circle-fill"></i> Suspended</span>
+              <span class="saas-status-badge badge-suspended">
+                <i class="bi bi-x-circle-fill"></i> Suspended
+              </span>
             {% else %}
-              <span class="metric-badge" style="background: rgba(217, 119, 6, 0.12); color: #d97706;"><i class="bi bi-clock-history"></i> Pending Docs</span>
+              <span class="saas-status-badge badge-pending">
+                <i class="bi bi-clock-fill"></i> Under Review
+              </span>
             {% endif %}
           </td>
-          <td style="color: var(--text-muted); font-size: 0.82rem;">
-            {{ comp.created_at.strftime('%b %d, %Y') if comp.created_at else '' }}
+
+          <!-- 7. Registered Date -->
+          <td style="color: #64748b; font-size: 0.82rem; white-space: nowrap;">
+            {{ comp.created_at.strftime('%b %d, %Y') if comp.created_at else 'N/A' }}
           </td>
-          <td>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="{{ url_for('admin.company_detail', company_id=comp.id) }}" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 12px; font-size: 0.78rem;">
-                <i class="bi bi-gear-fill"></i> Manage
+
+          <!-- 8. Actions Group -->
+          <td style="text-align: right; padding-right: 22px;">
+            <div class="table-action-group" style="justify-content: flex-end;">
+              <a href="{{ url_for('admin.company_detail', company_id=comp.id) }}" class="btn-table-manage">
+                <i class="bi bi-sliders2"></i> Manage
               </a>
               {% if comp.wallet and comp.wallet.balance < 500 %}
-              <form method="POST" action="{{ url_for('admin.send_low_balance_alert', company_id=comp.id) }}" style="display: inline;" onsubmit="return confirm('Send Low Balance alert to {{ comp.name }} ({{ comp.email }})?');">
+              <form method="POST" action="{{ url_for('admin.send_low_balance_alert', company_id=comp.id) }}" style="display: inline;" onsubmit="return confirm('Send Low Float warning email to {{ comp.name }} ({{ comp.email }})?');">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <button type="submit" title="Send Low Balance Alert Email" class="lang-toggle-pill" style="background: rgba(245, 158, 11, 0.15); color: #b45309; border: 1px solid #fde68a; cursor: pointer; padding: 6px 10px; font-size: 0.78rem;">
+                <button type="submit" title="Send Low Float Notification to Client" class="btn-table-bell">
                   <i class="bi bi-bell-fill"></i>
                 </button>
               </form>
@@ -127,23 +195,40 @@
 
   <!-- Pagination -->
   {% if pagination and pagination.pages > 1 %}
-  <div class="pagination-container">
-    <div>Showing page {{ pagination.page }} of {{ pagination.pages }}</div>
+  <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #f1f5f9; margin-top: 10px; font-size: 0.85rem; color: #64748b;">
+    <div>Showing page <strong>{{ pagination.page }}</strong> of <strong>{{ pagination.pages }}</strong></div>
     <div style="display: flex; gap: 8px;">
       {% if pagination.has_prev %}
-        <a href="{{ url_for('admin.companies', page=pagination.prev_num, status=status_filter, q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none;">&larr; Previous</a>
+        <a href="{{ url_for('admin.companies', page=pagination.prev_num, status=status_filter, q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 14px; font-size: 0.8rem;">&larr; Previous</a>
       {% endif %}
       {% if pagination.has_next %}
-        <a href="{{ url_for('admin.companies', page=pagination.next_num, status=status_filter, q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none;">Next &rarr;</a>
+        <a href="{{ url_for('admin.companies', page=pagination.next_num, status=status_filter, q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 14px; font-size: 0.8rem;">Next &rarr;</a>
       {% endif %}
     </div>
   </div>
   {% endif %}
 
   {% else %}
-  <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-    <p>No client companies found matching your criteria.</p>
+  <!-- Clean Empty State -->
+  <div style="text-align: center; padding: 50px 20px; background: #f8fafc; border-radius: 12px; border: 1.5px dashed #cbd5e1; margin: 10px 0;">
+    <div style="width: 52px; height: 52px; border-radius: 50%; background: #f1f5f9; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #94a3b8; margin-bottom: 14px;">
+      <i class="bi bi-building-slash"></i>
+    </div>
+    <h4 style="font-size: 1.05rem; font-weight: 700; color: #1e293b; margin-bottom: 6px;">No Client Companies Found</h4>
+    <p style="font-size: 0.85rem; color: #64748b; max-width: 380px; margin: 0 auto 18px;">
+      {% if search_query %}
+        No organisation matches "<strong>{{ search_query }}</strong>" in the selected status filter.
+      {% else %}
+        There are currently no registered companies matching the "{{ status_filter }}" filter.
+      {% endif %}
+    </p>
+    {% if search_query or status_filter != 'all' %}
+      <a href="{{ url_for('admin.companies') }}" class="btn-table-manage" style="display: inline-flex;">
+        <i class="bi bi-arrow-counterclockwise"></i> Reset Filters
+      </a>
+    {% endif %}
   </div>
   {% endif %}
+
 </div>
 {% endblock %}

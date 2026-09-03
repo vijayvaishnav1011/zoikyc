@@ -308,13 +308,16 @@
 
 <!-- Recent Transactions of This Client -->
 <div class="card" style="margin-top: 24px;">
-  <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin-bottom: 18px;">
-    Recent Transaction Ledger ({{ company.name }})
-  </h3>
+  <div class="saas-page-title-group" style="margin-bottom: 18px;">
+    <h3>
+      <span>Recent Transaction Ledger</span>
+      <span class="saas-count-badge">{{ transactions | length }} Recent</span>
+    </h3>
+  </div>
 
   {% if transactions %}
-  <div class="table-responsive">
-    <table class="custom-table admin-txn-table">
+  <div class="saas-table-card">
+    <table class="saas-table">
       <thead>
         <tr>
           <th>Reference ID</th>
@@ -322,25 +325,29 @@
           <th>Amount</th>
           <th>Balance After</th>
           <th>Description</th>
-          <th>Date</th>
+          <th>Timestamp</th>
         </tr>
       </thead>
       <tbody>
         {% for txn in transactions %}
         <tr>
-          <td><code style="color: var(--tiancai-blue); font-weight: 700;">{{ txn.reference_id }}</code></td>
           <td>
-            <span class="metric-badge {% if txn.type == 'credit' %}badge-credit{% else %}badge-debit{% endif %}">
+            <span class="chip-client-id" style="background: #f1f5f9; color: #1e293b; font-size: 0.76rem;">
+              {{ txn.reference_id }}
+            </span>
+          </td>
+          <td>
+            <span class="saas-status-badge {% if txn.type == 'credit' %}badge-active{% else %}badge-suspended{% endif %}">
               {{ txn.type | upper }}
             </span>
           </td>
-          <td style="font-weight: 800; color: {% if txn.type == 'credit' %}#059669{% else %}#dc2626{% endif %};">
+          <td style="font-weight: 800; font-size: 0.92rem; color: {% if txn.type == 'credit' %}#059669{% else %}#dc2626{% endif %};">
             {% if txn.type == 'credit' %}+{% else %}-{% endif %} {{ txn.amount | currency }}
           </td>
-          <td style="font-weight: 600;">{{ txn.balance_after | currency }}</td>
-          <td>{{ txn.description }}</td>
-          <td style="color: var(--text-muted); font-size: 0.82rem;">
-            {{ txn.created_at.strftime('%b %d, %Y %H:%M') if txn.created_at else '' }}
+          <td style="font-weight: 700; color: #1e293b;">{{ txn.balance_after | currency }}</td>
+          <td style="color: #334155; font-size: 0.85rem;">{{ txn.description }}</td>
+          <td style="color: #64748b; font-size: 0.82rem; white-space: nowrap;">
+            {{ txn.created_at.strftime('%b %d, %Y %H:%M') if txn.created_at else 'N/A' }}
           </td>
         </tr>
         {% endfor %}
@@ -348,8 +355,8 @@
     </table>
   </div>
   {% else %}
-  <div style="text-align: center; padding: 30px; color: var(--text-muted);">
-    <p>No transaction history for this company yet.</p>
+  <div style="text-align: center; padding: 36px 20px; color: var(--text-muted); background: #f8fafc; border-radius: 12px; border: 1.5px dashed #cbd5e1;">
+    <p style="margin: 0; font-size: 0.88rem;">No transaction ledger entries recorded for this client organisation yet.</p>
   </div>
   {% endif %}
 </div>
