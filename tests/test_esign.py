@@ -305,5 +305,70 @@ class ESignIntegrationTestCase(unittest.TestCase):
         self.assertIsNotNone(updated_doc.signed_at)
         self.assertIsNotNone(updated_doc.signed_file_path)
 
+    def test_admin_esign_requests_company_grouped(self):
+        """Verify that /admin/esign organizes document execution requests grouped company-wise."""
+        # Create second company Beta Corp
+        beta_comp = Company(
+            name="Beta Innovations",
+            authorised_signatory_name="Beta Director",
+            email="contact@betainno.com",
+            phone="9123456780",
+            country="India",
+            state="Maharashtra",
+            city="Mumbai",
+            zip_code="400001",
+            address="Nariman Point, Mumbai",
+            status="active"
+        )
+        db.session.add(beta_comp)
+        db.session.flush()
+
+        beta_wallet = Wallet(company_id=beta_comp.id, balance=Decimal("200.00"))
+        db.session.add(beta_wallet)
+        db.session.commit()
+
+        # Add documents to both companies
+        doc1 = ESignDocument(
+            company_id=self.company.id,
+            title="Alpha Partnership Agreement",
+            signatory_name="Pankaj Signer",
+            original_filename="alpha.pdf",
+            file_path="uploads/test_sample.pdf",
+            status="pending_admin"
+        )
+        doc2 = ESignDocument(
+            company_id=beta_comp.id,
+            title="Beta Vendor Contract",
+            signatory_name="Beta Signer",
+            original_filename="beta.pdf",
+            file_path="uploads/test_sample.pdf",
+            status="pending_admin"
+        )
+        db.session.add_all([doc1, doc2])
+        db.session.commit()
+
+        # Log in as super admin
+        super_admin = User.query.filter_by(role='super_admin').first()
+        with self.client.session_transaction() as sess:
+            sess['_user_id'] = str(super_admin.id)
+
+        # GET /admin/esign
+        resp = self.client.get('/admin/esign')
+        self.assertEqual(resp.status_code, 200)
+        html = resp.data.decode('utf-8')
+
+        # Check both companies and documents appear
+        self.assertIn("Alpha Corp", html)
+        self.assertIn("Alpha Partnership Agreement", html)
+        self.assertIn("Beta Innovations", html)
+        self.assertIn("Beta Vendor Contract", html)
+
+        # Test filtering by Alpha Corp only
+        filter_resp = self.client.get(f'/admin/esign?company_id={self.company.id}')
+        self.assertEqual(filter_resp.status_code, 200)
+        filter_html = filter_resp.data.decode('utf-8')
+        self.assertIn("Alpha Partnership Agreement", filter_html)
+        self.assertNotIn("Beta Vendor Contract", filter_html)
+
 if __name__ == '__main__':
     unittest.main()

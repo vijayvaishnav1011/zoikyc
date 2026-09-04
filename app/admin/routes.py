@@ -497,14 +497,24 @@ def update_company_pricing(company_id):
 @admin_bp.route('/esign')
 @admin_required
 def esign_requests():
-    """Super Admin screen to review uploaded client documents and dispatch to Capricorn."""
+    """Super Admin screen to review uploaded client documents grouped company-wise and dispatch to Capricorn."""
+    from collections import OrderedDict
+
     status_filter = request.args.get('status', 'all')
     search_query = request.args.get('q', '').strip()
+    company_filter = request.args.get('company_id', 'all')
 
     query = ESignDocument.query.join(Company).filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS))
 
     if status_filter != 'all':
         query = query.filter(ESignDocument.status == status_filter)
+
+    if company_filter != 'all':
+        try:
+            cid = int(company_filter)
+            query = query.filter(ESignDocument.company_id == cid)
+        except ValueError:
+            pass
 
     if search_query:
         search_pattern = f"%{search_query}%"
@@ -519,31 +529,42 @@ def esign_requests():
             )
         )
 
-    documents = query.order_by(ESignDocument.created_at.desc()).all()
+    # Order by company name first, then by created_at desc
+    documents = query.order_by(Company.name.asc(), ESignDocument.created_at.desc()).all()
+
+    # Group documents by Company
+    grouped_documents = OrderedDict()
+    for doc in documents:
+        comp = doc.company
+        if comp not in grouped_documents:
+            grouped_documents[comp] = []
+        grouped_documents[comp].append(doc)
+
+    # Filter base counts for the status tabs
+    base_counts = ESignDocument.query.join(Company).filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS))
+    if company_filter != 'all':
+        try:
+            cid = int(company_filter)
+            base_counts = base_counts.filter(ESignDocument.company_id == cid)
+        except ValueError:
+            pass
 
     counts = {
-        'all': ESignDocument.query.join(Company).filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS)).count(),
-        'pending_admin': ESignDocument.query.join(Company).filter(
-            Company.email.notin_(ADMIN_SYSTEM_EMAILS),
-            ESignDocument.status == 'pending_admin'
-        ).count(),
-        'sent_to_capricorn': ESignDocument.query.join(Company).filter(
-            Company.email.notin_(ADMIN_SYSTEM_EMAILS),
-            ESignDocument.status == 'sent_to_capricorn'
-        ).count(),
-        'signed': ESignDocument.query.join(Company).filter(
-            Company.email.notin_(ADMIN_SYSTEM_EMAILS),
-            ESignDocument.status == 'signed'
-        ).count(),
-        'rejected_by_admin': ESignDocument.query.join(Company).filter(
-            Company.email.notin_(ADMIN_SYSTEM_EMAILS),
-            ESignDocument.status == 'rejected_by_admin'
-        ).count(),
+        'all': base_counts.count(),
+        'pending_admin': base_counts.filter(ESignDocument.status == 'pending_admin').count(),
+        'sent_to_capricorn': base_counts.filter(ESignDocument.status == 'sent_to_capricorn').count(),
+        'signed': base_counts.filter(ESignDocument.status == 'signed').count(),
+        'rejected_by_admin': base_counts.filter(ESignDocument.status == 'rejected_by_admin').count(),
     }
+
+    all_companies = Company.query.filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS)).order_by(Company.name.asc()).all()
 
     return render_template(
         'admin/esign_requests.html',
-        documents=documents,
+        grouped_documents=grouped_documents,
+        total_documents_count=len(documents),
+        all_companies=all_companies,
+        current_company_id=company_filter,
         counts=counts,
         current_status=status_filter,
         search_query=search_query

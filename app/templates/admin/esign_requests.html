@@ -14,62 +14,78 @@
         <span class="saas-count-badge">{{ counts.all }} Total</span>
       </h3>
       <div class="saas-page-subtitle">
-        Review client-uploaded customer agreements, verify client wallet float, and dispatch documents as Base64 to the Capricorn E-Sign API for Aadhaar OTP signing.
+        Review client-uploaded customer agreements organized company-wise, verify client wallet float, and dispatch documents as Base64 to Capricorn E-Sign for Aadhaar OTP signing.
       </div>
     </div>
   </div>
 
-  <!-- Unified Controls Bar (Integrated Search + Segmented Filter Tabs) -->
-  <div class="saas-controls-bar">
+  <!-- Unified Controls Bar (Integrated Search + Filter Tabs + Company Selector) -->
+  <div class="saas-controls-bar" style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px;">
     
-    <!-- Search Input Form with Embedded Icon -->
-    <form method="GET" action="{{ url_for('admin.esign_requests') }}" class="saas-search-form">
-      <input type="hidden" name="status" value="{{ current_status }}">
-      <div class="saas-search-box">
-        <i class="bi bi-search saas-search-icon"></i>
-        <input 
-          type="text" 
-          name="q" 
-          value="{{ search_query or '' }}" 
-          placeholder="Search organisation, customer, phone, remark..." 
-          class="saas-search-field"
-          autocomplete="off"
-        >
-        {% if search_query %}
-          <a href="{{ url_for('admin.esign_requests', status=current_status) }}" class="saas-search-clear" title="Clear search">
-            <i class="bi bi-x-circle-fill"></i>
-          </a>
-        {% endif %}
+    <div style="display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+      <!-- Search Input Form with Company Filter -->
+      <form method="GET" action="{{ url_for('admin.esign_requests') }}" class="saas-search-form" style="display: flex; gap: 10px; align-items: center; flex: 1; max-width: 650px;">
+        <input type="hidden" name="status" value="{{ current_status }}">
+        
+        <div class="saas-search-box" style="flex: 1;">
+          <i class="bi bi-search saas-search-icon"></i>
+          <input 
+            type="text" 
+            name="q" 
+            value="{{ search_query or '' }}" 
+            placeholder="Search customer, document title, remark..." 
+            class="saas-search-field"
+            autocomplete="off"
+          >
+          {% if search_query %}
+            <a href="{{ url_for('admin.esign_requests', status=current_status, company_id=current_company_id) }}" class="saas-search-clear" title="Clear search">
+              <i class="bi bi-x-circle-fill"></i>
+            </a>
+          {% endif %}
+        </div>
+
+        <!-- Filter by Company Dropdown -->
+        <select name="company_id" onchange="this.form.submit()" style="height: 42px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 600; color: #334155; background: #ffffff; cursor: pointer; font-size: 0.85rem; max-width: 250px;">
+          <option value="all">🏢 All Organisations ({{ all_companies|length }})</option>
+          {% for c in all_companies %}
+            <option value="{{ c.id }}" {% if current_company_id == c.id|string %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </form>
+
+      <!-- Stats Pill -->
+      <div style="font-size: 0.85rem; color: #64748b;">
+        Showing <strong>{{ total_documents_count }}</strong> request{% if total_documents_count != 1 %}s{% endif %} across <strong>{{ grouped_documents|length }}</strong> organisation{% if grouped_documents|length != 1 %}s{% endif %}
       </div>
-    </form>
+    </div>
 
     <!-- Segmented Status Filter Tabs -->
     <div class="saas-filter-tabs">
-      <a href="{{ url_for('admin.esign_requests', status='all', q=search_query) }}" class="saas-tab-link {% if current_status == 'all' %}active{% endif %}">
+      <a href="{{ url_for('admin.esign_requests', status='all', q=search_query, company_id=current_company_id) }}" class="saas-tab-link {% if current_status == 'all' %}active{% endif %}">
         <i class="bi bi-grid-fill" style="font-size: 0.72rem;"></i>
         <span>All</span>
         <span class="tab-badge">{{ counts.all }}</span>
       </a>
       
-      <a href="{{ url_for('admin.esign_requests', status='pending_admin', q=search_query) }}" class="saas-tab-link {% if current_status == 'pending_admin' %}active{% endif %}">
+      <a href="{{ url_for('admin.esign_requests', status='pending_admin', q=search_query, company_id=current_company_id) }}" class="saas-tab-link {% if current_status == 'pending_admin' %}active{% endif %}">
         <span class="status-dot dot-amber"></span>
         <span>Pending Dispatch</span>
         <span class="tab-badge">{{ counts.pending_admin }}</span>
       </a>
       
-      <a href="{{ url_for('admin.esign_requests', status='sent_to_capricorn', q=search_query) }}" class="saas-tab-link {% if current_status == 'sent_to_capricorn' %}active{% endif %}">
+      <a href="{{ url_for('admin.esign_requests', status='sent_to_capricorn', q=search_query, company_id=current_company_id) }}" class="saas-tab-link {% if current_status == 'sent_to_capricorn' %}active{% endif %}">
         <span class="status-dot dot-cyan"></span>
         <span>Awaiting OTP</span>
         <span class="tab-badge">{{ counts.sent_to_capricorn }}</span>
       </a>
       
-      <a href="{{ url_for('admin.esign_requests', status='signed', q=search_query) }}" class="saas-tab-link {% if current_status == 'signed' %}active{% endif %}">
+      <a href="{{ url_for('admin.esign_requests', status='signed', q=search_query, company_id=current_company_id) }}" class="saas-tab-link {% if current_status == 'signed' %}active{% endif %}">
         <span class="status-dot dot-emerald"></span>
         <span>Signed</span>
         <span class="tab-badge">{{ counts.signed }}</span>
       </a>
 
-      <a href="{{ url_for('admin.esign_requests', status='rejected_by_admin', q=search_query) }}" class="saas-tab-link {% if current_status == 'rejected_by_admin' %}active{% endif %}">
+      <a href="{{ url_for('admin.esign_requests', status='rejected_by_admin', q=search_query, company_id=current_company_id) }}" class="saas-tab-link {% if current_status == 'rejected_by_admin' %}active{% endif %}">
         <span class="status-dot dot-rose"></span>
         <span>Rejected</span>
         <span class="tab-badge">{{ counts.rejected_by_admin }}</span>
@@ -78,187 +94,221 @@
 
   </div>
 
-  <!-- Documents Table Container -->
-  {% if documents %}
-  <div class="saas-table-card">
-    <table class="saas-table">
-      <thead>
-        <tr>
-          <th>Client Organisation</th>
-          <th>Document & Remarks</th>
-          <th>Customer / Signatory</th>
-          <th>Wallet Balance</th>
-          <th>Status</th>
-          <th>Date Created</th>
-          <th style="text-align: right; padding-right: 22px;">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for doc in documents %}
-        {% set comp = doc.company %}
-        {% set wallet = comp.wallet %}
-        {% set price = comp.per_kyc_price or 20.00 %}
-        {% set has_balance = wallet and wallet.balance >= price %}
-        <tr>
-          <!-- 1. Organisation & ID -->
-          <td>
-            <div>
-              <a href="{{ url_for('admin.company_detail', company_id=comp.id) }}" class="company-name-link">
+  <!-- Documents Grouped by Company -->
+  {% if grouped_documents %}
+    {% for comp, docs in grouped_documents.items() %}
+    {% set wallet = comp.wallet %}
+    {% set price = comp.per_kyc_price or 20.00 %}
+    {% set has_balance = wallet and wallet.balance >= price %}
+
+    <div class="company-esign-group" style="margin-bottom: 28px; border: 1px solid #e2e8f0; border-radius: 14px; background: #ffffff; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03); overflow: hidden;">
+      
+      <!-- Company Header Bar -->
+      <div style="background: linear-gradient(to right, #f8fafc, #ffffff); padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+        
+        <!-- Company Info Left -->
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.15rem; box-shadow: 0 4px 10px rgba(124, 58, 237, 0.25); flex-shrink: 0;">
+            {{ comp.name[:1].upper() if comp.name else 'C' }}
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <a href="{{ url_for('admin.company_detail', company_id=comp.id) }}" style="font-size: 1.05rem; font-weight: 800; color: #0f172a; text-decoration: none;" title="View Organisation Details">
                 {{ comp.name }}
               </a>
-            </div>
-            <div class="company-sub-meta">
-              <span class="chip-client-id">{{ comp.client_id or 'ZOI-CLIENT' }}</span>
+              <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; background: #e0e7ff; color: #4338ca; font-weight: 600; font-family: monospace;">
+                {{ comp.client_id or 'ZOI-CLIENT' }}
+              </span>
               {% if comp.status == 'active' %}
-                <span style="color: #059669; font-weight: 600; font-size: 0.72rem;"><i class="bi bi-patch-check-fill"></i> KYC Active</span>
+                <span style="color: #059669; font-weight: 600; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 3px;">
+                  <i class="bi bi-patch-check-fill"></i> KYC Active
+                </span>
               {% else %}
-                <span style="color: #d97706; font-weight: 600; font-size: 0.72rem;"><i class="bi bi-clock-history"></i> KYC Pending</span>
+                <span style="color: #d97706; font-weight: 600; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 3px;">
+                  <i class="bi bi-clock-history"></i> KYC Pending
+                </span>
               {% endif %}
             </div>
-          </td>
+            <div style="font-size: 0.76rem; color: #64748b; margin-top: 3px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <span><i class="bi bi-envelope"></i> {{ comp.email }}</span>
+              <span>&bull;</span>
+              <span>Execution Fee: <strong style="color: #1e293b;">₹{{ "%.2f"|format(price) }}/sign</strong></span>
+            </div>
+          </div>
+        </div>
 
-          <!-- 2. Document & Remarks -->
-          <td>
-            <div style="font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 6px;">
-              <i class="bi bi-file-earmark-pdf-fill" style="color: #ef4444; font-size: 1.05rem;"></i>
-              <span>{{ doc.title }}</span>
+        <!-- Wallet Balance & Count Right -->
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          
+          <!-- Balance Pill -->
+          <div style="display: flex; align-items: center; gap: 10px; padding: 6px 14px; border-radius: 10px; background: {% if has_balance %}#f0fdf4{% else %}#fef2f2{% endif %}; border: 1px solid {% if has_balance %}#bbf7d0{% else %}#fecaca{% endif %};">
+            <div style="width: 32px; height: 32px; border-radius: 8px; background: {% if has_balance %}#dcfce7{% else %}#fee2e2{% endif %}; color: {% if has_balance %}#16a34a{% else %}#dc2626{% endif %}; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+              <i class="bi bi-wallet2"></i>
             </div>
-            <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">
-              {{ doc.original_filename }} &bull; Page {{ doc.page_num }}
-            </div>
-            {% if doc.client_remarks %}
-            <div style="margin-top: 4px; font-size: 0.75rem; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; display: inline-block; color: #334155;">
-              <i class="bi bi-chat-left-text" style="color: #64748b;"></i> {{ doc.client_remarks }}
-            </div>
-            {% endif %}
-            <div style="margin-top: 4px;">
-              <a href="{{ url_for('admin.preview_esign', doc_id=doc.id) }}" target="_blank" style="font-size: 0.74rem; color: var(--tiancai-blue); text-decoration: none; font-weight: 600;">
-                <i class="bi bi-eye"></i> View PDF
-              </a>
-            </div>
-          </td>
-
-          <!-- 3. Customer / Signatory -->
-          <td>
-            <div class="signatory-row">
-              <div class="signatory-avatar">
-                {{ doc.signatory_name[:1].upper() if doc.signatory_name else 'C' }}
+            <div style="text-align: right;">
+              <div style="font-size: 0.68rem; font-weight: 700; color: {% if has_balance %}#166534{% else %}#991b1b{% endif %}; text-transform: uppercase; letter-spacing: 0.5px;">
+                Wallet Balance
               </div>
-              <div>
-                <div style="font-weight: 700; color: var(--text-dark);">{{ doc.signatory_name }}</div>
-                {% if doc.signatory_mobile and doc.signatory_mobile != '9999999999' %}
-                  <div style="font-size: 0.75rem; color: var(--text-muted);"><i class="bi bi-phone"></i> {{ doc.signatory_mobile }}</div>
-                {% endif %}
-                {% if doc.signatory_email and doc.signatory_email != 'na@zoikyc.com' %}
-                  <div style="font-size: 0.72rem; color: #64748b;"><i class="bi bi-envelope"></i> {{ doc.signatory_email }}</div>
-                {% endif %}
+              <div style="font-weight: 800; font-size: 0.98rem; color: {% if has_balance %}#15803d{% else %}#dc2626{% endif %};">
+                {{ wallet.balance | currency if wallet else '₹0.00' }}
               </div>
             </div>
-          </td>
+          </div>
 
-          <!-- 4. Wallet Balance -->
-          <td>
-            <div class="balance-val {% if has_balance %}healthy{% else %}low{% endif %}">
-              {{ wallet.balance | currency if wallet else '₹0.00' }}
-            </div>
-            {% if has_balance %}
-              <div class="balance-pill balance-pill-healthy">
-                <i class="bi bi-check-circle-fill"></i> Cost: ₹{{ "%.2f"|format(price) }}
-              </div>
-            {% else %}
-              <div class="balance-pill balance-pill-low">
-                <i class="bi bi-exclamation-triangle-fill"></i> Low Balance (Req: ₹{{ "%.2f"|format(price) }})
-              </div>
-            {% endif %}
-          </td>
+          <!-- Total Requests Badge -->
+          <div style="padding: 8px 14px; border-radius: 10px; background: #f8fafc; border: 1px solid #cbd5e1; font-size: 0.82rem; font-weight: 700; color: #334155; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="bi bi-files" style="color: #7c3aed;"></i>
+            <span>{{ docs|length }} Document{% if docs|length != 1 %}s{% endif %}</span>
+          </div>
 
-          <!-- 5. Status Badge -->
-          <td>
-            {% if doc.status == 'pending_admin' %}
-              <span class="saas-status-badge badge-pending">
-                <i class="bi bi-hourglass-split"></i> Pending Dispatch
-              </span>
-            {% elif doc.status == 'sent_to_capricorn' %}
-              <span class="saas-status-badge" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;">
-                <i class="bi bi-send-check-fill"></i> Awaiting OTP
-              </span>
-              {% if doc.capricorn_txn %}
-                <div style="font-size: 0.68rem; color: #0369a1; font-family: monospace; margin-top: 2px;">
-                  Txn: {{ doc.capricorn_txn }}
+        </div>
+
+      </div>
+
+      <!-- Company's Document Execution Requests Table -->
+      <div class="saas-table-card" style="border: none; border-radius: 0; margin-bottom: 0; box-shadow: none;">
+        <table class="saas-table">
+          <thead>
+            <tr>
+              <th style="width: 30%;">Document & Remarks</th>
+              <th style="width: 25%;">Customer / Signatory</th>
+              <th style="width: 18%;">Status</th>
+              <th style="width: 13%;">Date Created</th>
+              <th style="width: 14%; text-align: right; padding-right: 22px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for doc in docs %}
+            <tr>
+              <!-- 1. Document & Remarks -->
+              <td>
+                <div style="font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 6px;">
+                  <i class="bi bi-file-earmark-pdf-fill" style="color: #ef4444; font-size: 1.05rem;"></i>
+                  <span>{{ doc.title }}</span>
                 </div>
-              {% endif %}
-            {% elif doc.status == 'signed' %}
-              <span class="saas-status-badge badge-active">
-                <i class="bi bi-check-circle-fill"></i> Signed & Sealed
-              </span>
-            {% elif doc.status == 'rejected_by_admin' %}
-              <span class="saas-status-badge badge-suspended">
-                <i class="bi bi-x-circle-fill"></i> Rejected
-              </span>
-            {% else %}
-              <span class="saas-status-badge badge-pending">
-                {{ doc.status_label }}
-              </span>
-            {% endif %}
-          </td>
+                <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">
+                  {{ doc.original_filename }} &bull; Page {{ doc.page_num }}
+                </div>
+                {% if doc.client_remarks %}
+                <div style="margin-top: 4px; font-size: 0.75rem; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; display: inline-block; color: #334155;">
+                  <i class="bi bi-chat-left-text" style="color: #64748b;"></i> {{ doc.client_remarks }}
+                </div>
+                {% endif %}
+                <div style="margin-top: 4px;">
+                  <a href="{{ url_for('admin.preview_esign', doc_id=doc.id) }}" target="_blank" style="font-size: 0.74rem; color: var(--tiancai-blue); text-decoration: none; font-weight: 600;">
+                    <i class="bi bi-eye"></i> View PDF
+                  </a>
+                </div>
+              </td>
 
-          <!-- 6. Date Created -->
-          <td style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap;">
-            {{ doc.created_at.strftime('%d %b %Y') }}<br>
-            <span style="font-size: 0.72rem;">{{ doc.created_at.strftime('%I:%M %p') }}</span>
-          </td>
+              <!-- 2. Customer / Signatory -->
+              <td>
+                <div class="signatory-row">
+                  <div class="signatory-avatar">
+                    {{ doc.signatory_name[:1].upper() if doc.signatory_name else 'C' }}
+                  </div>
+                  <div>
+                    <div style="font-weight: 700; color: var(--text-dark);">{{ doc.signatory_name }}</div>
+                    {% if doc.signatory_mobile and doc.signatory_mobile != '9999999999' %}
+                      <div style="font-size: 0.75rem; color: var(--text-muted);"><i class="bi bi-phone"></i> {{ doc.signatory_mobile }}</div>
+                    {% endif %}
+                    {% if doc.signatory_email and doc.signatory_email != 'na@zoikyc.com' %}
+                      <div style="font-size: 0.72rem; color: #64748b;"><i class="bi bi-envelope"></i> {{ doc.signatory_email }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+              </td>
 
-          <!-- 7. Actions -->
-          <td style="text-align: right; padding-right: 22px; white-space: nowrap;">
-            <div style="display: inline-flex; gap: 8px; align-items: center; justify-content: flex-end;">
-              
-              {% if doc.status in ['pending_admin', 'failed'] %}
-                <!-- Dispatch Form -->
-                <form action="{{ url_for('admin.dispatch_esign', doc_id=doc.id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Convert PDF to Base64 and dispatch to Capricorn API? This will debit ₹{{ price }} from {{ comp.name }}.');">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                  <button type="submit" class="btn btn-sm" style="background: #7c3aed; color: #ffffff; font-weight: 700; padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; border: none; box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25);" {% if not has_balance %}disabled title="Cannot dispatch: Client has insufficient balance"{% endif %}>
-                    <i class="bi bi-send-fill"></i> Send to Capricorn
-                  </button>
-                </form>
+              <!-- 3. Status -->
+              <td>
+                {% if doc.status == 'pending_admin' %}
+                  <span class="saas-status-badge badge-pending">
+                    <i class="bi bi-hourglass-split"></i> Pending Dispatch
+                  </span>
+                {% elif doc.status == 'sent_to_capricorn' %}
+                  <span class="saas-status-badge" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;">
+                    <i class="bi bi-send-check-fill"></i> Awaiting OTP
+                  </span>
+                  {% if doc.capricorn_txn %}
+                    <div style="font-size: 0.68rem; color: #0369a1; font-family: monospace; margin-top: 2px;">
+                      Txn: {{ doc.capricorn_txn }}
+                    </div>
+                  {% endif %}
+                {% elif doc.status == 'signed' %}
+                  <span class="saas-status-badge badge-active">
+                    <i class="bi bi-check-circle-fill"></i> Signed & Sealed
+                  </span>
+                {% elif doc.status == 'rejected_by_admin' %}
+                  <span class="saas-status-badge badge-suspended">
+                    <i class="bi bi-x-circle-fill"></i> Rejected
+                  </span>
+                {% else %}
+                  <span class="saas-status-badge badge-pending">
+                    {{ doc.status_label }}
+                  </span>
+                {% endif %}
+              </td>
 
-                <!-- Reject Form -->
-                <form action="{{ url_for('admin.reject_esign', doc_id=doc.id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Reject this document request?');">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                  <button type="submit" class="btn btn-sm btn-outline-danger" style="padding: 6px 10px; border-radius: 6px;" title="Reject Document">
-                    <i class="bi bi-x-lg"></i>
-                  </button>
-                </form>
-              
-              {% elif doc.status == 'sent_to_capricorn' and doc.redirect_url %}
-                <a href="{{ doc.redirect_url }}" target="_blank" class="btn btn-sm" style="background: #0284c7; color: #ffffff; font-weight: 700; padding: 6px 12px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);" title="Inspect Capricorn Signing Screen">
-                  <i class="bi bi-box-arrow-up-right"></i> Open OTP Screen
-                </a>
-              
-              {% elif doc.status == 'signed' %}
-                <a href="{{ url_for('admin.preview_esign', doc_id=doc.id, type='signed') }}" target="_blank" class="btn btn-sm btn-success" style="font-weight: 700; padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);">
-                  <i class="bi bi-file-earmark-check-fill"></i> Signed PDF
-                </a>
-              {% endif %}
+              <!-- 4. Date Created -->
+              <td style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap;">
+                {{ doc.created_at.strftime('%d %b %Y') }}<br>
+                <span style="font-size: 0.72rem;">{{ doc.created_at.strftime('%I:%M %p') }}</span>
+              </td>
 
-            </div>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <div style="text-align: center; padding: 56px 24px;">
-    <div style="font-size: 3rem; color: #cbd5e1; margin-bottom: 12px;">
-      <i class="bi bi-inbox-fill"></i>
+              <!-- 5. Actions -->
+              <td style="text-align: right; padding-right: 22px; white-space: nowrap;">
+                <div style="display: inline-flex; gap: 8px; align-items: center; justify-content: flex-end;">
+                  
+                  {% if doc.status in ['pending_admin', 'failed'] %}
+                    <!-- Dispatch Form -->
+                    <form action="{{ url_for('admin.dispatch_esign', doc_id=doc.id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Convert PDF to Base64 and dispatch to Capricorn API? This will debit ₹{{ price }} from {{ comp.name }}.');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                      <button type="submit" class="btn btn-sm" style="background: #7c3aed; color: #ffffff; font-weight: 700; padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; border: none; box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25);" {% if not has_balance %}disabled title="Cannot dispatch: Client has insufficient balance"{% endif %}>
+                        <i class="bi bi-send-fill"></i> Send to Capricorn
+                      </button>
+                    </form>
+
+                    <!-- Reject Form -->
+                    <form action="{{ url_for('admin.reject_esign', doc_id=doc.id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Reject this document request?');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                      <button type="submit" class="btn btn-sm btn-outline-danger" style="padding: 6px 10px; border-radius: 6px;" title="Reject Document">
+                        <i class="bi bi-x-lg"></i>
+                      </button>
+                    </form>
+                  
+                  {% elif doc.status == 'sent_to_capricorn' and doc.redirect_url %}
+                    <a href="{{ doc.redirect_url }}" target="_blank" class="btn btn-sm" style="background: #0284c7; color: #ffffff; font-weight: 700; padding: 6px 12px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);" title="Inspect Capricorn Signing Screen">
+                      <i class="bi bi-box-arrow-up-right"></i> Open OTP Screen
+                    </a>
+                  
+                  {% elif doc.status == 'signed' %}
+                    <a href="{{ url_for('admin.preview_esign', doc_id=doc.id, type='signed') }}" target="_blank" class="btn btn-sm btn-success" style="font-weight: 700; padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);">
+                      <i class="bi bi-file-earmark-check-fill"></i> Signed PDF
+                    </a>
+                  {% endif %}
+
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
     </div>
-    <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-dark); margin-bottom: 6px;">
-      No E-Sign Requests in this Filter
-    </h3>
-    <p style="color: var(--text-muted); font-size: 0.88rem; max-width: 440px; margin: 0 auto;">
-      When client organisations upload PDF documents, they will appear here for your review and Capricorn dispatch.
-    </p>
-  </div>
+    {% endfor %}
+  {% else %}
+    <div style="text-align: center; padding: 56px 24px;">
+      <div style="font-size: 3rem; color: #cbd5e1; margin-bottom: 12px;">
+        <i class="bi bi-inbox-fill"></i>
+      </div>
+      <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-dark); margin-bottom: 6px;">
+        No E-Sign Requests in this Filter
+      </h3>
+      <p style="color: var(--text-muted); font-size: 0.88rem; max-width: 440px; margin: 0 auto;">
+        When client organisations upload PDF documents, they will appear here grouped by company for your review and Capricorn dispatch.
+      </p>
+    </div>
   {% endif %}
 
 </div>
