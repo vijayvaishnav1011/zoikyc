@@ -125,15 +125,6 @@
             <div class="balance-val {% if comp.wallet and comp.wallet.balance < 500 %}low{% else %}healthy{% endif %}">
               {{ comp.wallet.balance | currency if comp.wallet else '₹0.00' }}
             </div>
-            {% if comp.wallet and comp.wallet.balance < 500 %}
-              <div class="balance-pill balance-pill-low">
-                <i class="bi bi-exclamation-triangle-fill"></i> Low Float
-              </div>
-            {% else %}
-              <div class="balance-pill balance-pill-healthy">
-                <i class="bi bi-check-circle-fill"></i> Healthy
-              </div>
-            {% endif %}
           </td>
 
           <!-- 5. Commercial Pricing & Limits -->

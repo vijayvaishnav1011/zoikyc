@@ -263,7 +263,7 @@
                     <!-- Dispatch Form -->
                     <form action="{{ url_for('admin.dispatch_esign', doc_id=doc.id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Convert PDF to Base64 and dispatch to Capricorn API? This will debit ₹{{ price }} from {{ comp.name }}.');">
                       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                      <button type="submit" class="btn btn-sm" style="background: #7c3aed; color: #ffffff; font-weight: 700; padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; border: none; box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25);" {% if not has_balance %}disabled title="Cannot dispatch: Client has insufficient balance"{% endif %}>
+                      <button type="submit" class="btn btn-sm" style="background: #7c3aed; color: #ffffff; font-weight: 700; padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; border: none; box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25);" title="Dispatch to Capricorn API for Aadhaar OTP Signing">
                         <i class="bi bi-send-fill"></i> Send to Capricorn
                       </button>
                     </form>
