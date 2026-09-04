@@ -23,44 +23,55 @@ REQUIRED_KYC_DOCS = [
     ('board_resolution', 'Authorised Signatory / Director Proof')
 ]
 
-ADMIN_SYSTEM_EMAILS = ['info@zoibit.com', 'info@zoikyc.com']
+ADMIN_SYSTEM_EMAILS = ['info@zoibit.com', 'info@zoikyc.com', 'admin@zoikyc.com']
+
+def client_companies_filter():
+    """SQLAlchemy filter criteria excluding internal platform/master admin company profiles."""
+    return (
+        Company.email.notin_(ADMIN_SYSTEM_EMAILS) &
+        ~Company.name.ilike('%Platform Admin%') &
+        ~Company.name.ilike('%Master Admin%') &
+        ~Company.name.ilike('%ZoiKYC%Admin%') &
+        ~Company.email.ilike('%@zoikyc.com') &
+        ~Company.email.ilike('%@zoibit.com')
+    )
 
 @admin_bp.route('/')
 @admin_required
 def index():
     # Platform Analytics Metrics (Excluding internal admin tenant)
-    client_companies = Company.query.filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS))
+    client_companies = Company.query.filter(client_companies_filter())
     
     total_companies = client_companies.count()
     active_companies = client_companies.filter_by(status='active').count()
     pending_companies = client_companies.filter_by(status='pending_verification').count()
     
     pending_documents = CompanyDocument.query.join(Company).filter(
-        Company.email.notin_(ADMIN_SYSTEM_EMAILS),
+        client_companies_filter(),
         CompanyDocument.status.in_(['under_review', 'pending'])
     ).count()
 
     total_wallet_reserves = db.session.query(
         func.coalesce(func.sum(Wallet.balance), 0)
-    ).join(Company).filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS)).scalar()
+    ).join(Company).filter(client_companies_filter()).scalar()
 
-    total_transactions = WalletTransaction.query.join(Company).filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS)).count()
+    total_transactions = WalletTransaction.query.join(Company).filter(client_companies_filter()).count()
     total_credit_volume = db.session.query(
         func.coalesce(func.sum(WalletTransaction.amount), 0)
     ).join(Company).filter(
-        Company.email.notin_(ADMIN_SYSTEM_EMAILS),
+        client_companies_filter(),
         WalletTransaction.type == 'credit',
         WalletTransaction.status == 'success'
     ).scalar()
 
     recent_companies = client_companies.order_by(Company.created_at.desc()).limit(6).all()
     pending_docs = CompanyDocument.query.join(Company).filter(
-        Company.email.notin_(ADMIN_SYSTEM_EMAILS),
+        client_companies_filter(),
         CompanyDocument.status.in_(['under_review', 'pending'])
     ).order_by(CompanyDocument.created_at.desc()).limit(6).all()
     
     recent_transactions = WalletTransaction.query.join(Company).filter(
-        Company.email.notin_(ADMIN_SYSTEM_EMAILS)
+        client_companies_filter()
     ).order_by(
         WalletTransaction.created_at.desc()
     ).limit(6).all()
@@ -91,7 +102,7 @@ def companies():
     page = request.args.get('page', 1, type=int)
 
     # Base query excluding internal admin
-    base_query = Company.query.filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS))
+    base_query = Company.query.filter(client_companies_filter())
     total_count = base_query.count()
     active_count = base_query.filter_by(status='active').count()
     pending_count = base_query.filter_by(status='pending_verification').count()
@@ -196,7 +207,7 @@ def documents():
     page = request.args.get('page', 1, type=int)
 
     # Exclude internal admin tenant from document verification matrix
-    query = Company.query.filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS))
+    query = Company.query.filter(client_companies_filter())
 
     if status_filter == 'pending':
         query = query.filter(Company.status != 'active')
@@ -316,7 +327,7 @@ def transactions():
     search_query = request.args.get('q', '').strip()
     page = request.args.get('page', 1, type=int)
 
-    query = WalletTransaction.query.join(Company)
+    query = WalletTransaction.query.join(Company).filter(client_companies_filter())
 
     if txn_type != 'all':
         query = query.filter(WalletTransaction.type == txn_type)
@@ -504,7 +515,7 @@ def esign_requests():
     search_query = request.args.get('q', '').strip()
     company_filter = request.args.get('company_id', 'all')
 
-    query = ESignDocument.query.join(Company).filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS))
+    query = ESignDocument.query.join(Company).filter(client_companies_filter())
 
     if status_filter != 'all':
         query = query.filter(ESignDocument.status == status_filter)
@@ -541,7 +552,7 @@ def esign_requests():
         grouped_documents[comp].append(doc)
 
     # Filter base counts for the status tabs
-    base_counts = ESignDocument.query.join(Company).filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS))
+    base_counts = ESignDocument.query.join(Company).filter(client_companies_filter())
     if company_filter != 'all':
         try:
             cid = int(company_filter)
@@ -557,7 +568,7 @@ def esign_requests():
         'rejected_by_admin': base_counts.filter(ESignDocument.status == 'rejected_by_admin').count(),
     }
 
-    all_companies = Company.query.filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS)).order_by(Company.name.asc()).all()
+    all_companies = Company.query.filter(client_companies_filter()).order_by(Company.name.asc()).all()
 
     return render_template(
         'admin/esign_requests.html',

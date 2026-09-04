@@ -6,23 +6,28 @@
 {% block content %}
 <!-- Super Admin Hero Banner -->
 <div class="dashboard-hero-banner" style="background: linear-gradient(135deg, #1e053a 0%, #3b0764 50%, #581c87 100%);">
-  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; position: relative; z-index: 5;">
+  <div
+    style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; position: relative; z-index: 5;">
     <div>
-      <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(250, 204, 21, 0.2); color: #fef08a; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 8px;">
+      <div
+        style="display: inline-flex; align-items: center; gap: 6px; background: rgba(250, 204, 21, 0.2); color: #fef08a; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 8px;">
         <i class="bi bi-shield-fill-check"></i> Master Control Panel
       </div>
       <h1 style="font-size: 1.75rem; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; margin-bottom: 6px;">
         ZoiKYC Super Administration
       </h1>
       <p style="color: rgba(255, 255, 255, 0.85); font-size: 0.9rem; max-width: 680px; line-height: 1.5;">
-        Verify client compliance documents, audit multi-tenant wallet balances, and monitor live FinTech transaction throughput.
+        Verify client compliance documents, audit multi-tenant wallet balances, and monitor live FinTech transaction
+        throughput.
       </p>
     </div>
     <div class="admin-hero-btn-group">
-      <a href="{{ url_for('admin.companies') }}" class="btn-tiancai-pill" style="text-decoration: none; padding: 11px 22px; font-size: 0.88rem; width: auto; background: var(--tiancai-purple-gradient); box-shadow: 0 8px 20px rgba(88, 28, 135, 0.35);">
+      <a href="{{ url_for('admin.companies') }}" class="btn-tiancai-pill"
+        style="text-decoration: none; padding: 11px 22px; font-size: 0.88rem; width: auto; background: var(--tiancai-purple-gradient); box-shadow: 0 8px 20px rgba(88, 28, 135, 0.35);">
         <i class="bi bi-buildings"></i> Client Organisations Directory ({{ total_companies }})
       </a>
-      <a href="{{ url_for('admin.transactions') }}" style="text-decoration: none; padding: 11px 20px; font-size: 0.88rem; background: rgba(255, 255, 255, 0.15); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: var(--radius-pill); font-weight: 700; display: inline-flex; align-items: center; gap: 6px; transition: var(--transition);">
+      <a href="{{ url_for('admin.transactions') }}"
+        style="text-decoration: none; padding: 11px 20px; font-size: 0.88rem; background: rgba(255, 255, 255, 0.15); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: var(--radius-pill); font-weight: 700; display: inline-flex; align-items: center; gap: 6px; transition: var(--transition);">
         <i class="bi bi-receipt-cutoff"></i> Global Transactions ({{ total_transactions }})
       </a>
     </div>
@@ -41,7 +46,7 @@
         {{ total_companies }}
       </div>
       <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
-        Registered B2B organizations
+        Registered
       </div>
     </div>
     <span class="metric-badge badge-active">{{ active_companies }} Active</span>
@@ -73,10 +78,10 @@
         {{ total_wallet_reserves | currency }}
       </div>
       <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
-        Sum of all active company balances
+
       </div>
     </div>
-    <span class="metric-badge badge-credit">INR Float</span>
+
   </div>
 
   <!-- Platform Fee Configuration Card -->
@@ -92,7 +97,8 @@
         Applied to wallet float recharges
       </div>
     </div>
-    <a href="{{ url_for('admin.settings') }}" class="metric-badge" style="background: rgba(126, 34, 206, 0.12); color: #7e22ce; text-decoration: none; font-weight: 700;">
+    <a href="{{ url_for('admin.settings') }}" class="metric-badge"
+      style="background: rgba(126, 34, 206, 0.12); color: #7e22ce; text-decoration: none; font-weight: 700;">
       <i class="bi bi-gear-fill"></i> Change
     </a>
   </div>
@@ -100,14 +106,18 @@
 
 <!-- Recent Client Organisations Card -->
 <div class="card" style="margin-bottom: 24px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+  <div
+    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
     <div>
-      <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+      <h3
+        style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
         <i class="bi bi-building-add" style="color: var(--tiancai-purple-light);"></i> Recent Client Organisations
       </h3>
-      <p style="font-size: 0.8rem; color: var(--text-muted);">Latest registered client companies and their KYC compliance status.</p>
+      <p style="font-size: 0.8rem; color: var(--text-muted);">Latest registered client companies and their KYC
+        compliance status.</p>
     </div>
-    <a href="{{ url_for('admin.companies') }}" style="color: var(--tiancai-blue); font-weight: 700; font-size: 0.85rem; text-decoration: none;">
+    <a href="{{ url_for('admin.companies') }}"
+      style="color: var(--tiancai-blue); font-weight: 700; font-size: 0.85rem; text-decoration: none;">
       All Organisations Directory <i class="bi bi-arrow-right"></i>
     </a>
   </div>
@@ -130,12 +140,14 @@
         {% for comp in recent_companies %}
         <tr>
           <td style="font-weight: 800;">
-            <a href="{{ url_for('admin.company_detail', company_id=comp.id) }}" style="color: var(--tiancai-purple-dark); text-decoration: none;">
+            <a href="{{ url_for('admin.company_detail', company_id=comp.id) }}"
+              style="color: var(--tiancai-purple-dark); text-decoration: none;">
               {{ comp.name }}
             </a>
           </td>
           <td>
-            <span class="metric-badge" style="background: rgba(37, 99, 235, 0.1); color: var(--tiancai-blue); font-size: 0.72rem; padding: 2px 8px; font-weight: 700;">
+            <span class="metric-badge"
+              style="background: rgba(37, 99, 235, 0.1); color: var(--tiancai-blue); font-size: 0.72rem; padding: 2px 8px; font-weight: 700;">
               {{ comp.client_id or 'ZOI-CLIENT' }}
             </span>
           </td>
@@ -149,15 +161,18 @@
           </td>
           <td>
             {% if comp.status == 'active' %}
-              <span class="metric-badge badge-active"><i class="bi bi-check-circle-fill"></i> Active</span>
+            <span class="metric-badge badge-active"><i class="bi bi-check-circle-fill"></i> Active</span>
             {% elif comp.status == 'suspended' %}
-              <span class="metric-badge" style="background: rgba(220, 38, 38, 0.12); color: #dc2626;"><i class="bi bi-x-circle-fill"></i> Suspended</span>
+            <span class="metric-badge" style="background: rgba(220, 38, 38, 0.12); color: #dc2626;"><i
+                class="bi bi-x-circle-fill"></i> Suspended</span>
             {% else %}
-              <span class="metric-badge" style="background: rgba(217, 119, 6, 0.12); color: #d97706;"><i class="bi bi-clock-history"></i> Pending Review</span>
+            <span class="metric-badge" style="background: rgba(217, 119, 6, 0.12); color: #d97706;"><i
+                class="bi bi-clock-history"></i> Pending Review</span>
             {% endif %}
           </td>
           <td>
-            <a href="{{ url_for('admin.company_detail', company_id=comp.id) }}" class="lang-toggle-pill" style="text-decoration: none; padding: 5px 12px; font-size: 0.78rem;">
+            <a href="{{ url_for('admin.company_detail', company_id=comp.id) }}" class="lang-toggle-pill"
+              style="text-decoration: none; padding: 5px 12px; font-size: 0.78rem;">
               <i class="bi bi-shield-check"></i> Manage & Verify
             </a>
           </td>
@@ -175,12 +190,15 @@
 
 <!-- Recent Global Platform Transactions Table -->
 <div class="card">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+  <div
+    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
     <div>
       <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark);">Recent Platform Transactions</h3>
-      <p style="font-size: 0.8rem; color: var(--text-muted);">Live transactions across all client organization wallets.</p>
+      <p style="font-size: 0.8rem; color: var(--text-muted);">Live transactions across all client organization wallets.
+      </p>
     </div>
-    <a href="{{ url_for('admin.transactions') }}" style="color: var(--tiancai-blue); font-weight: 700; text-decoration: none; font-size: 0.85rem;">
+    <a href="{{ url_for('admin.transactions') }}"
+      style="color: var(--tiancai-blue); font-weight: 700; text-decoration: none; font-size: 0.85rem;">
       Full Ledger <i class="bi bi-arrow-right"></i>
     </a>
   </div>
@@ -204,7 +222,8 @@
         <tr>
           <td><code style="color: var(--tiancai-blue); font-weight: 700;">{{ txn.reference_id }}</code></td>
           <td style="font-weight: 700;">
-            <a href="{{ url_for('admin.company_detail', company_id=txn.company_id) }}" style="color: inherit; text-decoration: none;">
+            <a href="{{ url_for('admin.company_detail', company_id=txn.company_id) }}"
+              style="color: inherit; text-decoration: none;">
               {{ txn.company.name if txn.company else 'N/A' }}
             </a>
           </td>
