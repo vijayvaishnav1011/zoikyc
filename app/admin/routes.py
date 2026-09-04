@@ -13,6 +13,8 @@ from app.models.wallet import Wallet
 from app.models.transaction import WalletTransaction
 from app.models.document import CompanyDocument
 from app.models.setting import SystemSetting, get_platform_fee_config
+from app.models.esign import ESignDocument
+from app.integrations.capricorn import CapricornESignProvider
 
 REQUIRED_KYC_DOCS = [
     ('certificate_of_incorporation', 'Certificate of Incorporation'),
@@ -487,6 +489,195 @@ def update_company_pricing(company_id):
 
     flash(f"Updated commercial rules for '{company.name}' — Per KYC: ₹{per_kyc:,.2f} | Min Recharge: ₹{min_rech:,.2f}.", "success")
     return redirect(url_for('admin.company_detail', company_id=company.id))
+
+# =========================================================================
+# E-SIGN CAPRICORN DISPATCH & MANAGEMENT
+# =========================================================================
+
+@admin_bp.route('/esign')
+@admin_required
+def esign_requests():
+    """Super Admin screen to review uploaded client documents and dispatch to Capricorn."""
+    status_filter = request.args.get('status', 'all')
+    search_query = request.args.get('q', '').strip()
+
+    query = ESignDocument.query.join(Company).filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS))
+
+    if status_filter != 'all':
+        query = query.filter(ESignDocument.status == status_filter)
+
+    if search_query:
+        search_pattern = f"%{search_query}%"
+        query = query.filter(
+            db.or_(
+                ESignDocument.title.ilike(search_pattern),
+                ESignDocument.signatory_name.ilike(search_pattern),
+                ESignDocument.signatory_mobile.ilike(search_pattern),
+                ESignDocument.client_remarks.ilike(search_pattern),
+                Company.name.ilike(search_pattern),
+                Company.client_id.ilike(search_pattern)
+            )
+        )
+
+    documents = query.order_by(ESignDocument.created_at.desc()).all()
+
+    counts = {
+        'all': ESignDocument.query.join(Company).filter(Company.email.notin_(ADMIN_SYSTEM_EMAILS)).count(),
+        'pending_admin': ESignDocument.query.join(Company).filter(
+            Company.email.notin_(ADMIN_SYSTEM_EMAILS),
+            ESignDocument.status == 'pending_admin'
+        ).count(),
+        'sent_to_capricorn': ESignDocument.query.join(Company).filter(
+            Company.email.notin_(ADMIN_SYSTEM_EMAILS),
+            ESignDocument.status == 'sent_to_capricorn'
+        ).count(),
+        'signed': ESignDocument.query.join(Company).filter(
+            Company.email.notin_(ADMIN_SYSTEM_EMAILS),
+            ESignDocument.status == 'signed'
+        ).count(),
+        'rejected_by_admin': ESignDocument.query.join(Company).filter(
+            Company.email.notin_(ADMIN_SYSTEM_EMAILS),
+            ESignDocument.status == 'rejected_by_admin'
+        ).count(),
+    }
+
+    return render_template(
+        'admin/esign_requests.html',
+        documents=documents,
+        counts=counts,
+        current_status=status_filter,
+        search_query=search_query
+    )
+
+@admin_bp.route('/esign/<int:doc_id>/dispatch', methods=['POST'])
+@admin_required
+def dispatch_esign(doc_id):
+    """
+    Encodes the client PDF into Base64 (pdf64) and dispatches it to Capricorn API.
+    Debits the per-sign fee from the client company's wallet and updates status to 'sent_to_capricorn'.
+    """
+    import uuid
+    doc = ESignDocument.query.get_or_404(doc_id)
+    company = doc.company
+    wallet = Wallet.query.filter_by(company_id=company.id).first()
+
+    per_sign_fee = company.per_kyc_price or Decimal('20.00')
+
+    # Float balance verification
+    if not wallet or wallet.balance < per_sign_fee:
+        flash(
+            f"Cannot dispatch document! Client '{company.name}' has insufficient wallet float "
+            f"(Balance: ₹{wallet.balance if wallet else 0:.2f}, Required: ₹{per_sign_fee:.2f}). "
+            f"Please notify client to recharge.",
+            "danger"
+        )
+        return redirect(url_for('admin.esign_requests'))
+
+    # Full server path to the original PDF
+    pdf_full_path = os.path.join(current_app.root_path, doc.file_path)
+    if not os.path.exists(pdf_full_path):
+        flash(f"Original PDF file not found at path: {doc.file_path}", "danger")
+        return redirect(url_for('admin.esign_requests'))
+
+    # Build callback URL
+    callback_url = url_for('esign.callback', _external=True)
+
+    # Optional override coordinates from admin form
+    custom_cood = request.form.get('coordinates', '').strip() or doc.coordinates or "200,250,400,500"
+    custom_page = request.form.get('page_num', '').strip() or doc.page_num or "1"
+
+    capricorn = CapricornESignProvider()
+    result = capricorn.send_document_for_esign(
+        doc_title=doc.title,
+        pdf_file_path=pdf_full_path,
+        signatory_name=doc.signatory_name,
+        signatory_mobile=doc.signatory_mobile,
+        signatory_email=doc.signatory_email,
+        callback_url=callback_url,
+        page_num=custom_page,
+        coordinates=custom_cood,
+        sign_mode=doc.sign_mode
+    )
+
+    if not result.get('success'):
+        error_msg = result.get('error', 'Unknown error from Capricorn')
+        flash(f"Capricorn API dispatch failed: {error_msg}", "danger")
+        return redirect(url_for('admin.esign_requests'))
+
+    # API call succeeded! Deduct fee from client's wallet
+    balance_before = wallet.balance
+    wallet.balance -= per_sign_fee
+    balance_after = wallet.balance
+
+    txn_ref = f"ESIGN-{doc.id}-{uuid.uuid4().hex[:6].upper()}"
+    wallet_txn = WalletTransaction(
+        wallet_id=wallet.id,
+        company_id=company.id,
+        type='debit',
+        amount=per_sign_fee,
+        balance_before=balance_before,
+        balance_after=balance_after,
+        reference_id=txn_ref,
+        status='success',
+        description=f"Aadhaar E-Sign charge for '{doc.title}' (Txn: {result.get('txn')})"
+    )
+    db.session.add(wallet_txn)
+
+    # Update document state
+    doc.status = 'sent_to_capricorn'
+    doc.capricorn_txn = result.get('txn')
+    doc.capricorn_reference = result.get('reference')
+    doc.redirect_url = result.get('redirect_url')
+    doc.signed_pdf_url = result.get('signed_pdf_url')
+    doc.cost_charged = per_sign_fee
+    doc.coordinates = custom_cood
+    doc.page_num = custom_page
+    doc.dispatched_at = datetime.now(timezone.utc)
+    doc.admin_notes = None
+
+    db.session.commit()
+
+    flash(
+        f"Document '{doc.title}' successfully converted to Base64 and dispatched to Capricorn! "
+        f"Txn: {doc.capricorn_txn}. Debited ₹{per_sign_fee:.2f} from {company.name}.",
+        "success"
+    )
+    return redirect(url_for('admin.esign_requests'))
+
+@admin_bp.route('/esign/<int:doc_id>/reject', methods=['POST'])
+@admin_required
+def reject_esign(doc_id):
+    """Rejects an e-sign document request with admin feedback."""
+    doc = ESignDocument.query.get_or_404(doc_id)
+    reason = request.form.get('admin_notes', 'Document rejected by compliance administrator.').strip()
+
+    doc.status = 'rejected_by_admin'
+    doc.admin_notes = reason
+    db.session.commit()
+
+    flash(f"Document '{doc.title}' rejected.", "info")
+    return redirect(url_for('admin.esign_requests'))
+
+@admin_bp.route('/esign/<int:doc_id>/preview')
+@admin_required
+def preview_esign(doc_id):
+    """Allows Super Admin to inspect original or signed PDF."""
+    doc = ESignDocument.query.get_or_404(doc_id)
+    req_type = request.args.get('type', 'original')
+
+    if req_type == 'signed' and doc.signed_file_path:
+        full_path = os.path.join(current_app.root_path, doc.signed_file_path)
+        download_name = f"Signed_{doc.original_filename}"
+    else:
+        full_path = os.path.join(current_app.root_path, doc.file_path)
+        download_name = doc.original_filename
+
+    if not os.path.exists(full_path):
+        flash("Document file not found on storage.", "danger")
+        return redirect(url_for('admin.esign_requests'))
+
+    return send_file(full_path, as_attachment=False, download_name=download_name)
+
 
 
 

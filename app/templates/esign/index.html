@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block title %}Aadhaar E-Sign Documents — ZoiKYC{% endblock %}
+{% block page_title %}E-Sign Documents{% endblock %}
+
+{% block content %}
+<div class="card" style="padding: 24px; border: 1px solid #e2e8f0; border-radius: var(--radius-xl); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04); background: #ffffff;">
+
+  <!-- Header Bar matching SaaS Page Header Pattern -->
+  <div class="saas-page-header">
+    <div class="saas-page-title-group">
+      <h3>
+        <span>Customer Document Execution Requests</span>
+        <span class="saas-count-badge">{{ counts.all }} Total</span>
+      </h3>
+      <div class="saas-page-subtitle">
+        Upload customer agreements, track UIDAI Aadhaar OTP signing status, and download legally binding executed PDFs.
+      </div>
+    </div>
+
+    <!-- Right Header Actions (Float Pill & New Request Button) -->
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+      <a href="https://demo.esign.digital/esign/2.1/signdockyc/" target="_blank" class="lang-toggle-pill" style="text-decoration: none; padding: 7px 14px; font-size: 0.8rem; font-weight: 700; color: #7e22ce; background: #faf5ff; border: 1px solid #e9d5ff; display: inline-flex; align-items: center; gap: 6px;" title="Open Capricorn E-Sign Portal directly">
+        <i class="bi bi-box-arrow-up-right"></i> Direct E-Sign Portal
+      </a>
+
+      <div class="balance-pill {% if has_sufficient_balance %}balance-pill-healthy{% else %}balance-pill-low{% endif %}" style="padding: 6px 14px; font-size: 0.8rem;">
+        <i class="bi bi-wallet2"></i> Balance: <strong style="margin-left: 2px;">{{ wallet.balance | currency if wallet else '₹0.00' }}</strong>
+      </div>
+
+      <a href="{{ url_for('esign.upload') }}" class="btn-purple-pill" style="width: auto; padding: 9px 20px; font-size: 0.84rem; text-decoration: none;">
+        <i class="bi bi-plus-lg"></i> New Customer Request
+      </a>
+    </div>
+  </div>
+
+
+  <!-- Unified Controls Bar (Integrated Search + Segmented Filter Tabs) -->
+  <div class="saas-controls-bar">
+    
+    <!-- Search Input Form with Embedded Icon -->
+    <form method="GET" action="{{ url_for('esign.index') }}" class="saas-search-form">
+      <input type="hidden" name="status" value="{{ current_status }}">
+      <div class="saas-search-box">
+        <i class="bi bi-search saas-search-icon"></i>
+        <input 
+          type="text" 
+          name="q" 
+          value="{{ search_query or '' }}" 
+          placeholder="Search customer, phone, agreement, remark..." 
+          class="saas-search-field"
+          autocomplete="off"
+        >
+        {% if search_query %}
+          <a href="{{ url_for('esign.index', status=current_status) }}" class="saas-search-clear" title="Clear search">
+            <i class="bi bi-x-circle-fill"></i>
+          </a>
+        {% endif %}
+      </div>
+    </form>
+
+    <!-- Segmented Status Filter Tabs -->
+    <div class="saas-filter-tabs">
+      <a href="{{ url_for('esign.index', status='all', q=search_query) }}" class="saas-tab-link {% if current_status == 'all' %}active{% endif %}">
+        <i class="bi bi-grid-fill" style="font-size: 0.72rem;"></i>
+        <span>All</span>
+        <span class="tab-badge">{{ counts.all }}</span>
+      </a>
+      
+      <a href="{{ url_for('esign.index', status='pending_admin', q=search_query) }}" class="saas-tab-link {% if current_status == 'pending_admin' %}active{% endif %}">
+        <span class="status-dot dot-amber"></span>
+        <span>Pending Dispatch</span>
+        <span class="tab-badge">{{ counts.pending_admin }}</span>
+      </a>
+      
+      <a href="{{ url_for('esign.index', status='sent_to_capricorn', q=search_query) }}" class="saas-tab-link {% if current_status == 'sent_to_capricorn' %}active{% endif %}">
+        <span class="status-dot dot-cyan"></span>
+        <span>Awaiting OTP</span>
+        <span class="tab-badge">{{ counts.sent_to_capricorn }}</span>
+      </a>
+      
+      <a href="{{ url_for('esign.index', status='signed', q=search_query) }}" class="saas-tab-link {% if current_status == 'signed' %}active{% endif %}">
+        <span class="status-dot dot-emerald"></span>
+        <span>Signed</span>
+        <span class="tab-badge">{{ counts.signed }}</span>
+      </a>
+
+      <a href="{{ url_for('esign.index', status='rejected_by_admin', q=search_query) }}" class="saas-tab-link {% if current_status == 'rejected_by_admin' %}active{% endif %}">
+        <span class="status-dot dot-rose"></span>
+        <span>Rejected</span>
+        <span class="tab-badge">{{ counts.rejected_by_admin }}</span>
+      </a>
+    </div>
+
+  </div>
+
+  <!-- Documents Table Container -->
+  {% if documents %}
+  <div class="saas-table-card">
+    <table class="saas-table">
+      <thead>
+        <tr>
+          <th>Customer / Signatory</th>
+          <th>Agreement & Remarks</th>
+          <th>Placement</th>
+          <th>Status</th>
+          <th>Date Created</th>
+          <th style="text-align: right; padding-right: 22px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in documents %}
+        <tr>
+          <!-- 1. Customer / Signatory Info -->
+          <td>
+            <div class="signatory-row">
+              <div class="signatory-avatar">
+                {{ doc.signatory_name[:1].upper() if doc.signatory_name else 'C' }}
+              </div>
+              <div>
+                <div style="font-weight: 700; color: var(--text-dark);">{{ doc.signatory_name }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);"><i class="bi bi-phone"></i> {{ doc.signatory_mobile }}</div>
+                {% if doc.signatory_email %}
+                  <div style="font-size: 0.72rem; color: #64748b;">{{ doc.signatory_email }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </td>
+
+          <!-- 2. Document Details & Remarks -->
+          <td>
+            <div style="font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 6px;">
+              <i class="bi bi-file-earmark-pdf-fill" style="color: #ef4444; font-size: 1.05rem;"></i>
+              <span>{{ doc.title }}</span>
+            </div>
+            <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">
+              {{ doc.original_filename }}
+            </div>
+            {% if doc.client_remarks %}
+            <div style="margin-top: 4px; font-size: 0.75rem; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; display: inline-block; color: #334155;">
+              <i class="bi bi-chat-left-text" style="color: #64748b;"></i> {{ doc.client_remarks }}
+            </div>
+            {% endif %}
+          </td>
+
+          <!-- 3. Placement Info -->
+          <td>
+            <span class="chip-client-id" style="font-size: 0.72rem;">Page {{ doc.page_num }}</span>
+            <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px; font-family: monospace;">
+              {{ doc.coordinates }}
+            </div>
+          </td>
+
+          <!-- 4. Status Badge -->
+          <td>
+            {% if doc.status == 'pending_admin' %}
+              <span class="saas-status-badge badge-pending">
+                <i class="bi bi-hourglass-split"></i> Pending Dispatch
+              </span>
+            {% elif doc.status == 'sent_to_capricorn' %}
+              <span class="saas-status-badge" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;">
+                <i class="bi bi-send-check-fill"></i> Awaiting OTP
+              </span>
+            {% elif doc.status == 'signed' %}
+              <span class="saas-status-badge badge-active">
+                <i class="bi bi-check-circle-fill"></i> Signed & Sealed
+              </span>
+            {% elif doc.status == 'rejected_by_admin' %}
+              <span class="saas-status-badge badge-suspended">
+                <i class="bi bi-x-circle-fill"></i> Rejected
+              </span>
+            {% else %}
+              <span class="saas-status-badge badge-pending">
+                {{ doc.status_label }}
+              </span>
+            {% endif %}
+
+            {% if doc.admin_notes %}
+            <div style="font-size: 0.72rem; color: #b91c1c; margin-top: 3px;">
+              Note: {{ doc.admin_notes }}
+            </div>
+            {% endif %}
+          </td>
+
+          <!-- 5. Created Date -->
+          <td style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap;">
+            {{ doc.created_at.strftime('%d %b %Y') }}<br>
+            <span style="font-size: 0.72rem;">{{ doc.created_at.strftime('%I:%M %p') }}</span>
+          </td>
+
+          <!-- 6. Actions -->
+          <td style="text-align: right; padding-right: 22px; white-space: nowrap;">
+            <div style="display: inline-flex; gap: 8px; align-items: center; justify-content: flex-end;">
+              {% if doc.status == 'signed' %}
+                <a href="{{ url_for('esign.download', doc_id=doc.id, type='signed') }}" class="btn btn-sm btn-success" style="font-weight: 700; padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);">
+                  <i class="bi bi-file-earmark-check-fill"></i> Download Signed PDF
+                </a>
+              {% elif doc.status == 'sent_to_capricorn' and doc.redirect_url %}
+                <a href="{{ doc.redirect_url }}" target="_blank" class="btn btn-sm" style="background: #0284c7; color: #ffffff; font-weight: 700; padding: 6px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);" title="Open Capricorn Aadhaar OTP Signing Screen directly">
+                  <i class="bi bi-shield-check"></i> Sign Now (OTP)
+                </a>
+              {% endif %}
+
+              <a href="{{ url_for('esign.download', doc_id=doc.id, type='original') }}" class="lang-toggle-pill" style="text-decoration: none; padding: 5px 10px; font-size: 0.75rem; border-radius: 6px; font-weight: 600;" title="Download Original PDF">
+                <i class="bi bi-file-earmark-arrow-down"></i> Original
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <!-- Clean Empty State -->
+  <div style="text-align: center; padding: 56px 24px;">
+    <div style="font-size: 3rem; color: #cbd5e1; margin-bottom: 12px;">
+      <i class="bi bi-inbox-fill"></i>
+    </div>
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-dark); margin-bottom: 6px;">
+      No Customer E-Sign Requests Found
+    </h3>
+    <p style="color: var(--text-muted); font-size: 0.88rem; max-width: 440px; margin: 0 auto 20px auto;">
+      {% if search_query %}
+        No requests match "<strong>{{ search_query }}</strong>" in the selected status filter.
+      {% else %}
+        Upload agreements, contracts, or offer letters to initiate legal UIDAI Aadhaar OTP signing.
+      {% endif %}
+    </p>
+    <a href="{{ url_for('esign.upload') }}" class="btn-purple-pill" style="width: auto; padding: 10px 24px; text-decoration: none; display: inline-flex;">
+      <i class="bi bi-cloud-arrow-up-fill"></i> Upload First Document
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

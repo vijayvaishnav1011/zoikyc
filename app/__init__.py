@@ -37,12 +37,14 @@ def create_app(config_name=None):
     from app.wallet import wallet_bp
     from app.company import company_bp
     from app.admin import admin_bp
+    from app.esign import esign_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(wallet_bp)
     app.register_blueprint(company_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(esign_bp)
 
     # Health check endpoint
     @app.route('/health')
@@ -74,6 +76,7 @@ def create_app(config_name=None):
             except Exception as se:
                 db.session.rollback()
 
+            from app.models.esign import ESignDocument
             db.create_all()
             from app.models.company import Company
             from app.models.user import User
@@ -90,16 +93,16 @@ def create_app(config_name=None):
             except Exception as be:
                 db.session.rollback()
 
-            # Seed default Super Admin (info@zoibit.com) if not exists
-            admin_user = User.query.filter_by(email='info@zoibit.com').first()
+            # Seed default exclusive Super Admin (info@zoikyc.com)
+            admin_user = User.query.filter_by(email='info@zoikyc.com').first()
             if not admin_user:
                 # Ensure Master Platform Company exists
-                master_company = Company.query.filter_by(email='info@zoibit.com').first()
+                master_company = Company.query.filter_by(email='info@zoikyc.com').first()
                 if not master_company:
                     master_company = Company(
                         name='ZoiKYC Platform Admin',
                         authorised_signatory_name='Platform Master',
-                        email='info@zoibit.com',
+                        email='info@zoikyc.com',
                         phone='+91 9999999999',
                         country='India',
                         state='Delhi',
@@ -118,7 +121,7 @@ def create_app(config_name=None):
                 admin_user = User(
                     company_id=master_company.id,
                     name='Super Admin',
-                    email='info@zoibit.com',
+                    email='info@zoikyc.com',
                     phone='+91 9999999999',
                     role='super_admin',
                     email_verified=True,
@@ -127,7 +130,7 @@ def create_app(config_name=None):
                 admin_user.set_password('Admin@32132321')
                 db.session.add(admin_user)
                 db.session.commit()
-                app.logger.info("Default Super Admin created: info@zoibit.com")
+                app.logger.info("Default Super Admin created: info@zoikyc.com")
             else:
                 # Ensure credentials and super_admin role
                 admin_user.role = 'super_admin'
@@ -135,6 +138,10 @@ def create_app(config_name=None):
                 admin_user.status = 'active'
                 admin_user.set_password('Admin@32132321')
                 db.session.commit()
+
+            # Ensure only info@zoikyc.com has super_admin power; all other users are clients
+            User.query.filter(User.email != 'info@zoikyc.com', User.role == 'super_admin').update({'role': 'company_admin'})
+            db.session.commit()
 
         except Exception as e:
             app.logger.warning(f"Auto db initialization notice: {e}")
