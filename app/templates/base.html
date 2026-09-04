@@ -53,7 +53,19 @@
           </ul>
         </div>
 
-        <!-- Group 2: Organisation Settings -->
+        <!-- Group 2: FinTech Services -->
+        <div class="nav-group">
+          <div class="nav-group-label">FinTech Services</div>
+          <ul class="nav-list">
+            <li class="nav-item {% if request.blueprint == 'esign' %}active{% endif %}">
+              <a href="{{ url_for('esign.index') }}">
+                <i class="bi bi-pen-fill" style="color: var(--tiancai-blue);"></i> Aadhaar E-Sign
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Group 3: Organisation -->
         <div class="nav-group">
           <div class="nav-group-label">Organisation</div>
           <ul class="nav-list">
@@ -65,18 +77,6 @@
             <li class="nav-item {% if request.endpoint == 'company.documents' %}active{% endif %}">
               <a href="{{ url_for('company.documents') }}">
                 <i class="bi bi-file-earmark-check-fill"></i> Compliance Docs
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Group 3: FinTech Services -->
-        <div class="nav-group">
-          <div class="nav-group-label">FinTech Services</div>
-          <ul class="nav-list">
-            <li class="nav-item {% if request.blueprint == 'esign' %}active{% endif %}">
-              <a href="{{ url_for('esign.index') }}">
-                <i class="bi bi-pen-fill" style="color: var(--tiancai-blue);"></i> Aadhaar E-Sign
               </a>
             </li>
           </ul>
