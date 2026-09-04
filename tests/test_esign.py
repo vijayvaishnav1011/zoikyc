@@ -225,7 +225,7 @@ class ESignIntegrationTestCase(unittest.TestCase):
             self.assertEqual(updated_doc.status, 'sent_to_capricorn')
             self.assertEqual(updated_doc.capricorn_txn, '88889999')
             self.assertEqual(updated_doc.capricorn_reference, 'REF888')
-            self.assertEqual(updated_doc.redirect_url, 'https://demo.esign.digital/api/esign/v1.0/88889999/REF888/signatory1')
+            self.assertEqual(updated_doc.redirect_url, 'https://demo.esign.network/api/esign/v1.0/88889999/REF888/signatory1')
 
             # Verify client wallet was debited by per_kyc_price (25.00)
             updated_wallet = Wallet.query.get(self.wallet.id)

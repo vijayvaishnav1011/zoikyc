@@ -69,7 +69,10 @@
       <ul style="margin: 0; padding-left: 24px; color: #991b1b; font-size: 0.85rem; line-height: 1.5;">
         {% for field, errors in form.errors.items() %}
           {% for error in errors %}
-            <li>{{ error }}</li>
+            <li>
+              <strong>{{ form[field].label.text.replace('*', '').strip() if field in form else field }}:</strong>
+              {{ error }}
+            </li>
           {% endfor %}
         {% endfor %}
       </ul>

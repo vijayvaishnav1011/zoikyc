@@ -183,27 +183,31 @@ class CapricornESignProvider(BaseESignProvider):
                     "error": f"Capricorn did not return redirect URL. Raw response: {data}"
                 }
 
-            # Resolve to direct live demo.esign.digital portal URL
+            # Resolve to direct live demo.esign.network portal URL
             direct_signing_url = redirect_url
             if redirect_url:
                 try:
-                    head_resp = requests.get(redirect_url, allow_redirects=False, timeout=10)
-                    loc = head_resp.headers.get("Location") or head_resp.headers.get("location")
-                    if loc and "?param=" in loc:
-                        param = loc.split("?param=")[-1]
-                        direct_signing_url = f"https://demo.esign.digital/esign/2.1/signdockyc/?param={param}"
-                    elif "demo.esign.network" in redirect_url:
-                        direct_signing_url = redirect_url.replace("demo.esign.network", "demo.esign.digital")
+                    if "/esigndoc/?param=" in redirect_url:
+                        direct_signing_url = redirect_url
+                    else:
+                        head_resp = requests.get(redirect_url, allow_redirects=False, timeout=10)
+                        loc = head_resp.headers.get("Location") or head_resp.headers.get("location")
+                        if loc and "?param=" in loc:
+                            param = loc.split("?param=")[-1]
+                            direct_signing_url = f"https://demo.esign.network/esigndoc/?param={param}"
+                        elif loc and loc.startswith("http"):
+                            direct_signing_url = loc
                 except Exception as e:
-                    logger.warning(f"Failed resolving direct demo.esign.digital signdockyc URL: {e}")
-                    if "demo.esign.network" in redirect_url:
-                        direct_signing_url = redirect_url.replace("demo.esign.network", "demo.esign.digital")
+                    logger.warning(f"Failed resolving direct demo.esign.network esigndoc URL: {e}")
+                    if "?param=" in redirect_url:
+                        param = redirect_url.split("?param=")[-1]
+                        direct_signing_url = f"https://demo.esign.network/esigndoc/?param={param}"
 
             return {
                 "success": True,
                 "txn": returned_txn,
                 "reference": reference,
-                "redirect_url": direct_signing_url or "https://demo.esign.digital/esign/2.1/signdockyc/",
+                "redirect_url": direct_signing_url or "https://demo.esign.network/esigndoc/",
                 "signed_pdf_url": signed_pdf_url,
                 "raw": data
             }
