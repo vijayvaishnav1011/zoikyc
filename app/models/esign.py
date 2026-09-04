@@ -19,7 +19,7 @@ class ESignDocument(db.Model):
     # Signatory details
     signatory_name = db.Column(db.String(150), nullable=False)
     signatory_email = db.Column(db.String(150), nullable=True)
-    signatory_mobile = db.Column(db.String(20), nullable=False)
+    signatory_mobile = db.Column(db.String(20), nullable=True, default='9999999999')
     sign_mode = db.Column(db.String(50), nullable=False, default='online-aadhaar-otp') # online-aadhaar-otp, dsc
 
     # Status tracking

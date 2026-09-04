@@ -115,7 +115,7 @@ def upload():
             original_filename=orig_filename,
             file_path=relative_path,
             signatory_name=form.signatory_name.data.strip(),
-            signatory_mobile=form.signatory_mobile.data.strip(),
+            signatory_mobile=form.signatory_mobile.data.strip() if form.signatory_mobile.data else '9999999999',
             signatory_email=form.signatory_email.data.strip() if form.signatory_email.data else None,
             client_remarks=form.client_remarks.data.strip() if form.client_remarks.data else None,
             page_num=form.page_num.data or '1',

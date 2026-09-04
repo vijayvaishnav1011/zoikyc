@@ -157,41 +157,18 @@
           </h4>
         </div>
         <p style="font-size: 0.8rem; color: var(--text-muted); margin-left: 36px; margin-bottom: 16px;">
-          Name and mobile number must match the signer's Aadhaar records for UIDAI OTP validation.
+          Enter the customer or signatory full name as registered on their Aadhaar card.
         </p>
 
         <div style="padding-left: 36px;">
-          <!-- Customer Name & Mobile Grid -->
-          <div class="ref-form-grid" style="margin-bottom: 16px;">
-            <div class="ref-form-group">
-              <label class="ref-form-label" for="signatory_name">
-                Customer Full Name (As on Aadhaar) *
-              </label>
-              {{ form.signatory_name(class="ref-form-control", id="signatory_name", placeholder="e.g. Rahul Sharma") }}
-              {% if form.signatory_name.errors %}
-                <span style="color: var(--accent-rose); font-size: 0.78rem; margin-top: 4px; display: block;">{{ form.signatory_name.errors[0] }}</span>
-              {% endif %}
-            </div>
-
-            <div class="ref-form-group">
-              <label class="ref-form-label" for="signatory_mobile">
-                Customer Mobile (Aadhaar Linked) *
-              </label>
-              {{ form.signatory_mobile(class="ref-form-control", id="signatory_mobile", placeholder="10-digit mobile number") }}
-              {% if form.signatory_mobile.errors %}
-                <span style="color: var(--accent-rose); font-size: 0.78rem; margin-top: 4px; display: block;">{{ form.signatory_mobile.errors[0] }}</span>
-              {% endif %}
-            </div>
-          </div>
-
-          <!-- Customer Email -->
+          <!-- Customer Name -->
           <div class="ref-form-group" style="margin-bottom: 16px;">
-            <label class="ref-form-label" for="signatory_email">
-              Customer Email Address (Optional)
+            <label class="ref-form-label" for="signatory_name">
+              Customer Full Name (As on Aadhaar) *
             </label>
-            {{ form.signatory_email(class="ref-form-control", id="signatory_email", placeholder="customer@example.com") }}
-            {% if form.signatory_email.errors %}
-              <span style="color: var(--accent-rose); font-size: 0.78rem; margin-top: 4px; display: block;">{{ form.signatory_email.errors[0] }}</span>
+            {{ form.signatory_name(class="ref-form-control", id="signatory_name", placeholder="e.g. Rahul Sharma") }}
+            {% if form.signatory_name.errors %}
+              <span style="color: var(--accent-rose); font-size: 0.78rem; margin-top: 4px; display: block;">{{ form.signatory_name.errors[0] }}</span>
             {% endif %}
           </div>
 

@@ -19,15 +19,15 @@ class ESignUploadForm(FlaskForm):
         Length(min=2, max=120)
     ], render_kw={"placeholder": "e.g. Rahul Sharma"})
 
-    signatory_mobile = StringField('Customer Mobile (Aadhaar Linked Mobile) *', validators=[
-        DataRequired(),
-        Regexp(r'^[6-9]\d{9}$', message="Enter a valid 10-digit Indian mobile number")
-    ], render_kw={"placeholder": "10-digit mobile number without +91"})
+    signatory_mobile = StringField('Customer Mobile', validators=[
+        Optional(),
+        Length(max=20)
+    ])
 
-    signatory_email = StringField('Customer Email (Optional)', validators=[
+    signatory_email = StringField('Customer Email', validators=[
         Optional(),
         Length(max=120)
-    ], render_kw={"placeholder": "customer@example.com"})
+    ])
 
     client_remarks = TextAreaField('Client Remarks / Purpose Notes (Optional)', validators=[
         Optional(),

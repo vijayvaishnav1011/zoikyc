@@ -153,8 +153,6 @@ class ESignIntegrationTestCase(unittest.TestCase):
                 'title': 'Consulting Agreement 2026',
                 'pdf_file': pdf_data,
                 'signatory_name': 'Amit Kumar',
-                'signatory_mobile': '9876543210',
-                'signatory_email': 'amit@alphacorp.com',
                 'page_num': '1',
                 'coordinates': '200,250,400,500'
             }, content_type='multipart/form-data', follow_redirects=True)
@@ -167,6 +165,8 @@ class ESignIntegrationTestCase(unittest.TestCase):
             self.assertEqual(doc.status, 'pending_admin')
             self.assertEqual(doc.company_id, self.company.id)
             self.assertEqual(doc.signatory_name, 'Amit Kumar')
+            self.assertEqual(doc.signatory_mobile, '9999999999')
+            self.assertIsNone(doc.signatory_email)
 
     @patch('app.integrations.capricorn.requests.post')
     def test_admin_dispatch_and_wallet_deduction(self, mock_post):
