@@ -45,14 +45,9 @@
                 <i class="bi bi-grid-1x2-fill"></i> Dashboard
               </a>
             </li>
-            <li class="nav-item {% if request.endpoint == 'wallet.index' %}active{% endif %}">
+            <li class="nav-item {% if request.blueprint == 'wallet' %}active{% endif %}">
               <a href="{{ url_for('wallet.index') }}">
                 <i class="bi bi-wallet2"></i> Wallet Overview
-              </a>
-            </li>
-            <li class="nav-item {% if request.endpoint == 'wallet.transactions' %}active{% endif %}">
-              <a href="{{ url_for('wallet.transactions') }}">
-                <i class="bi bi-journal-text"></i> Transactions History
               </a>
             </li>
           </ul>
@@ -79,36 +74,9 @@
         <div class="nav-group">
           <div class="nav-group-label">FinTech Services</div>
           <ul class="nav-list">
-            <li class="nav-item disabled">
-              <a href="#" onclick="return false;">
-                <i class="bi bi-people"></i> Customers <span class="disabled-badge">Soon</span>
-              </a>
-            </li>
-            <li class="nav-item disabled">
-              <a href="#" onclick="return false;">
-                <i class="bi bi-person-bounding-box"></i> KYC / KRA <span class="disabled-badge">Soon</span>
-              </a>
-            </li>
             <li class="nav-item {% if request.blueprint == 'esign' %}active{% endif %}">
               <a href="{{ url_for('esign.index') }}">
                 <i class="bi bi-pen-fill" style="color: var(--tiancai-blue);"></i> Aadhaar E-Sign
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Group 4: Developer API -->
-        <div class="nav-group">
-          <div class="nav-group-label">Developer API</div>
-          <ul class="nav-list">
-            <li class="nav-item disabled">
-              <a href="#" onclick="return false;">
-                <i class="bi bi-key-fill"></i> API Keys <span class="disabled-badge">Soon</span>
-              </a>
-            </li>
-            <li class="nav-item disabled">
-              <a href="#" onclick="return false;">
-                <i class="bi bi-code-square"></i> API Docs <span class="disabled-badge">Soon</span>
               </a>
             </li>
           </ul>
