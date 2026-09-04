@@ -146,9 +146,11 @@
               </div>
               <div>
                 <div style="font-weight: 700; color: var(--text-dark);">{{ doc.signatory_name }}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);"><i class="bi bi-phone"></i> {{ doc.signatory_mobile }}</div>
-                {% if doc.signatory_email %}
-                  <div style="font-size: 0.72rem; color: #64748b;">{{ doc.signatory_email }}</div>
+                {% if doc.signatory_mobile and doc.signatory_mobile != '9999999999' %}
+                  <div style="font-size: 0.75rem; color: var(--text-muted);"><i class="bi bi-phone"></i> {{ doc.signatory_mobile }}</div>
+                {% endif %}
+                {% if doc.signatory_email and doc.signatory_email != 'na@zoikyc.com' %}
+                  <div style="font-size: 0.72rem; color: #64748b;"><i class="bi bi-envelope"></i> {{ doc.signatory_email }}</div>
                 {% endif %}
               </div>
             </div>

@@ -22,7 +22,12 @@ def index():
         flash("No organisation associated with this user.", "danger")
         return redirect(url_for('dashboard.index'))
 
-    query = ESignDocument.query.filter_by(company_id=company.id)
+    if current_user.role == 'super_admin':
+        base_docs = ESignDocument.query
+        query = ESignDocument.query
+    else:
+        base_docs = ESignDocument.query.filter_by(company_id=company.id)
+        query = ESignDocument.query.filter_by(company_id=company.id)
 
     search_query = request.args.get('q', '').strip()
     if search_query:
@@ -37,7 +42,6 @@ def index():
         )
 
     status_filter = request.args.get('status', 'all').strip()
-    base_docs = ESignDocument.query.filter_by(company_id=company.id)
     counts = {
         'all': base_docs.count(),
         'pending_admin': base_docs.filter_by(status='pending_admin').count(),
