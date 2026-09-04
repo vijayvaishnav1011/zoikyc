@@ -137,6 +137,14 @@ def upload():
         )
         return redirect(url_for('esign.index'))
 
+    if request.method == 'POST' and not form.validate():
+        current_app.logger.warning(f"Upload form validation failed: {form.errors}")
+        for field, errs in form.errors.items():
+            field_name = getattr(form, field).label.text if hasattr(form, field) and hasattr(getattr(form, field), 'label') else field
+            field_clean = field_name.replace('*', '').strip()
+            for err in errs:
+                flash(f"{field_clean}: {err}", "danger")
+
     return render_template(
         'esign/upload.html',
         form=form,

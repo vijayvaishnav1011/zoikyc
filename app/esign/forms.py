@@ -5,18 +5,18 @@ from wtforms.validators import DataRequired, Length, Optional, Regexp
 
 class ESignUploadForm(FlaskForm):
     title = StringField('Document Title / Agreement Name *', validators=[
-        DataRequired(),
-        Length(min=3, max=150)
+        DataRequired(message='Document title is required.'),
+        Length(min=1, max=150, message='Document title must be between 1 and 150 characters.')
     ], render_kw={"placeholder": "e.g. Master Service Agreement, Offer Letter, NDA"})
 
     pdf_file = FileField('Select PDF Document (Max 15MB) *', validators=[
-        FileRequired(),
-        FileAllowed(['pdf'], 'Only PDF documents are supported for Aadhaar E-Sign.')
+        FileRequired(message='Please select a PDF document file to upload.'),
+        FileAllowed(['pdf', 'PDF'], 'Only PDF documents (.pdf) are supported for Aadhaar E-Sign.')
     ])
 
     signatory_name = StringField('Customer / Signatory Name (As on Aadhaar) *', validators=[
-        DataRequired(),
-        Length(min=2, max=120)
+        DataRequired(message='Customer full name (as on Aadhaar) is required.'),
+        Length(min=1, max=120, message='Name must be between 1 and 120 characters.')
     ], render_kw={"placeholder": "e.g. Rahul Sharma"})
 
     signatory_mobile = StringField('Customer Mobile', validators=[
