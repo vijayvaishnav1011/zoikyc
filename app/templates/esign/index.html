@@ -20,9 +20,6 @@
 
     <!-- Right Header Actions (Float Pill & New Request Button) -->
     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-      <a href="https://demo.esign.digital/esign/2.1/signdockyc/" target="_blank" class="lang-toggle-pill" style="text-decoration: none; padding: 7px 14px; font-size: 0.8rem; font-weight: 700; color: #7e22ce; background: #faf5ff; border: 1px solid #e9d5ff; display: inline-flex; align-items: center; gap: 6px;" title="Open Capricorn E-Sign Portal directly">
-        <i class="bi bi-box-arrow-up-right"></i> Direct E-Sign Portal
-      </a>
 
       <div class="balance-pill {% if has_sufficient_balance %}balance-pill-healthy{% else %}balance-pill-low{% endif %}" style="padding: 6px 14px; font-size: 0.8rem;">
         <i class="bi bi-wallet2"></i> Balance: <strong style="margin-left: 2px;">{{ wallet.balance | currency if wallet else '₹0.00' }}</strong>
