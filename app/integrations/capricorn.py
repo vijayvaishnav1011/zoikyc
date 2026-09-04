@@ -17,7 +17,9 @@ class CapricornESignProvider(BaseESignProvider):
     Supports Base64 PDF transmission, online-aadhaar-otp signing, and signed document retrieval.
     """
 
-    DEFAULT_API_URL = "https://demo.esign.network/op/api/v1.0/postjson"
+    POST_JSON_URL = "https://demo.esign.network/op/api/v1.0/postjson"
+    POST_XML_URL = "https://demo.esign.network/op/api/v1.0/postxml"
+    DEFAULT_API_URL = POST_JSON_URL
     DEFAULT_TOKEN = "4352F73EEDAB18ADEAF33FDA7C35BC9013E5E704"
     DEFAULT_KEY = "QkXVeIcZZtdNvPnotGoXqG4hO9Os0@@@@@@sfp4bigUC4pgZTgUrKS4Tkew=="
 
