@@ -393,7 +393,7 @@ def adjust_wallet(company_id):
             balance_before=balance_before,
             balance_after=wallet.balance,
             reference_id=ref_id,
-            description=f"[Admin Adjustment: {current_user.name}] {reason}",
+            description=f"{current_user.name}] {reason}",
             status='success'
         )
         db.session.add(txn)
