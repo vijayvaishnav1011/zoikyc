@@ -80,6 +80,17 @@ def index():
                 dob = (form.dob.data or "").strip()
 
     if should_process and pan_number:
+        if not dob:
+            if is_json_req:
+                return jsonify({
+                    "success": False,
+                    "status": "invalid",
+                    "error": "Missing required field: 'dob'. Date of Birth is required."
+                }), 400
+            flash("Date of Birth is required. Please select Day, Month, and Year.", "danger")
+            should_process = False
+
+    if should_process and pan_number:
         # Free service - no wallet deduction
         charge_amount = Decimal('0.00')
 
@@ -218,7 +229,7 @@ def public_api_pan(client_id=None):
         headers_info = {"Content-Type": "application/json"}
         body_info = {
             "pan": "ABCDE1234F (Required - 10-character PAN number)",
-            "dob": "DD/MM/YYYY (Optional - Date of Birth)"
+            "dob": "DD/MM/YYYY (Required - Date of Birth)"
         }
         if not company:
             headers_info["X-API-Key"] = "YOUR_COMPANY_API_KEY (or client_id)"
@@ -260,6 +271,13 @@ def public_api_pan(client_id=None):
             "success": False,
             "status": "invalid",
             "error": "Missing required field: 'pan'. Please provide a 10-character PAN number."
+        }), 400
+
+    if not dob:
+        return jsonify({
+            "success": False,
+            "status": "invalid",
+            "error": "Missing required field: 'dob'. Date of Birth is required (format DD/MM/YYYY)."
         }), 400
 
     # 4. If company wasn't resolved via URL path, resolve from Headers or Body

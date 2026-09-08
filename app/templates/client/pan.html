@@ -244,15 +244,15 @@
         <!-- 2. Date of Birth: 3 Separate Dropdown Selects (Day, Month, Year) -->
         <div style="margin-bottom: 20px;">
           <label style="display: block; font-size: 0.88rem; font-weight: 600; color: #334155; margin-bottom: 6px;">
-            Date of Birth <span style="color: #94a3b8; font-weight: 400; font-size: 0.8rem;">(Optional)</span>
+            Date of Birth <span style="color: #ef4444; font-weight: 700;">*</span>
           </label>
           {{ form.dob(id="hiddenDobInput") }}
           <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
             
             <!-- Day Select -->
             <div>
-              <select name="dob_day" id="dobDay" class="dob-custom-select" onchange="syncDobValues()">
-                <option value="">Day</option>
+              <select name="dob_day" id="dobDay" class="dob-custom-select" onchange="syncDobValues()" required>
+                <option value="">Day *</option>
                 {% for d in range(1, 32) %}
                 {% set d_val = "%02d"|format(d) %}
                 <option value="{{ d_val }}" {% if form.dob_day.data == d_val or form.dob_day.data == d|string %}selected{% endif %}>{{ d }}</option>
@@ -262,8 +262,8 @@
 
             <!-- Month Select -->
             <div>
-              <select name="dob_month" id="dobMonth" class="dob-custom-select" onchange="syncDobValues()">
-                <option value="">Month</option>
+              <select name="dob_month" id="dobMonth" class="dob-custom-select" onchange="syncDobValues()" required>
+                <option value="">Month *</option>
                 {% set months = [
                   ('01', 'January'), ('02', 'February'), ('03', 'March'), ('04', 'April'),
                   ('05', 'May'), ('06', 'June'), ('07', 'July'), ('08', 'August'),
@@ -277,8 +277,8 @@
 
             <!-- Year Select -->
             <div>
-              <select name="dob_year" id="dobYear" class="dob-custom-select" onchange="syncDobValues()">
-                <option value="">Year</option>
+              <select name="dob_year" id="dobYear" class="dob-custom-select" onchange="syncDobValues()" required>
+                <option value="">Year *</option>
                 {% for y in range(2026, 1939, -1) %}
                 {% set y_str = y|string %}
                 <option value="{{ y_str }}" {% if form.dob_year.data == y_str %}selected{% endif %}>{{ y_str }}</option>
@@ -759,7 +759,16 @@
     const form = document.getElementById('panCheckForm');
     const btnSubmit = document.getElementById('btnSubmitPan');
     if (form && btnSubmit) {
-      form.addEventListener('submit', function () {
+      form.addEventListener('submit', function (e) {
+        syncDobValues();
+        const day = document.getElementById('dobDay')?.value;
+        const month = document.getElementById('dobMonth')?.value;
+        const year = document.getElementById('dobYear')?.value;
+        if (!day || !month || !year) {
+          e.preventDefault();
+          alert('Please select Day, Month, and Year for Date of Birth.');
+          return false;
+        }
         btnSubmit.disabled = true;
         btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verifying...';
       });

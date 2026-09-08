@@ -19,11 +19,11 @@ class PANCheckForm(FlaskForm):
     )
     dob = StringField(
         'Date of Birth',
-        validators=[Optional()],
+        validators=[DataRequired(message="Date of Birth is required.")],
         render_kw={"type": "hidden", "id": "hiddenDobInput"}
     )
-    dob_day = StringField('Day', validators=[Optional()])
-    dob_month = StringField('Month', validators=[Optional()])
-    dob_year = StringField('Year', validators=[Optional()])
+    dob_day = StringField('Day', validators=[DataRequired(message="Day is required.")])
+    dob_month = StringField('Month', validators=[DataRequired(message="Month is required.")])
+    dob_year = StringField('Year', validators=[DataRequired(message="Year is required.")])
     submit = SubmitField('Verify PAN Details')
 
