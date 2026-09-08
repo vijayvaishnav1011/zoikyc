@@ -122,8 +122,14 @@ def index():
             reference_id=verification_data.get('reference_id'),
             raw_response=json.dumps(verification_data.get('raw_response', {}))
         )
-        db.session.add(record)
-        db.session.commit()
+        try:
+            db.session.add(record)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            # Log the error but don't crash the UI for the user
+            import logging
+            logging.error(f"Failed to save PAN Verification to database: {e}")
 
         # If requested as JSON, return instant JSON response
         if is_json_req and request.method == 'POST':
