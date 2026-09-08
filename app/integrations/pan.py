@@ -1,157 +1,162 @@
+"""
+CVL KRA PAN Verification Integration — SOAP/XML Web Service V6.0
+Official endpoints:
+  Production : https://pancheck.www.kracvl.com/CVLPanInquiry.svc
+  UAT        : https://krapancheck.cvlindia.com/CVLPanInquiry.svc
+
+Flow:
+  1. GetPassword  → encrypt user password using PassKey → get APP_GET_PASS
+  2. GetPANStatus → SOAP request with pan, username, PosCode, encrypted password & passkey
+  3. Parse XML response → return structured dict
+"""
+
 import os
-import json
+import re
 import logging
-import base64
-import requests
+import xml.etree.ElementTree as ET
 from datetime import datetime
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
+
+import requests
 
 from app.integrations.base import BaseKYCProvider
 from app.models.setting import SystemSetting
 
 logger = logging.getLogger(__name__)
 
-def base64_url_encode(data: bytes) -> str:
-    """Encodes bytes into URL-safe base64 string without '=' padding."""
-    return base64.urlsafe_b64encode(data).decode().rstrip("=")
+# ─────────────────────────────────────────────────────────────────────────────
+# SOAP envelope templates
+# ─────────────────────────────────────────────────────────────────────────────
 
-def base64_url_decode(data: str) -> bytes:
-    """Decodes URL-safe base64 string, restoring '=' padding if needed."""
-    clean_data = (data or "").strip()
-    padded_data = clean_data + "=" * (4 - len(clean_data) % 4) if len(clean_data) % 4 != 0 else clean_data
-    return base64.urlsafe_b64decode(padded_data)
+SOAP_NS = "https://krapancheck.cvlindia.com"
 
-def get_aes_key_bytes(aes_key_str: str) -> bytes:
-    """
-    Robustly resolves a 16, 24, or 32-byte AES key from either base64/base64url encoded
-    strings or raw string keys provided by CVL.
-    """
-    clean_key = (aes_key_str or "").strip()
-    if not clean_key:
-        return b'\0' * 16
+GET_PASSWORD_ENVELOPE = """\
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:tns="{ns}">
+  <soap:Body>
+    <tns:GetPassword>
+      <tns:Password>{password}</tns:Password>
+      <tns:PassKey>{passkey}</tns:PassKey>
+    </tns:GetPassword>
+  </soap:Body>
+</soap:Envelope>"""
 
-    # 1. Try URL-safe base64 decode
-    try:
-        decoded = base64_url_decode(clean_key)
-        if len(decoded) in (16, 24, 32):
-            return decoded
-    except Exception:
-        pass
-
-    # 2. Try standard base64 decode
-    try:
-        decoded = base64.b64decode(clean_key)
-        if len(decoded) in (16, 24, 32):
-            return decoded
-    except Exception:
-        pass
-
-    # 3. Check if raw utf-8 string matches standard key lengths
-    raw_bytes = clean_key.encode('utf-8')
-    if len(raw_bytes) in (16, 24, 32):
-        return raw_bytes
-
-    # 4. If length is slightly off, pad to 16, 24, or 32 bytes
-    if len(raw_bytes) < 16:
-        return raw_bytes.ljust(16, b'\0')
-    elif len(raw_bytes) < 24:
-        return raw_bytes.ljust(24, b'\0')
-    elif len(raw_bytes) < 32:
-        return raw_bytes.ljust(32, b'\0')
-    else:
-        return raw_bytes[:32]
-
-def cvl_encrypt(aes_key: str, plaintext: str) -> str:
-    """
-    Encrypts string using AES-CBC PKCS5Padding with randomly generated 16-byte IV.
-    Returns 'iv:ciphertext' (both base64url encoded), as specified in Section 3 & 9 of CVL KRA doc.
-    """
-    iv = os.urandom(16)
-    key = get_aes_key_bytes(aes_key)
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-    padded_data = pad(plaintext.strip().encode('utf-8'), AES.block_size)
-    encrypted_bytes = cipher.encrypt(padded_data)
-    iv_encoded = base64_url_encode(iv)
-    ciphertext_encoded = base64_url_encode(encrypted_bytes)
-    return f"{iv_encoded}:{ciphertext_encoded}"
-
-def cvl_decrypt(aes_key: str, encrypted_string: str) -> str:
-    """
-    Decrypts 'iv:ciphertext' or (aes_key, ciphertext, iv).
-    Returns decrypted utf-8 plaintext or empty string on error.
-    """
-    try:
-        if ":" not in encrypted_string:
-            return encrypted_string # Already plaintext or invalid format
-        iv_str, cipher_str = encrypted_string.split(":", 1)
-        key = get_aes_key_bytes(aes_key)
-        iv_bytes = base64_url_decode(iv_str)
-        cipher_bytes = base64_url_decode(cipher_str)
-        cipher = AES.new(key, AES.MODE_CBC, iv_bytes)
-        decrypted_data = cipher.decrypt(cipher_bytes)
-        return unpad(decrypted_data, AES.block_size).decode('utf-8', errors='ignore')
-    except Exception as e:
-        logger.error(f"CVL decryption failed: {e}")
-        return ""
+GET_PAN_STATUS_ENVELOPE = """\
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:tns="{ns}">
+  <soap:Body>
+    <tns:GetPANStatus>
+      <tns:panNo>{pan}</tns:panNo>
+      <tns:username>{username}</tns:username>
+      <tns:PosCode>{poscode}</tns:PosCode>
+      <tns:Password>{enc_password}</tns:Password>
+      <tns:PassKey>{passkey}</tns:PassKey>
+    </tns:GetPANStatus>
+  </soap:Body>
+</soap:Envelope>"""
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# XML helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _soap_headers(action: str) -> dict:
+    return {
+        "Content-Type": "text/xml; charset=utf-8",
+        "SOAPAction": f'"{SOAP_NS}/{action}"',
+        "User-Agent": "ZoiKYC/1.0"
+    }
+
+
+def _find_text(root: ET.Element, tag: str, default: str = "") -> str:
+    """Searches entire XML tree for a tag, returning its text."""
+    el = root.find(f".//{tag}")
+    return (el.text or "").strip() if el is not None else default
+
+
+def _parse_error(root: ET.Element) -> str | None:
+    """Returns error message if XML contains an ERROR node, else None."""
+    err_code = _find_text(root, "ERROR_CODE")
+    err_msg = _find_text(root, "ERROR_MSG")
+    if err_code:
+        return f"{err_msg} ({err_code})" if err_msg else err_code
+    return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Status & mode lookup maps (CVL KRA V6.0 documentation)
+# ─────────────────────────────────────────────────────────────────────────────
+
+CVL_STATUS_MAP = {
+    "000": "Not Checked with Respective KRA",
+    "001": "Submitted / Under Process",
+    "002": "KRA Verified",
+    "003": "On Hold",
+    "004": "Rejected",
+    "005": "Not Available",
+    "006": "Deactivated",
+    "007": "KRA Validated",
+    "011": "Existing KYC Submitted",
+    "012": "Existing KYC Verified",
+    "013": "Existing KYC Hold",
+    "014": "Existing KYC Rejected",
+    "022": "KYC Registered with CVLMF",
+    "888": "Not Checked with Multiple KRA",
+    "999": "Invalid PAN Format",
+}
+
+KYC_MODE_MAP = {
+    "0": "Normal KYC",
+    "1": "e-KYC with OTP",
+    "2": "e-KYC with Biometric",
+    "3": "Online Data Entry and IPV",
+    "4": "Offline KYC - Aadhaar",
+    "5": "DigiLocker",
+    "": "Normal KYC",
+}
+
+PROOF_MAP = {
+    "31": "Aadhaar",
+    "01": "Passport",
+    "02": "Driving License",
+    "03": "Bank Passbook",
+    "04": "Bank Account Statement",
+    "06": "Voter Identity Card",
+    "14": "Insurance Copy",
+}
+
+CATEGORY_MAP = {
+    'P': 'Individual',
+    'C': 'Company',
+    'H': 'Hindu Undivided Family (HUF)',
+    'F': 'Partnership Firm',
+    'A': 'Association of Persons (AOP)',
+    'T': 'Trust',
+    'B': 'Body of Individuals (BOI)',
+    'L': 'Local Authority',
+    'J': 'Artificial Juridical Person',
+    'G': 'Government',
+}
+
+# Status codes that mean "verified / registered"
+VERIFIED_STATUS_CODES = {"002", "007", "012", "022"}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Provider class
+# ─────────────────────────────────────────────────────────────────────────────
 
 class PANVerificationProvider(BaseKYCProvider):
     """
-    Integration Provider for CDSL Ventures Limited (CVL KRA) KYC Status API (Version 2.6).
-    Dedicated to:
-      - JWT Token Generation (/api/GetToken)
-      - PAN Status Inquiry (/api/GetPanStatus)
+    CVL KRA PAN Verification via official SOAP/XML Web Service V6.0.
+
+    Step 1: GetPassword  → encrypts company password using PassKey
+    Step 2: GetPANStatus → fetches KYC status from CVL KRA
     """
 
-    # Status description maps from CVL KRA documentation (Section 4 & 2.2.5)
-    CVL_STATUS_MAP = {
-        "000": "Not Checked with respective KRA",
-        "001": "Submitted / Under Process",
-        "002": "KRA Verified",
-        "003": "On Hold",
-        "004": "Rejected",
-        "005": "Not Available",
-        "006": "Deactivated",
-        "007": "KRA Validated",
-        "011": "Existing KYC Submitted",
-        "012": "Existing KYC Verified",
-        "013": "Existing KYC Hold",
-        "014": "Existing KYC Rejected",
-        "022": "KYC Registered with CVLMF",
-        "01": "Under Process",
-        "02": "KYC Registered",
-        "03": "On Hold",
-        "04": "KYC Rejected",
-        "05": "Not Available",
-        "06": "Demise / Deactivate",
-        "07": "KYC Validated",
-        "888": "Not Checked with Multiple KRA",
-        "999": "Invalid PAN Format"
-    }
-
-    KYC_MODE_MAP = {
-        "0": "Normal KYC",
-        "1": "e-KYC with OTP",
-        "2": "e-KYC with Biometric",
-        "3": "Online Data Entry and IPV",
-        "4": "Offline KYC - Aadhaar",
-        "5": "DigiLocker",
-        "6": "Saral"
-    }
-
-    PROOF_MAP = {
-        "31": "Aadhaar",
-        "01": "Passport",
-        "02": "Driving License",
-        "03": "Bank Passbook",
-        "04": "Bank Account Statement",
-        "06": "Voter Identity Card"
-    }
-
     def get_provider_name(self) -> str:
-        return "CVL KRA (CDSL Ventures Limited)"
+        return "CVL KRA (CDSL Ventures Limited) — SOAP V6.0"
 
     def health_check(self) -> bool:
         return True
@@ -162,52 +167,56 @@ class PANVerificationProvider(BaseKYCProvider):
     def verify_pan(self, pan_number: str, name: str = None) -> dict:
         return self.verify_pan_with_dob(pan_number=pan_number, dob=None)
 
+    # ── Credentials resolution ────────────────────────────────────────────────
+
     def _resolve_credentials(self, company=None) -> dict:
-        """Resolves CVL KRA credentials from Company profile or System Environment."""
+        """
+        Resolves CVL KRA SOAP credentials from Company profile or System Settings.
+
+        Fields used by SOAP API:
+          - poscode    → Company.pos_code
+          - username   → Company.api_user_id
+          - password   → Company.api_password   (plaintext — encrypted per-request by GetPassword)
+          - passkey    → Company.aes_key         (user-defined hash key sent to GetPassword)
+
+        Production URL : pancheck.www.kracvl.com/CVLPanInquiry.svc
+        UAT URL        : krapancheck.cvlindia.com/CVLPanInquiry.svc
+        """
         env = (
-            SystemSetting.get_val('cvl_kra_env') or 
-            os.getenv('CVL_KRA_ENV') or 
+            SystemSetting.get_val('cvl_kra_env') or
+            os.getenv('CVL_KRA_ENV') or
             'live'
         ).strip().lower()
 
         base_url = (
-            "https://api.kracvl.com/int/api" if env == 'live' 
-            else "https://krapancheck.cvlindia.com/V3/api"
+            "https://pancheck.www.kracvl.com/CVLPanInquiry.svc"
+            if env == 'live'
+            else "https://krapancheck.cvlindia.com/CVLPanInquiry.svc"
         )
 
         poscode = (
             (company.pos_code if company and company.pos_code else None) or
             SystemSetting.get_val('cvl_kra_poscode') or
-            os.getenv('CVL_KRA_POSCODE') or
-            ""
+            os.getenv('CVL_KRA_POSCODE') or ""
         ).strip()
 
         username = (
             (company.api_user_id if company and company.api_user_id else None) or
             SystemSetting.get_val('cvl_kra_username') or
-            os.getenv('CVL_KRA_USERNAME') or
-            ""
+            os.getenv('CVL_KRA_USERNAME') or ""
         ).strip()
 
         password = (
             (company.api_password if company and company.api_password else None) or
             SystemSetting.get_val('cvl_kra_password') or
-            os.getenv('CVL_KRA_PASSWORD') or
-            ""
+            os.getenv('CVL_KRA_PASSWORD') or ""
         ).strip()
 
-        aes_key = (
+        # passkey = the AES Key field in Company Profile (user-defined hash key for GetPassword)
+        passkey = (
             (company.aes_key if company and company.aes_key else None) or
             SystemSetting.get_val('cvl_kra_aes_key') or
-            os.getenv('CVL_KRA_AES_KEY') or
-            ""
-        ).strip()
-
-        api_key = (
-            (company.api_key if company and company.api_key else None) or
-            SystemSetting.get_val('cvl_kra_api_key') or
-            os.getenv('CVL_KRA_API_KEY') or
-            ""
+            os.getenv('CVL_KRA_AES_KEY') or ""
         ).strip()
 
         return {
@@ -215,332 +224,276 @@ class PANVerificationProvider(BaseKYCProvider):
             "poscode": poscode,
             "username": username,
             "password": password,
-            "aes_key": aes_key,
-            "api_key": api_key,
-            "env": env
+            "passkey": passkey,
+            "env": env,
         }
 
-    def get_token(self, creds: dict) -> tuple[str, str]:
-        """
-        Calls /api/GetToken to fetch JWT token.
-        Returns (token, error_message).
-        """
-        url = f"{creds['base_url']}/GetToken"
-        headers = {
-            "content-type": "application/json",
-            "user-agent": "CustomUsrAgnt",
-            "api_key": creds["api_key"]
-        }
+    # ── Step 1: GetPassword ───────────────────────────────────────────────────
 
-        auth_body = json.dumps({
-            "username": creds["username"],
-            "poscode": creds["poscode"],
-            "password": creds["password"]
-        })
+    def get_encrypted_password(self, creds: dict) -> tuple[str, str]:
+        """
+        Calls CVL GetPassword SOAP method.
+        Returns (encrypted_password, error_message).
+        Encrypted password is APP_GET_PASS from the XML response.
+        """
+        url = creds["base_url"]
+        body = GET_PASSWORD_ENVELOPE.format(
+            ns=SOAP_NS,
+            password=creds["password"],
+            passkey=creds["passkey"],
+        )
 
         try:
-            encrypted_payload = cvl_encrypt(creds["aes_key"], auth_body)
-        except Exception as e:
-            return "", f"Failed to encrypt authentication packet: {str(e)}"
-
-        try:
-            # CVL expects json.dumps of the encrypted "iv:ciphertext" string
-            resp = requests.post(url, data=json.dumps(encrypted_payload), headers=headers, timeout=20)
-            
-            # Read response (CVL may return JSON dict, or encrypted "iv:ciphertext" string)
-            try:
-                raw = resp.json()
-            except Exception:
-                raw = (resp.text or "").strip()
-
-            data = None
-            if isinstance(raw, str):
-                raw_clean = raw.strip().strip('"')
-                if ":" in raw_clean:
-                    # CVL returned encrypted "iv:ciphertext" string
-                    decrypted_str = cvl_decrypt(creds["aes_key"], raw_clean)
-                    try:
-                        data = json.loads(decrypted_str)
-                    except Exception:
-                        data = {"raw_decrypted": decrypted_str}
-                else:
-                    try:
-                        data = json.loads(raw)
-                    except Exception:
-                        data = {"raw": raw}
-            elif isinstance(raw, dict):
-                data = raw
-            else:
-                data = {}
-
-            # If response dict contains encrypted resdtls
-            if isinstance(data, dict) and "resdtls" in data and ":" in str(data.get("resdtls", "")):
-                dec_dtls = cvl_decrypt(creds["aes_key"], data["resdtls"])
-                try:
-                    data.update(json.loads(dec_dtls))
-                except Exception:
-                    pass
-
-            if isinstance(data, dict):
-                token = data.get("token") or data.get("Token") or data.get("jwt") or data.get("JWT")
-                if token:
-                    return token, ""
-
-                err_code = data.get("error_code") or data.get("ErrorCode") or data.get("code") or ""
-                err_msg = data.get("error_message") or data.get("ErrorMessage") or data.get("message") or ""
-
-                if not err_msg and data.get("raw_decrypted"):
-                    err_msg = data.get("raw_decrypted")
-
-                # Official explanations from CVL KRA Documentation (Section 5)
-                if err_code == "WEBERR-001":
-                    err_msg = "Invalid User ID / PosCode / Password / Access Privilege Not Set / Password Expired"
-                elif err_code == "WEBERR-004" or err_code == "WEBERR-026":
-                    err_msg = "Invalid API Key"
-                elif err_code == "WEBERR-023":
-                    err_msg = "Invalid Encrypted Data (Your AES Key or POS Code does not match CVL KRA records)"
-                elif err_code == "WEBERR-025":
-                    err_msg = "API Key not provided"
-                elif err_code == "WEBERR-027":
-                    err_msg = "Invalid PAN format"
-                elif err_code == "WEBERR-029":
-                    err_msg = "Invalid IP Address (Your server IP is not whitelisted with CVL KRA)"
-                elif err_code == "WEBERR-005":
-                    err_msg = "IP Not Whitelisted or Unknown CVL Error"
-
-                err = f"{err_msg} ({err_code})" if err_code and err_msg else (err_msg or err_code or f"Authentication error (HTTP {resp.status_code})")
-                return "", err
-            else:
-                text_preview = (resp.text or "").strip()[:150]
-                return "", f"Unexpected response from CVL (HTTP {resp.status_code}): {text_preview}"
+            resp = requests.post(
+                url,
+                data=body.encode("utf-8"),
+                headers=_soap_headers("GetPassword"),
+                timeout=20,
+            )
         except requests.exceptions.Timeout:
-            return "", "CVL Gateway connection timed out (20s). Please try again."
-        except requests.exceptions.ConnectionError:
-            return "", "Could not reach CVL Gateway. Please check internet connection."
-        except Exception as e:
-            logger.error(f"Error calling CVL GetToken: {e}")
-            return "", str(e)
+            return "", "CVL KRA connection timed out during GetPassword (20s)"
+        except requests.exceptions.ConnectionError as e:
+            return "", f"Cannot reach CVL KRA server: {e}"
+
+        if resp.status_code != 200:
+            return "", f"CVL GetPassword HTTP {resp.status_code}: {resp.text[:200]}"
+
+        try:
+            root = ET.fromstring(resp.text)
+        except ET.ParseError as e:
+            return "", f"CVL GetPassword: invalid XML response — {e}: {resp.text[:200]}"
+
+        err = _parse_error(root)
+        if err:
+            return "", f"CVL GetPassword error: {err}"
+
+        enc_pass = _find_text(root, "APP_GET_PASS")
+        if not enc_pass:
+            return "", f"CVL GetPassword: APP_GET_PASS missing in response: {resp.text[:300]}"
+
+        logger.info("CVL GetPassword succeeded — encrypted password obtained")
+        return enc_pass, ""
+
+    # ── Step 2: GetPANStatus ──────────────────────────────────────────────────
+
+    def call_get_pan_status(self, pan: str, creds: dict, enc_password: str) -> tuple[dict, str]:
+        """
+        Calls CVL GetPANStatus SOAP method.
+        Returns (parsed_kyc_dict, error_message).
+        """
+        url = creds["base_url"]
+        body = GET_PAN_STATUS_ENVELOPE.format(
+            ns=SOAP_NS,
+            pan=pan,
+            username=creds["username"],
+            poscode=creds["poscode"],
+            enc_password=enc_password,
+            passkey=creds["passkey"],
+        )
+
+        try:
+            resp = requests.post(
+                url,
+                data=body.encode("utf-8"),
+                headers=_soap_headers("GetPANStatus"),
+                timeout=25,
+            )
+        except requests.exceptions.Timeout:
+            return {}, "CVL KRA connection timed out during GetPANStatus (25s)"
+        except requests.exceptions.ConnectionError as e:
+            return {}, f"Cannot reach CVL KRA server: {e}"
+
+        if resp.status_code != 200:
+            return {}, f"CVL GetPANStatus HTTP {resp.status_code}: {resp.text[:200]}"
+
+        try:
+            root = ET.fromstring(resp.text)
+        except ET.ParseError as e:
+            return {}, f"CVL GetPANStatus: invalid XML — {e}: {resp.text[:200]}"
+
+        err = _parse_error(root)
+        if err:
+            return {}, f"CVL GetPANStatus error: {err}"
+
+        # Extract APP_PAN_INQ fields
+        inq = root.find(".//APP_PAN_INQ")
+        summ = root.find(".//APP_PAN_SUMM")
+
+        def t(tag): return _find_text(inq, tag) if inq is not None else ""
+        def s(tag): return _find_text(summ, tag) if summ is not None else ""
+
+        result = {
+            "APP_PAN_NO":              t("APP_PAN_NO"),
+            "APP_NAME":                t("APP_NAME"),
+            "APP_STATUS":              t("APP_STATUS"),
+            "APP_STATUSDT":            t("APP_STATUSDT"),
+            "APP_ENTRYDT":             t("APP_ENTRYDT"),
+            "APP_MODDT":               t("APP_MODDT"),
+            "APP_STATUS_DELTA":        t("APP_STATUS_DELTA"),
+            "APP_UPDT_STATUS":         t("APP_UPDT_STATUS"),
+            "APP_HOLD_DEACTIVE_RMKS":  t("APP_HOLD_DEACTIVE_RMKS"),
+            "APP_UPDT_RMKS":           t("APP_UPDT_RMKS"),
+            "APP_KYC_MODE":            t("APP_KYC_MODE"),
+            "APP_IPV_FLAG":            t("APP_IPV_FLAG"),
+            "APP_UBO_FLAG":            t("APP_UBO_FLAG"),
+            "APP_PER_ADD_PROOF":       t("APP_PER_ADD_PROOF"),
+            "APP_COR_ADD_PROOF":       t("APP_COR_ADD_PROOF"),
+            "BATCH_ID":                s("BATCH_ID"),
+            "APP_RESPONSE_DATE":       s("APP_RESPONSE_DATE"),
+            "APP_TOTAL_REC":           s("APP_TOTAL_REC"),
+        }
+
+        return result, ""
+
+    # ── Main entry: verify_pan_with_dob ──────────────────────────────────────
 
     def verify_pan_with_dob(self, pan_number: str, dob: str = None, company=None) -> dict:
         """
-        Verifies PAN against CVL KRA using GetPANStatus API (Section 2.2 of CVL KRA specification).
-        Payload: {"pan": pan, "poscode": poscode}
-        Endpoint: /api/GetPanStatus
+        Verify PAN using CVL KRA SOAP GetPANStatus (V6.0).
+        DOB is accepted for UI compatibility but CVL GetPANStatus does not require it.
         """
         pan_clean = (pan_number or "").strip().upper()
-        dob_raw = (dob or "").strip()
 
-        # Format DOB if provided
-        formatted_dob = dob_raw
-        if dob_raw:
-            try:
-                if "-" in dob_raw:
-                    parts = dob_raw.split("-")
-                    if len(parts[0]) == 4:  # yyyy-mm-dd
-                        formatted_dob = f"{parts[2]}-{parts[1]}-{parts[0]}"
-                elif "/" in dob_raw:
-                    parts = dob_raw.split("/")
-                    if len(parts[0]) == 4:  # yyyy/mm/dd
-                        formatted_dob = f"{parts[2]}-{parts[1]}-{parts[0]}"
-                    else:
-                        formatted_dob = dob_raw.replace("/", "-")
-            except Exception:
-                formatted_dob = dob_raw
-
-        # Format validation: 10-character alphanumeric PAN
-        if len(pan_clean) != 10 or not (pan_clean[:5].isalpha() and pan_clean[5:9].isdigit() and pan_clean[9].isalpha()):
+        # PAN format validation: AAAAA9999A
+        if not re.fullmatch(r"[A-Z]{5}[0-9]{4}[A-Z]", pan_clean):
             return {
                 "success": False,
                 "status": "invalid",
                 "status_message": "Invalid PAN format. Must be 10 characters (e.g., ABCDE1234F).",
-                "raw_response": {"error": "Invalid format"}
+                "raw_response": {"error": "Invalid PAN format"},
             }
 
         creds = self._resolve_credentials(company)
 
-        # If live credentials (API Key, AES Key, POS Code, Username, Password) are configured:
-        if creds["api_key"] and creds["aes_key"] and creds["poscode"] and creds["username"]:
-            token, token_err = self.get_token(creds)
-            if not token:
-                logger.warning(f"CVL GetToken failed: {token_err}.")
+        # Check minimum required credentials
+        has_live_creds = bool(
+            creds["poscode"] and
+            creds["username"] and
+            creds["password"] and
+            creds["passkey"]
+        )
+
+        if has_live_creds:
+            # ── Step 1: GetPassword ──────────────────────────────────────────
+            enc_password, err = self.get_encrypted_password(creds)
+            if not enc_password:
+                logger.warning(f"CVL GetPassword failed: {err}")
                 return {
                     "success": False,
                     "status": "failed",
-                    "status_message": f"CVL KRA Authentication Failed: {token_err}",
-                    "raw_response": {"error": token_err}
+                    "status_message": f"CVL KRA Authentication Failed: {err}",
+                    "raw_response": {"error": err},
                 }
 
-            # Call GetPanStatus (Section 2.2 of CVL KRA Specification)
-            get_pan_status_url = f"{creds['base_url']}/GetPanStatus"
-            headers = {
-                "content-type": "application/json",
-                "user-agent": "CustomUsrAgnt",
-                "Token": token
-            }
-
-            request_packet = {
-                "pan": pan_clean,
-                "poscode": creds["poscode"]
-            }
-
-            try:
-                enc_req = cvl_encrypt(creds["aes_key"], json.dumps(request_packet))
-                resp = requests.post(get_pan_status_url, data=json.dumps(enc_req), headers=headers, timeout=25)
-                
-                try:
-                    raw_resp = resp.json()
-                except Exception:
-                    raw_resp = (resp.text or "").strip()
-
-                resp_json = None
-                if isinstance(raw_resp, str):
-                    clean_str = raw_resp.strip().strip('"')
-                    if ":" in clean_str:
-                        # Direct encrypted string response
-                        decrypted_str = cvl_decrypt(creds["aes_key"], clean_str)
-                        try:
-                            resp_json = json.loads(decrypted_str)
-                        except Exception:
-                            resp_json = {"raw": decrypted_str}
-                    else:
-                        try:
-                            resp_json = json.loads(raw_resp)
-                        except Exception:
-                            resp_json = {"raw": raw_resp}
-                elif isinstance(raw_resp, dict):
-                    resp_json = raw_resp
-                else:
-                    resp_json = {}
-
-                # If resdtls is present in resp_json
-                raw_details = resp_json.get("resdtls") or resp_json.get("ResDtls") or ""
-                if isinstance(raw_details, str) and ":" in raw_details:
-                    decrypted_str = cvl_decrypt(creds["aes_key"], raw_details)
-                    try:
-                        payload = json.loads(decrypted_str)
-                    except Exception:
-                        payload = {"raw": decrypted_str, "resp": resp_json}
-                else:
-                    payload = resp_json
-
-                # Extract KYC data from GetPanStatus response (APP_PAN_INQ list or dict)
-                inq_data = payload.get("APP_PAN_INQ")
-                if isinstance(inq_data, list) and len(inq_data) > 0:
-                    kyc_item = inq_data[0]
-                elif isinstance(inq_data, dict):
-                    kyc_item = inq_data
-                else:
-                    kyc_item = payload.get("KYC_DATA") or {}
-
-                app_name = kyc_item.get("APP_NAME") or kyc_item.get("APP_PAN_NAME") or ""
-                status_code = str(kyc_item.get("APP_STATUS") or resp_json.get("error_code") or "01")
-                status_date = kyc_item.get("APP_STATUSDT") or ""
-                proof_code = str(kyc_item.get("APP_PER_ADD_PROOF") or "")
-                kyc_mode_code = str(kyc_item.get("APP_KYC_MODE") or "")
-                remarks = kyc_item.get("APP_REMARKS") or kyc_item.get("APP_HOLD_DEACT_RMKS") or ""
-
-                status_desc = self.CVL_STATUS_MAP.get(status_code, f"Status Code {status_code}")
-                mode_desc = self.KYC_MODE_MAP.get(kyc_mode_code, f"Mode {kyc_mode_code}")
-
-                # Aadhaar verification / seeding flag
-                aadhaar_seeding = (
-                    "LINKED (Aadhaar Verified - Proof Code 31)" if proof_code == "31" or "AADHAAR" in remarks.upper()
-                    else ("EXEMPTED" if kyc_item.get("APP_EXMT") == "Y" else f"Proof Code {proof_code}" if proof_code else "N/A")
-                )
-
-                # Entity classification from 4th character
-                fourth_char = pan_clean[3]
-                category_map = {
-                    'P': 'Individual',
-                    'C': 'Company',
-                    'H': 'Hindu Undivided Family (HUF)',
-                    'F': 'Partnership Firm',
-                    'A': 'Association of Persons (AOP)',
-                    'T': 'Trust',
-                    'B': 'Body of Individuals (BOI)',
-                    'L': 'Local Authority',
-                    'J': 'Artificial Juridical Person',
-                    'G': 'Government'
-                }
-                category = category_map.get(fourth_char, 'Individual')
-
-                # Status check: 02/002 = Registered/Verified, 07/007 = Validated, 012 = Existing Verified
-                is_success = status_code in ["02", "002", "07", "007", "012"]
-
-                name_parts = app_name.split() if app_name else []
-                first_name = name_parts[0] if name_parts else ""
-                last_name = name_parts[-1] if len(name_parts) > 1 else ""
-                middle_name = " ".join(name_parts[1:-1]) if len(name_parts) > 2 else ""
-
-                return {
-                    "success": is_success,
-                    "status": "verified" if is_success else "failed",
-                    "status_message": f"CVL KRA (GetPanStatus): {status_desc} (Code: {status_code})",
-                    "full_name": app_name or "NAME NOT RETURNED",
-                    "first_name": first_name,
-                    "middle_name": middle_name,
-                    "last_name": last_name,
-                    "category": category,
-                    "pan_status": status_desc.upper(),
-                    "dob_match": True if not formatted_dob else True,
-                    "aadhaar_seeding_status": aadhaar_seeding,
-                    "reference_id": resp_json.get("error_code") or f"CVL-GPS-{creds['poscode']}",
-                    "raw_response": payload,
-                    "method": "GetPANStatus",
-                    "status_date": status_date,
-                    "kyc_mode": mode_desc
-                }
-
-            except Exception as e:
-                logger.error(f"Error executing CVL KRA GetPanStatus request: {e}")
+            # ── Step 2: GetPANStatus ─────────────────────────────────────────
+            kyc_data, err = self.call_get_pan_status(pan_clean, creds, enc_password)
+            if err:
+                logger.warning(f"CVL GetPANStatus failed: {err}")
                 return {
                     "success": False,
                     "status": "failed",
-                    "status_message": f"CVL KRA Gateway Error: {str(e)}",
-                    "raw_response": {"error": str(e)}
+                    "status_message": f"CVL KRA PAN Lookup Failed: {err}",
+                    "raw_response": {"error": err},
                 }
 
-        # Fallback to Sandbox Simulation when CVL credentials are not yet entered in Company Profile
-        fourth_char = pan_clean[3]
-        category_map = {
-            'P': 'Individual',
-            'C': 'Company',
-            'H': 'Hindu Undivided Family (HUF)',
-            'F': 'Partnership Firm',
-            'A': 'Association of Persons (AOP)',
-            'T': 'Trust'
-        }
-        category = category_map.get(fourth_char, 'Individual')
-        simulated_name = "VIJAY" if fourth_char == 'P' else "ZOI FINTECH SOLUTIONS PVT LTD"
-        name_parts = simulated_name.split()
+            # ── Parse response ───────────────────────────────────────────────
+            app_name     = kyc_data.get("APP_NAME", "")
+            status_code  = kyc_data.get("APP_STATUS", "").strip().zfill(3)
+            kyc_mode     = kyc_data.get("APP_KYC_MODE", "")
+            per_add      = kyc_data.get("APP_PER_ADD_PROOF", "")
+            cor_add      = kyc_data.get("APP_COR_ADD_PROOF", "")
+            ipv_flag     = kyc_data.get("APP_IPV_FLAG", "")
+            remarks      = kyc_data.get("APP_HOLD_DEACTIVE_RMKS", "")
+            status_dt    = kyc_data.get("APP_STATUSDT", "")
+            resp_date    = kyc_data.get("APP_RESPONSE_DATE", "")
+
+            status_desc   = CVL_STATUS_MAP.get(status_code, f"Status Code {status_code}")
+            kyc_mode_desc = KYC_MODE_MAP.get(kyc_mode, f"Mode {kyc_mode}" if kyc_mode else "Normal KYC")
+
+            # Aadhaar seeding
+            if per_add == "31":
+                aadhaar_status = "LINKED (Aadhaar — Permanent Address)"
+            elif cor_add == "31":
+                aadhaar_status = "LINKED (Aadhaar — Correspondence Address)"
+            elif per_add:
+                aadhaar_status = f"Non-Aadhaar ({PROOF_MAP.get(per_add, f'Code {per_add}')})"
+            else:
+                aadhaar_status = "N/A"
+
+            # Entity type from 4th character of PAN
+            category = CATEGORY_MAP.get(pan_clean[3], "Individual")
+
+            # Success if status is verified / registered
+            is_success = status_code in VERIFIED_STATUS_CODES
+
+            # Name parsing
+            name_parts  = app_name.split() if app_name else []
+            first_name  = name_parts[0] if name_parts else ""
+            last_name   = name_parts[-1] if len(name_parts) > 1 else ""
+            middle_name = " ".join(name_parts[1:-1]) if len(name_parts) > 2 else ""
+
+            reference_id = (
+                kyc_data.get("BATCH_ID") or
+                f"CVL-GPS-{creds['poscode']}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            )
+
+            return {
+                "success":              is_success,
+                "status":               "verified" if is_success else "failed",
+                "status_message":       f"CVL KRA GetPANStatus: {status_desc} (Code: {status_code})",
+                "full_name":            app_name or "NAME NOT RETURNED BY CVL",
+                "first_name":           first_name,
+                "middle_name":          middle_name,
+                "last_name":            last_name,
+                "category":             category,
+                "pan_status":           status_desc.upper(),
+                "dob_match":            True,   # CVL GetPANStatus does not validate DOB
+                "aadhaar_seeding_status": aadhaar_status,
+                "reference_id":         reference_id,
+                "method":               "GetPANStatus",
+                "status_date":          status_dt,
+                "kyc_mode":             kyc_mode_desc,
+                "ipv_flag":             ipv_flag,
+                "remarks":              remarks,
+                "response_date":        resp_date,
+                "raw_response":         kyc_data,
+            }
+
+        # ── Sandbox fallback (no credentials configured) ─────────────────────
+        category     = CATEGORY_MAP.get(pan_clean[3], "Individual")
+        sim_name     = "VIJAY VAISHNAV" if pan_clean[3] == 'P' else "ZOI FINTECH SOLUTIONS PVT LTD"
+        name_parts   = sim_name.split()
 
         return {
-            "success": True,
-            "status": "verified",
-            "status_message": "CVL KRA Verified (GetPANStatus Demo - Configure POSCODE & AES Key in Company Profile for Live API)",
-            "full_name": simulated_name,
-            "first_name": name_parts[0],
-            "middle_name": "",
-            "last_name": name_parts[-1] if len(name_parts) > 1 else "",
-            "category": category,
-            "pan_status": "KYC REGISTERED (02)",
-            "dob_match": True,
-            "aadhaar_seeding_status": "LINKED (Aadhaar Verified - Proof Code 31)",
-            "reference_id": f"CVL-DEMO-GPS-{os.urandom(3).hex().upper()}",
-            "method": "GetPANStatus",
+            "success":              True,
+            "status":               "verified",
+            "status_message":       (
+                "CVL KRA Verified (DEMO — Configure POS Code, Username, Password & PassKey "
+                "in Company Profile → KRA Credentials for live API)"
+            ),
+            "full_name":            sim_name,
+            "first_name":           name_parts[0],
+            "middle_name":          "",
+            "last_name":            name_parts[-1] if len(name_parts) > 1 else "",
+            "category":             category,
+            "pan_status":           "KRA VERIFIED (002)",
+            "dob_match":            True,
+            "aadhaar_seeding_status": "LINKED (Aadhaar — Permanent Address)",
+            "reference_id":         f"CVL-DEMO-{os.urandom(3).hex().upper()}",
+            "method":               "GetPANStatus",
+            "status_date":          datetime.now().strftime("%d/%m/%Y"),
+            "kyc_mode":             "Normal KYC",
+            "ipv_flag":             "Y",
+            "remarks":              "",
+            "response_date":        datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
             "raw_response": {
-                "APP_PAN_INQ": [
-                    {
-                        "APP_PAN_NO": pan_clean,
-                        "APP_NAME": simulated_name,
-                        "APP_STATUS": "02",
-                        "APP_STATUS_DESC": "KYC Registered",
-                        "APP_STATUSDT": datetime.now().strftime("%d-%m-%Y"),
-                        "APP_PER_ADD_PROOF": "31",
-                        "APP_KYC_MODE": "1",
-                        "METHOD": "GetPANStatus"
-                    }
-                ]
-            }
+                "APP_PAN_NO":   pan_clean,
+                "APP_NAME":     sim_name,
+                "APP_STATUS":   "002",
+                "APP_KYC_MODE": "0",
+                "APP_IPV_FLAG": "Y",
+                "APP_PER_ADD_PROOF": "31",
+                "APP_STATUSDT": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                "NOTE":         "DEMO MODE — CVL KRA credentials not configured",
+            },
         }
-

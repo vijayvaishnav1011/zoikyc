@@ -179,7 +179,9 @@
           </span>
         </div>
         <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
-          Configure your KRA / Capricorn gateway authentication keys and credentials.
+          Configure your CVL KRA SOAP gateway credentials (<strong>V6.0</strong>). These are used to call
+          <code style="background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:0.78rem;">GetPassword</code> →
+          <code style="background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:0.78rem;">GetPANStatus</code> on the official CVL KRA SOAP endpoint.
         </p>
 
         <!-- POS Code & API User ID -->
@@ -215,31 +217,24 @@
           </div>
 
           <div class="ref-form-group">
-            <label class="ref-form-label" for="aes_key">AES Key</label>
+            <label class="ref-form-label" for="aes_key">
+              PassKey
+              <span style="font-size:0.7rem;color:#64748b;font-weight:400;"> (used in GetPassword)</span>
+            </label>
             <div style="position: relative;">
-              {{ form.aes_key(class="ref-form-control", type="password", id="aesKeyInput", placeholder="Enter AES Key") }}
+              {{ form.aes_key(class="ref-form-control", type="password", id="aesKeyInput", placeholder="Your CVL PassKey (e.g. MYKEY123)") }}
               <button type="button" onclick="togglePassVisibility('aesKeyInput', 'aesEyeIcon')"
                 style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0;">
                 <i class="bi bi-eye-fill" id="aesEyeIcon"></i>
               </button>
             </div>
-            {% if form.aes_key.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
-              form.aes_key.errors[0] }}</span>{% endif %}
+            {% if form.aes_key.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.aes_key.errors[0] }}</span>{% endif %}
           </div>
         </div>
 
-        <!-- API Key / Token -->
-        <div class="ref-form-group" style="margin-bottom: 20px;">
-          <label class="ref-form-label" for="api_key">API Key / Token</label>
-          <div style="position: relative;">
-            {{ form.api_key(class="ref-form-control", type="password", id="apiKeyInput", placeholder="Enter API Key / Token") }}
-            <button type="button" onclick="togglePassVisibility('apiKeyInput', 'apiKeyEyeIcon')"
-              style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0;">
-              <i class="bi bi-eye-fill" id="apiKeyEyeIcon"></i>
-            </button>
-          </div>
-          {% if form.api_key.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
-            form.api_key.errors[0] }}</span>{% endif %}
+        <!-- API Key hidden — retained in DB for legacy, not needed for SOAP V6.0 -->
+        <div style="display:none;">
+          {{ form.api_key(id="apiKeyInput") }}
         </div>
 
         <button type="submit" class="btn-tiancai-pill" style="max-width: 240px;">
