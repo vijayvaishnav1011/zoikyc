@@ -246,15 +246,42 @@ class PANVerificationProvider(BaseKYCProvider):
         try:
             # CVL expects json.dumps of the encrypted "iv:ciphertext" string
             resp = requests.post(url, data=json.dumps(encrypted_payload), headers=headers, timeout=20)
-            raw = resp.json()
-            data = json.loads(raw) if isinstance(raw, str) else raw
-            if data.get("success") == "1" and data.get("token"):
-                return data["token"], ""
-            else:
+            
+            # Check for non-JSON or HTML response
+            try:
+                raw = resp.json()
+                data = json.loads(raw) if isinstance(raw, str) else raw
+            except Exception:
+                text_preview = (resp.text or "").strip()[:150]
+                if not text_preview:
+                    return "", f"Empty response from CVL Gateway (HTTP {resp.status_code})"
+                return "", f"CVL Gateway HTTP {resp.status_code}: {text_preview}"
+
+            if isinstance(data, dict):
+                if data.get("success") == "1" and data.get("token"):
+                    return data["token"], ""
+                
                 err_code = data.get("error_code", "")
                 err_msg = data.get("error_message", "")
-                err = f"{err_msg} ({err_code})" if err_code and err_msg else (err_msg or err_code or f"Token error (HTTP {resp.status_code})")
+                
+                # Friendly explanations for standard CVL error codes
+                if err_code == "WEBERR-023":
+                    err_msg = "Invalid Encrypted Data (Your AES Key or POS Code does not match CVL KRA records)"
+                elif err_code == "WEBERR-004":
+                    err_msg = "Invalid API Key"
+                elif err_code == "WEBERR-005":
+                    err_msg = "IP Not Whitelisted (Your server IP must be registered with CVL KRA)"
+                elif err_code == "WEBERR-001":
+                    err_msg = "Invalid Username or Password"
+
+                err = f"{err_msg} ({err_code})" if err_code and err_msg else (err_msg or err_code or f"Authentication error (HTTP {resp.status_code})")
                 return "", err
+            else:
+                return "", f"Unexpected response format from CVL: {str(data)[:100]}"
+        except requests.exceptions.Timeout:
+            return "", "CVL Gateway connection timed out (20s). Please try again."
+        except requests.exceptions.ConnectionError:
+            return "", "Could not reach CVL Gateway. Please check internet connection."
         except Exception as e:
             logger.error(f"Error calling CVL GetToken: {e}")
             return "", str(e)
@@ -324,8 +351,17 @@ class PANVerificationProvider(BaseKYCProvider):
             try:
                 enc_req = cvl_encrypt(creds["aes_key"], json.dumps(request_packet))
                 resp = requests.post(get_pan_status_url, data=json.dumps(enc_req), headers=headers, timeout=25)
-                raw_resp = resp.json()
-                resp_json = json.loads(raw_resp) if isinstance(raw_resp, str) else raw_resp
+                try:
+                    raw_resp = resp.json()
+                    resp_json = json.loads(raw_resp) if isinstance(raw_resp, str) else raw_resp
+                except Exception:
+                    text_snippet = (resp.text or "").strip()[:150]
+                    return {
+                        "success": False,
+                        "status": "failed",
+                        "status_message": f"CVL Gateway HTTP {resp.status_code}: {text_snippet or 'Invalid non-JSON response'}",
+                        "raw_response": {"http_status": resp.status_code, "response": text_snippet}
+                    }
 
                 raw_details = resp_json.get("resdtls", "")
                 decrypted_str = raw_details
