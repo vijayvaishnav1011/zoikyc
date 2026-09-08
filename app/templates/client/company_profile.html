@@ -217,10 +217,7 @@
           </div>
 
           <div class="ref-form-group">
-            <label class="ref-form-label" for="aes_key">
-              PassKey
-              <span style="font-size:0.7rem;color:#64748b;font-weight:400;"> (used in GetPassword)</span>
-            </label>
+            <label class="ref-form-label" for="aes_key">AES Key</label>
             <div style="position: relative;">
               {{ form.aes_key(class="ref-form-control", type="password", id="aesKeyInput", placeholder="Your CVL PassKey (e.g. MYKEY123)") }}
               <button type="button" onclick="togglePassVisibility('aesKeyInput', 'aesEyeIcon')"
@@ -232,9 +229,17 @@
           </div>
         </div>
 
-        <!-- API Key hidden — retained in DB for legacy, not needed for SOAP V6.0 -->
-        <div style="display:none;">
-          {{ form.api_key(id="apiKeyInput") }}
+        <!-- API Key / Token -->
+        <div class="ref-form-group" style="margin-bottom: 20px;">
+          <label class="ref-form-label" for="api_key">API Key</label>
+          <div style="position: relative;">
+            {{ form.api_key(class="ref-form-control", type="password", id="apiKeyInput", placeholder="Enter API Key") }}
+            <button type="button" onclick="togglePassVisibility('apiKeyInput', 'apiKeyEyeIcon')"
+              style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0;">
+              <i class="bi bi-eye-fill" id="apiKeyEyeIcon"></i>
+            </button>
+          </div>
+          {% if form.api_key.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.api_key.errors[0] }}</span>{% endif %}
         </div>
 
         <button type="submit" class="btn-tiancai-pill" style="max-width: 240px;">
