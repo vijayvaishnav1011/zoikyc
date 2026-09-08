@@ -59,13 +59,25 @@ def index():
     if request.is_json:
         req_json = request.get_json() or {}
         pan_number = (req_json.get('pan') or req_json.get('pan_number') or '').strip().upper()
-        dob = (req_json.get('dob') or '').strip()
+        dob_day = str(req_json.get('dob_day') or req_json.get('day') or '').strip()
+        dob_month = str(req_json.get('dob_month') or req_json.get('month') or '').strip()
+        dob_year = str(req_json.get('dob_year') or req_json.get('year') or '').strip()
+        if dob_day and dob_month and dob_year:
+            dob = f"{dob_day.zfill(2)}/{dob_month.zfill(2)}/{dob_year}"
+        else:
+            dob = (req_json.get('dob') or '').strip()
         should_process = bool(pan_number)
     else:
         should_process = form.validate_on_submit()
         if should_process:
             pan_number = form.pan_number.data.strip().upper()
-            dob = (form.dob.data or "").strip()
+            dob_day = (request.form.get('dob_day') or form.dob_day.data or '').strip()
+            dob_month = (request.form.get('dob_month') or form.dob_month.data or '').strip()
+            dob_year = (request.form.get('dob_year') or form.dob_year.data or '').strip()
+            if dob_day and dob_month and dob_year:
+                dob = f"{dob_day.zfill(2)}/{dob_month.zfill(2)}/{dob_year}"
+            else:
+                dob = (form.dob.data or "").strip()
 
     if should_process and pan_number:
         # Free service - no wallet deduction
@@ -209,7 +221,13 @@ def public_api_pan():
         payload_data = request.form.to_dict()
 
     pan_number = (payload_data.get('pan') or payload_data.get('pan_number') or '').strip().upper()
-    dob = (payload_data.get('dob') or payload_data.get('date_of_birth') or '').strip()
+    dob_day = str(payload_data.get('dob_day') or payload_data.get('day') or '').strip()
+    dob_month = str(payload_data.get('dob_month') or payload_data.get('month') or '').strip()
+    dob_year = str(payload_data.get('dob_year') or payload_data.get('year') or '').strip()
+    if dob_day and dob_month and dob_year:
+        dob = f"{dob_day.zfill(2)}/{dob_month.zfill(2)}/{dob_year}"
+    else:
+        dob = (payload_data.get('dob') or payload_data.get('date_of_birth') or '').strip()
 
     if not pan_number:
         return jsonify({

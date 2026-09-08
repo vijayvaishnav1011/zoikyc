@@ -20,10 +20,10 @@ class PANCheckForm(FlaskForm):
     dob = StringField(
         'Date of Birth',
         validators=[Optional()],
-        render_kw={
-            "placeholder": "DD/MM/YYYY (Optional)",
-            "autocomplete": "off",
-            "class": "form-control custom-date-picker"
-        }
+        render_kw={"type": "hidden", "id": "hiddenDobInput"}
     )
+    dob_day = StringField('Day', validators=[Optional()])
+    dob_month = StringField('Month', validators=[Optional()])
+    dob_year = StringField('Year', validators=[Optional()])
     submit = SubmitField('Verify PAN Details')
+

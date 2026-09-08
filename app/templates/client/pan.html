@@ -147,27 +147,39 @@
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 7px;
-    color: #64748b;
-    width: 32px;
-    height: 32px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  .dob-custom-select {
+    width: 100%;
+    height: 48px;
+    padding: 10px 28px 10px 12px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #1e293b;
+    background-color: #ffffff;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 13px 10px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
     cursor: pointer;
     transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   }
-  .dob-picker-btn:hover {
-    background: #f3e8ff;
-    color: #7e22ce;
-    border-color: #d8b4fe;
+  .dob-custom-select:focus {
+    border-color: #7e22ce;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(126, 34, 206, 0.12);
   }
   .pan-form-single-row {
     display: grid;
-    grid-template-columns: 1fr 1fr auto;
+    grid-template-columns: 1fr 1.35fr auto;
     gap: 16px;
     align-items: flex-end;
   }
-  @media (max-width: 820px) {
+  @media (max-width: 960px) {
     .pan-form-single-row {
       grid-template-columns: 1fr;
     }
@@ -237,23 +249,55 @@
           {% endif %}
         </div>
 
-        <!-- 2. Date of Birth Input with Modern Date Picker -->
+        <!-- 2. Date of Birth: 3 Separate Dropdown Selects (Day, Month, Year) -->
         <div>
           <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #334155; margin-bottom: 6px;">
             Date of Birth <span style="color: #94a3b8; font-weight: 500; font-size: 0.76rem;">(Optional)</span>
           </label>
-          <div class="custom-input-group">
-            <i class="bi bi-calendar2-date-fill custom-input-icon" style="color: #0ea5e9;"></i>
-            {{ form.dob(
-                class="pan-custom-input", 
-                id="dobPicker", 
-                placeholder="DD/MM/YYYY",
-                autocomplete="off",
-                style="font-family: monospace; letter-spacing: 1px; font-size: 0.95rem;"
-            ) }}
-            <button type="button" class="dob-picker-btn" id="dobCalendarTrigger" title="Open Calendar">
-              <i class="bi bi-calendar-week"></i>
-            </button>
+          {{ form.dob(id="hiddenDobInput") }}
+          <div style="display: grid; grid-template-columns: 1fr 1.25fr 1fr; gap: 8px;">
+            
+            <!-- Day Select -->
+            <div style="position: relative;">
+              <select name="dob_day" id="dobDay" class="dob-custom-select" onchange="syncDobValues()">
+                <option value="">Day</option>
+                {% for d in range(1, 32) %}
+                {% set day_str = "%02d"|format(d) %}
+                <option value="{{ day_str }}" {% if form.dob_day.data == day_str %}selected{% endif %}>{{ day_str }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Month Select -->
+            <div style="position: relative;">
+              <select name="dob_month" id="dobMonth" class="dob-custom-select" onchange="syncDobValues()">
+                <option value="">Month</option>
+                <option value="01" {% if form.dob_month.data == '01' %}selected{% endif %}>01 - Jan</option>
+                <option value="02" {% if form.dob_month.data == '02' %}selected{% endif %}>02 - Feb</option>
+                <option value="03" {% if form.dob_month.data == '03' %}selected{% endif %}>03 - Mar</option>
+                <option value="04" {% if form.dob_month.data == '04' %}selected{% endif %}>04 - Apr</option>
+                <option value="05" {% if form.dob_month.data == '05' %}selected{% endif %}>05 - May</option>
+                <option value="06" {% if form.dob_month.data == '06' %}selected{% endif %}>06 - Jun</option>
+                <option value="07" {% if form.dob_month.data == '07' %}selected{% endif %}>07 - Jul</option>
+                <option value="08" {% if form.dob_month.data == '08' %}selected{% endif %}>08 - Aug</option>
+                <option value="09" {% if form.dob_month.data == '09' %}selected{% endif %}>09 - Sep</option>
+                <option value="10" {% if form.dob_month.data == '10' %}selected{% endif %}>10 - Oct</option>
+                <option value="11" {% if form.dob_month.data == '11' %}selected{% endif %}>11 - Nov</option>
+                <option value="12" {% if form.dob_month.data == '12' %}selected{% endif %}>12 - Dec</option>
+              </select>
+            </div>
+
+            <!-- Year Select -->
+            <div style="position: relative;">
+              <select name="dob_year" id="dobYear" class="dob-custom-select" onchange="syncDobValues()">
+                <option value="">Year</option>
+                {% for y in range(2026, 1939, -1) %}
+                {% set y_str = y|string %}
+                <option value="{{ y_str }}" {% if form.dob_year.data == y_str %}selected{% endif %}>{{ y_str }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
           </div>
           {% if form.dob.errors %}
           <div style="color: #dc2626; font-size: 0.75rem; margin-top: 4px; font-weight: 600;">
@@ -661,43 +705,41 @@
     if (e.target === this) closeJsonModal();
   });
 
-  document.addEventListener('DOMContentLoaded', function () {
-    // 1. Initialize Modern Flatpickr on DOB field
-    const dobInput = document.getElementById('dobPicker');
-    const calendarBtn = document.getElementById('dobCalendarTrigger');
-
-    if (dobInput) {
-      const fp = flatpickr(dobInput, {
-        dateFormat: "d/m/Y",
-        allowInput: true,
-        maxDate: "today",
-        disableMobile: "true",
-        monthSelectorType: "dropdown",
-        showMonths: 1,
-        prevArrow: '<i class="bi bi-chevron-left"></i>',
-        nextArrow: '<i class="bi bi-chevron-right"></i>',
-        onChange: function(selectedDates, dateStr, instance) {
-          dobInput.dispatchEvent(new Event('input'));
-        }
-      });
-
-      if (calendarBtn) {
-        calendarBtn.addEventListener('click', function (e) {
-          e.preventDefault();
-          fp.open();
-        });
+  function syncDobValues() {
+    const day = document.getElementById('dobDay')?.value || '';
+    const month = document.getElementById('dobMonth')?.value || '';
+    const year = document.getElementById('dobYear')?.value || '';
+    const hidden = document.getElementById('hiddenDobInput');
+    if (hidden) {
+      if (day && month && year) {
+        hidden.value = day + '/' + month + '/' + year;
+      } else {
+        hidden.value = '';
       }
+    }
+  }
 
-      // Auto-insert slash on manual typing (DD/MM/YYYY)
-      dobInput.addEventListener('input', function (e) {
-        let val = this.value.replace(/[^0-9/]/g, '');
-        if (val.length === 2 && !val.includes('/')) {
-          val = val + '/';
-        } else if (val.length === 5 && (val.match(/\//g) || []).length === 1) {
-          val = val + '/';
+  document.addEventListener('DOMContentLoaded', function () {
+    // 1. Pre-select Day, Month, Year from hidden input if present
+    const hidden = document.getElementById('hiddenDobInput');
+    if (hidden && hidden.value) {
+      const parts = hidden.value.split(/[-/]/);
+      if (parts.length === 3) {
+        let d = parts[0].padStart(2, '0');
+        let m = parts[1].padStart(2, '0');
+        let y = parts[2];
+        if (parts[0].length === 4) { // YYYY-MM-DD
+          y = parts[0];
+          m = parts[1].padStart(2, '0');
+          d = parts[2].padStart(2, '0');
         }
-        this.value = val;
-      });
+        const dayEl = document.getElementById('dobDay');
+        const monthEl = document.getElementById('dobMonth');
+        const yearEl = document.getElementById('dobYear');
+        if (dayEl && !dayEl.value) dayEl.value = d;
+        if (monthEl && !monthEl.value) monthEl.value = m;
+        if (yearEl && !yearEl.value) yearEl.value = y;
+      }
     }
 
     // 2. PAN Live Character Counter & Uppercase formatting
