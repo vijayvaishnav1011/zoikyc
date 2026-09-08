@@ -247,23 +247,51 @@ class PANVerificationProvider(BaseKYCProvider):
             # CVL expects json.dumps of the encrypted "iv:ciphertext" string
             resp = requests.post(url, data=json.dumps(encrypted_payload), headers=headers, timeout=20)
             
-            # Check for non-JSON or HTML response
+            # Read response (CVL may return JSON dict, or encrypted "iv:ciphertext" string)
             try:
                 raw = resp.json()
-                data = json.loads(raw) if isinstance(raw, str) else raw
             except Exception:
-                text_preview = (resp.text or "").strip()[:150]
-                if not text_preview:
-                    return "", f"Empty response from CVL Gateway (HTTP {resp.status_code})"
-                return "", f"CVL Gateway HTTP {resp.status_code}: {text_preview}"
+                raw = (resp.text or "").strip()
+
+            data = None
+            if isinstance(raw, str):
+                raw_clean = raw.strip().strip('"')
+                if ":" in raw_clean:
+                    # CVL returned encrypted "iv:ciphertext" string
+                    decrypted_str = cvl_decrypt(creds["aes_key"], raw_clean)
+                    try:
+                        data = json.loads(decrypted_str)
+                    except Exception:
+                        data = {"raw_decrypted": decrypted_str}
+                else:
+                    try:
+                        data = json.loads(raw)
+                    except Exception:
+                        data = {"raw": raw}
+            elif isinstance(raw, dict):
+                data = raw
+            else:
+                data = {}
+
+            # If response dict contains encrypted resdtls
+            if isinstance(data, dict) and "resdtls" in data and ":" in str(data.get("resdtls", "")):
+                dec_dtls = cvl_decrypt(creds["aes_key"], data["resdtls"])
+                try:
+                    data.update(json.loads(dec_dtls))
+                except Exception:
+                    pass
 
             if isinstance(data, dict):
-                if data.get("success") == "1" and data.get("token"):
-                    return data["token"], ""
-                
-                err_code = data.get("error_code", "")
-                err_msg = data.get("error_message", "")
-                
+                token = data.get("token") or data.get("Token") or data.get("jwt") or data.get("JWT")
+                if token:
+                    return token, ""
+
+                err_code = data.get("error_code") or data.get("ErrorCode") or data.get("code") or ""
+                err_msg = data.get("error_message") or data.get("ErrorMessage") or data.get("message") or ""
+
+                if not err_msg and data.get("raw_decrypted"):
+                    err_msg = data.get("raw_decrypted")
+
                 # Friendly explanations for standard CVL error codes
                 if err_code == "WEBERR-023":
                     err_msg = "Invalid Encrypted Data (Your AES Key or POS Code does not match CVL KRA records)"
@@ -277,7 +305,8 @@ class PANVerificationProvider(BaseKYCProvider):
                 err = f"{err_msg} ({err_code})" if err_code and err_msg else (err_msg or err_code or f"Authentication error (HTTP {resp.status_code})")
                 return "", err
             else:
-                return "", f"Unexpected response format from CVL: {str(data)[:100]}"
+                text_preview = (resp.text or "").strip()[:150]
+                return "", f"Unexpected response from CVL (HTTP {resp.status_code}): {text_preview}"
         except requests.exceptions.Timeout:
             return "", "CVL Gateway connection timed out (20s). Please try again."
         except requests.exceptions.ConnectionError:
@@ -351,28 +380,42 @@ class PANVerificationProvider(BaseKYCProvider):
             try:
                 enc_req = cvl_encrypt(creds["aes_key"], json.dumps(request_packet))
                 resp = requests.post(get_pan_status_url, data=json.dumps(enc_req), headers=headers, timeout=25)
+                
                 try:
                     raw_resp = resp.json()
-                    resp_json = json.loads(raw_resp) if isinstance(raw_resp, str) else raw_resp
                 except Exception:
-                    text_snippet = (resp.text or "").strip()[:150]
-                    return {
-                        "success": False,
-                        "status": "failed",
-                        "status_message": f"CVL Gateway HTTP {resp.status_code}: {text_snippet or 'Invalid non-JSON response'}",
-                        "raw_response": {"http_status": resp.status_code, "response": text_snippet}
-                    }
+                    raw_resp = (resp.text or "").strip()
 
-                raw_details = resp_json.get("resdtls", "")
-                decrypted_str = raw_details
+                resp_json = None
+                if isinstance(raw_resp, str):
+                    clean_str = raw_resp.strip().strip('"')
+                    if ":" in clean_str:
+                        # Direct encrypted string response
+                        decrypted_str = cvl_decrypt(creds["aes_key"], clean_str)
+                        try:
+                            resp_json = json.loads(decrypted_str)
+                        except Exception:
+                            resp_json = {"raw": decrypted_str}
+                    else:
+                        try:
+                            resp_json = json.loads(raw_resp)
+                        except Exception:
+                            resp_json = {"raw": raw_resp}
+                elif isinstance(raw_resp, dict):
+                    resp_json = raw_resp
+                else:
+                    resp_json = {}
 
-                if ":" in raw_details:
+                # If resdtls is present in resp_json
+                raw_details = resp_json.get("resdtls") or resp_json.get("ResDtls") or ""
+                if isinstance(raw_details, str) and ":" in raw_details:
                     decrypted_str = cvl_decrypt(creds["aes_key"], raw_details)
-
-                try:
-                    payload = json.loads(decrypted_str) if decrypted_str else resp_json
-                except Exception:
-                    payload = {"raw": decrypted_str, "resp": resp_json}
+                    try:
+                        payload = json.loads(decrypted_str)
+                    except Exception:
+                        payload = {"raw": decrypted_str, "resp": resp_json}
+                else:
+                    payload = resp_json
 
                 # Extract KYC data from GetPanStatus response (APP_PAN_INQ list or dict)
                 inq_data = payload.get("APP_PAN_INQ")
