@@ -305,15 +305,19 @@
           {% endif %}
         </div>
 
-        <div>
-          <span style="font-size: 0.76rem; font-family: monospace; background: #ffffff; padding: 4px 10px; border-radius: 6px; border: 1px solid #e2e8f0; color: #475569; font-weight: 600;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button type="button" onclick="toggleResultJson()" id="btnToggleResultJson"
+            style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 7px; padding: 5px 12px; font-size: 0.78rem; font-weight: 700; color: #475569; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease;">
+            <i class="bi bi-braces" style="color: #7e22ce;"></i> <span id="toggleJsonText">View JSON</span>
+          </button>
+          <span style="font-size: 0.76rem; font-family: monospace; background: #ffffff; padding: 5px 10px; border-radius: 7px; border: 1px solid #e2e8f0; color: #475569; font-weight: 600;">
             Ref: {{ result.data.reference_id or 'N/A' }}
           </span>
         </div>
       </div>
 
       <!-- Result Details Grid -->
-      <div style="padding: 18px 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+      <div id="resultDetailsGrid" style="padding: 18px 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
 
         <div>
           <div style="font-size: 0.7rem; text-transform: uppercase; color: #64748b; font-weight: 700;">PAN Number</div>
@@ -333,7 +337,7 @@
           <div style="font-size: 0.7rem; text-transform: uppercase; color: #64748b; font-weight: 700;">DOB Match</div>
           <div style="font-size: 0.9rem; font-weight: 700; color: {% if result.data.dob_match %}#16a34a{% else %}#dc2626{% endif %}; margin-top: 2px;">
             {% if result.data.dob_match %}
-            <i class="bi bi-check-circle-fill"></i> Matched ({{ result.record.dob }})
+            <i class="bi bi-check-circle-fill"></i> Matched ({{ result.record.dob or 'Verified' }})
             {% else %}
             <i class="bi bi-exclamation-circle-fill"></i> Mismatch
             {% endif %}
@@ -365,17 +369,27 @@
 
       </div>
 
-      <!-- Collapsible Developer Raw Response -->
-      {% if result.data.raw_response %}
-      <div style="padding: 10px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0;">
-        <details style="cursor: pointer;">
-          <summary style="font-size: 0.75rem; font-weight: 700; color: #64748b;">
-            <i class="bi bi-code-slash"></i> View Raw Gateway Response
-          </summary>
-          <pre style="margin-top: 8px; padding: 12px; background: #0f172a; color: #38bdf8; border-radius: 6px; font-size: 0.72rem; overflow-x: auto; max-height: 200px;"><code>{{ result.data.raw_response | tojson(indent=2) }}</code></pre>
-        </details>
+      <!-- JSON Viewer Panel (Expandable) -->
+      <div id="resultJsonPanel" style="display: none; padding: 16px 20px; background: #0f172a; border-top: 1px solid #334155;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 0.78rem; font-weight: 700;">
+            <i class="bi bi-braces" style="color: #a855f7;"></i>
+            <span>GetPANStatus JSON Payload</span>
+            <span style="background: rgba(168, 85, 247, 0.2); color: #c084fc; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem;">Method: GetPANStatus</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" onclick="copyResultJson(this)"
+              style="background: #1e293b; border: 1px solid #475569; color: #f1f5f9; border-radius: 6px; padding: 4px 10px; font-size: 0.74rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+              <i class="bi bi-clipboard"></i> Copy JSON
+            </button>
+            <a href="{{ url_for('pan.get_check_json', check_id=result.record.id) }}" target="_blank"
+              style="background: rgba(126, 34, 206, 0.2); border: 1px solid rgba(168, 85, 247, 0.4); color: #d8b4fe; border-radius: 6px; padding: 4px 10px; font-size: 0.74rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+              <i class="bi bi-box-arrow-up-right"></i> Open API JSON
+            </a>
+          </div>
+        </div>
+        <pre id="resultJsonCode" style="margin: 0; padding: 12px; background: #020617; border-radius: 8px; color: #38bdf8; font-family: monospace; font-size: 0.76rem; line-height: 1.5; overflow-x: auto; max-height: 280px;"><code>{{ result.data | tojson(indent=2) }}</code></pre>
       </div>
-      {% endif %}
 
     </div>
   </div>
@@ -435,6 +449,7 @@
           <th style="padding: 12px 16px; text-align: left;">Category</th>
           <th style="padding: 12px 16px; text-align: left;">Status</th>
           <th style="padding: 12px 16px; text-align: left;">Aadhaar Link</th>
+          <th style="padding: 12px 16px; text-align: center;">JSON</th>
           <th style="padding: 12px 16px; text-align: right;">Checked At</th>
         </tr>
       </thead>
@@ -461,7 +476,7 @@
 
           <!-- DOB -->
           <td style="padding: 12px 16px; color: #475569; font-family: monospace;">
-            {{ check.dob }}
+            {{ check.dob or '—' }}
           </td>
 
           <!-- Category -->
@@ -493,6 +508,14 @@
             {% endif %}
           </td>
 
+          <!-- JSON Button -->
+          <td style="padding: 12px 16px; text-align: center;">
+            <button type="button" onclick="openJsonModal({{ check.id }}, '{{ check.pan_number }}')"
+              style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 10px; font-size: 0.74rem; font-weight: 700; font-family: monospace; color: #475569; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s ease;">
+              <i class="bi bi-braces" style="color: #7e22ce;"></i> JSON
+            </button>
+          </td>
+
           <!-- Checked At -->
           <td style="padding: 12px 16px; text-align: right; font-size: 0.76rem; color: var(--text-muted); white-space: nowrap;">
             {{ check.created_at.strftime('%d %b %Y') }}<br>
@@ -513,16 +536,131 @@
       No PAN Card Verifications Yet
     </h4>
     <p style="color: var(--text-muted); font-size: 0.85rem; max-width: 420px; margin: 0 auto;">
-      Enter a PAN Card Number and Date of Birth in the form above to verify holder credentials.
+      Enter a PAN Card Number in the form above to verify holder credentials.
     </p>
   </div>
   {% endif %}
 
 </div>
 
+<!-- JSON Modal for History Inspection -->
+<div id="panJsonModal" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px;">
+  <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 680px; box-shadow: 0 20px 45px rgba(0,0,0,0.25); overflow: hidden; display: flex; flex-direction: column; max-height: 85vh; animation: fadeIn 0.2s ease;">
+    <!-- Modal Header -->
+    <div style="padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: rgba(126, 34, 206, 0.1); color: #7e22ce; font-size: 1.1rem;">
+          <i class="bi bi-braces"></i>
+        </span>
+        <div>
+          <span style="font-weight: 800; font-size: 0.96rem; color: #1e293b;" id="modalPanTitle">PAN JSON Data</span>
+          <div style="font-size: 0.72rem; color: #64748b;">CVL KRA GetPANStatus Record</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button type="button" id="modalCopyBtn" onclick="copyModalJson()"
+          style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 12px; font-size: 0.76rem; font-weight: 700; color: #475569; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+          <i class="bi bi-clipboard"></i> <span>Copy JSON</span>
+        </button>
+        <button type="button" onclick="closeJsonModal()"
+          style="background: transparent; border: none; font-size: 1.15rem; color: #94a3b8; cursor: pointer; padding: 4px; display: inline-flex; align-items: center;">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    </div>
+    <!-- Modal Body -->
+    <div style="padding: 16px 20px; overflow-y: auto; flex: 1; background: #0f172a;">
+      <pre id="modalJsonContent" style="margin: 0; color: #38bdf8; font-family: monospace; font-size: 0.78rem; line-height: 1.5; white-space: pre-wrap; word-break: break-all;">Loading JSON...</pre>
+    </div>
+    <!-- Modal Footer -->
+    <div style="padding: 12px 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+      <a id="modalRawLink" href="#" target="_blank" style="font-size: 0.78rem; color: #7e22ce; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+        <i class="bi bi-box-arrow-up-right"></i> Open API JSON
+      </a>
+      <button type="button" onclick="closeJsonModal()" class="btn-purple-pill" style="height: 36px; padding: 0 16px; font-size: 0.8rem;">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Flatpickr JS Script and Interactive Input Formatters -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
+  // JSON Viewer Functions
+  function toggleResultJson() {
+    const panel = document.getElementById('resultJsonPanel');
+    const text = document.getElementById('toggleJsonText');
+    if (!panel) return;
+    if (panel.style.display === 'none' || !panel.style.display) {
+      panel.style.display = 'block';
+      if (text) text.textContent = 'Hide JSON';
+    } else {
+      panel.style.display = 'none';
+      if (text) text.textContent = 'View JSON';
+    }
+  }
+
+  function copyResultJson(btn) {
+    const code = document.getElementById('resultJsonCode');
+    if (!code) return;
+    navigator.clipboard.writeText(code.innerText).then(() => {
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
+      btn.style.color = '#10b981';
+      setTimeout(() => {
+        btn.innerHTML = originalHtml;
+        btn.style.color = '#f1f5f9';
+      }, 2000);
+    });
+  }
+
+  function openJsonModal(checkId, panNumber) {
+    const modal = document.getElementById('panJsonModal');
+    const title = document.getElementById('modalPanTitle');
+    const content = document.getElementById('modalJsonContent');
+    const link = document.getElementById('modalRawLink');
+    
+    if (title) title.textContent = 'PAN JSON — ' + panNumber;
+    if (content) content.textContent = 'Loading JSON from server...';
+    if (link) link.href = '/services/pan/' + checkId + '/json';
+    if (modal) modal.style.display = 'flex';
+
+    fetch('/services/pan/' + checkId + '/json')
+      .then(res => res.json())
+      .then(data => {
+        if (content) content.textContent = JSON.stringify(data, null, 2);
+      })
+      .catch(err => {
+        if (content) content.textContent = 'Error loading JSON: ' + err.message;
+      });
+  }
+
+  function closeJsonModal() {
+    const modal = document.getElementById('panJsonModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function copyModalJson() {
+    const content = document.getElementById('modalJsonContent');
+    const btn = document.getElementById('modalCopyBtn');
+    if (!content || !btn) return;
+    navigator.clipboard.writeText(content.innerText).then(() => {
+      const span = btn.querySelector('span');
+      if (span) span.textContent = 'Copied!';
+      btn.style.color = '#10b981';
+      setTimeout(() => {
+        if (span) span.textContent = 'Copy JSON';
+        btn.style.color = '#475569';
+      }, 2000);
+    });
+  }
+
+  // Close modal on click outside
+  document.getElementById('panJsonModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeJsonModal();
+  });
+
   document.addEventListener('DOMContentLoaded', function () {
     // 1. Initialize Modern Flatpickr on DOB field
     const dobInput = document.getElementById('dobPicker');

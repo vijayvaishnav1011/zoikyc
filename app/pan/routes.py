@@ -1,6 +1,6 @@
 import json
 from decimal import Decimal
-from flask import render_template, redirect, url_for, flash, request, current_app
+from flask import render_template, redirect, url_for, flash, request, current_app, jsonify
 from flask_login import login_required, current_user
 from app.extensions import db
 from app.pan import pan_bp
@@ -15,6 +15,8 @@ from app.integrations.pan import PANVerificationProvider
 def index():
     company = current_user.company
     if not company:
+        if request.is_json or request.args.get('format') == 'json':
+            return jsonify({"success": False, "error": "No organisation associated with this user"}), 400
         flash("No organisation associated with this user.", "danger")
         return redirect(url_for('dashboard.index'))
 
@@ -46,14 +48,29 @@ def index():
     verified_count = PANVerification.query.filter_by(company_id=company.id, status='verified').count()
     failed_count = PANVerification.query.filter_by(company_id=company.id, status='failed').count()
 
-    if form.validate_on_submit():
-        pan_number = form.pan_number.data.strip().upper()
-        dob = (form.dob.data or "").strip()
+    # Check if request is JSON API call
+    is_json_req = request.is_json or request.args.get('format') == 'json' or request.headers.get('Accept') == 'application/json'
 
+    # Support both JSON payload and standard Form submission
+    pan_number = None
+    dob = ""
+
+    if request.is_json:
+        req_json = request.get_json() or {}
+        pan_number = (req_json.get('pan') or req_json.get('pan_number') or '').strip().upper()
+        dob = (req_json.get('dob') or '').strip()
+        should_process = bool(pan_number)
+    else:
+        should_process = form.validate_on_submit()
+        if should_process:
+            pan_number = form.pan_number.data.strip().upper()
+            dob = (form.dob.data or "").strip()
+
+    if should_process and pan_number:
         # Free service - no wallet deduction
         charge_amount = Decimal('0.00')
 
-        # Call PAN Verification Gateway
+        # Call PAN Verification Gateway (GetPANStatus)
         provider = PANVerificationProvider()
         verification_data = provider.verify_pan_with_dob(
             pan_number=pan_number,
@@ -84,6 +101,22 @@ def index():
         db.session.add(record)
         db.session.commit()
 
+        # If requested as JSON, return instant JSON response
+        if is_json_req and request.method == 'POST':
+            return jsonify({
+                "success": verification_data.get('success', False),
+                "pan_number": pan_number,
+                "status": verification_data.get('status'),
+                "status_message": verification_data.get('status_message'),
+                "full_name": verification_data.get('full_name'),
+                "category": verification_data.get('category'),
+                "pan_status": verification_data.get('pan_status'),
+                "aadhaar_seeding_status": verification_data.get('aadhaar_seeding_status'),
+                "reference_id": verification_data.get('reference_id'),
+                "method": "GetPANStatus",
+                "raw_response": verification_data.get('raw_response')
+            })
+
         result = {
             "record": record,
             "data": verification_data
@@ -111,3 +144,30 @@ def index():
         search_query=search_query,
         status_filter=status_filter
     )
+
+
+@pan_bp.route('/services/pan/<int:check_id>/json', methods=['GET'])
+@login_required
+def get_check_json(check_id):
+    """Returns the full JSON payload for any PAN verification record."""
+    company = current_user.company
+    record = PANVerification.query.filter_by(id=check_id, company_id=company.id).first_or_404()
+    return jsonify({
+        "id": record.id,
+        "pan_number": record.pan_number,
+        "dob": record.dob,
+        "status": record.status,
+        "status_message": record.status_message,
+        "full_name": record.full_name,
+        "first_name": record.first_name,
+        "middle_name": record.middle_name,
+        "last_name": record.last_name,
+        "category": record.category,
+        "pan_status": record.pan_status,
+        "aadhaar_seeding_status": record.aadhaar_seeding_status,
+        "reference_id": record.reference_id,
+        "method": "GetPANStatus",
+        "created_at": record.created_at.isoformat(),
+        "raw_response": record.response_dict
+    })
+
