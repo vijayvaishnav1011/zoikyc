@@ -67,42 +67,39 @@ def create_app(config_name=None):
     with app.app_context():
         try:
             from sqlalchemy import text
-            try:
-                db.session.execute(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS client_id VARCHAR(50);"))
-                db.session.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_companies_client_id ON companies(client_id);"))
-                db.session.execute(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS per_kyc_price NUMERIC(10, 2) DEFAULT 20.00;"))
-                db.session.execute(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS min_recharge_amount NUMERIC(10, 2) DEFAULT 1000.00;"))
-                db.session.execute(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS pos_code VARCHAR(100);"))
-                db.session.execute(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS api_user_id VARCHAR(100);"))
-                db.session.execute(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS api_password VARCHAR(255);"))
-                db.session.execute(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS aes_key VARCHAR(255);"))
-                db.session.execute(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS api_key VARCHAR(255);"))
-                db.session.commit()
-            except Exception as se:
-                db.session.rollback()
+            def _safe_ddl(stmt):
+                try:
+                    with db.engine.connect() as conn:
+                        conn.execute(text(stmt))
+                        conn.commit()
+                except Exception:
+                    pass
+
+            # Companies columns
+            _safe_ddl("ALTER TABLE companies ADD COLUMN IF NOT EXISTS client_id VARCHAR(50);")
+            _safe_ddl("ALTER TABLE companies ADD COLUMN IF NOT EXISTS per_kyc_price NUMERIC(10, 2) DEFAULT 20.00;")
+            _safe_ddl("ALTER TABLE companies ADD COLUMN IF NOT EXISTS min_recharge_amount NUMERIC(10, 2) DEFAULT 1000.00;")
+            _safe_ddl("ALTER TABLE companies ADD COLUMN IF NOT EXISTS pos_code VARCHAR(100);")
+            _safe_ddl("ALTER TABLE companies ADD COLUMN IF NOT EXISTS api_user_id VARCHAR(100);")
+            _safe_ddl("ALTER TABLE companies ADD COLUMN IF NOT EXISTS api_password VARCHAR(255);")
+            _safe_ddl("ALTER TABLE companies ADD COLUMN IF NOT EXISTS aes_key VARCHAR(255);")
+            _safe_ddl("ALTER TABLE companies ADD COLUMN IF NOT EXISTS api_key VARCHAR(255);")
 
             from app.models.esign import ESignDocument
             from app.models.pending_recharge import PendingRecharge  # ensure table exists
             db.create_all()
-            # Auto-create pending_recharges columns if needed (upgrade path)
-            try:
-                db.session.execute(text("ALTER TABLE pending_recharges ADD COLUMN IF NOT EXISTS failure_reason VARCHAR(255);"))
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
 
-            # Auto-create pan_verifications columns if needed (upgrade path)
-            try:
-                db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS raw_request TEXT;"))
-                db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS raw_response TEXT;"))
-                db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS dob VARCHAR(20);"))
-                db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS reference_id VARCHAR(100);"))
-                db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS aadhaar_seeding_status VARCHAR(100);"))
-                db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS pan_status VARCHAR(50);"))
-                db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS dob_match BOOLEAN;"))
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
+            # Pending recharges columns
+            _safe_ddl("ALTER TABLE pending_recharges ADD COLUMN IF NOT EXISTS failure_reason VARCHAR(255);")
+
+            # PAN verifications columns
+            _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS raw_request TEXT;")
+            _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS raw_response TEXT;")
+            _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS dob VARCHAR(20);")
+            _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS reference_id VARCHAR(100);")
+            _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS aadhaar_seeding_status VARCHAR(100);")
+            _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS pan_status VARCHAR(50);")
+            _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS dob_match BOOLEAN;")
             from app.models.company import Company
             from app.models.user import User
             from app.models.wallet import Wallet
