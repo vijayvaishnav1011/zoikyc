@@ -247,6 +247,45 @@
 
   <!-- Team & User Access Panel -->
   <div>
+    <!-- Dedicated API Endpoint Card -->
+    <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; border: 1px solid rgba(255,255,255,0.1);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <span style="font-size: 0.76rem; text-transform: uppercase; font-weight: 800; letter-spacing: 1px; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+          <i class="bi bi-cpu-fill"></i> Dedicated PAN API
+        </span>
+        <span style="font-size: 0.72rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 8px; border-radius: 12px; font-weight: 700;">
+          Active
+        </span>
+      </div>
+
+      <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 10px; line-height: 1.4;">
+        Use your company's dedicated endpoint to verify PAN cards directly from your website or client system.
+      </p>
+
+      <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <code style="font-size: 0.76rem; color: #a5f3fc; word-break: break-all;" id="apiEndpointUrl">https://zoikyc.com/api/pan/{{ company.client_id or 'ZOI-CLIENT' }}</code>
+        <button type="button" onclick="copyApiUrl()" id="btnCopyApi" style="background: #3b82f6; border: none; color: #fff; border-radius: 6px; padding: 5px 10px; font-size: 0.72rem; font-weight: 700; cursor: pointer; white-space: nowrap; transition: 0.2s;">
+          <i class="bi bi-clipboard"></i> Copy
+        </button>
+      </div>
+
+      <div style="font-size: 0.74rem; color: #cbd5e1; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span style="color: #94a3b8;">Method:</span>
+          <strong style="color: #4ade80;">POST</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span style="color: #94a3b8;">Payload:</span>
+          <code style="color: #e2e8f0; font-size: 0.72rem;">{"pan": "...", "dob": "DD/MM/YYYY"}</code>
+        </div>
+        <div style="margin-top: 8px; text-align: right;">
+          <a href="/api/pan/{{ company.client_id or 'ZOI-CLIENT' }}" target="_blank" style="color: #38bdf8; text-decoration: none; font-size: 0.72rem;">
+            View API Docs <i class="bi bi-box-arrow-up-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
     <div class="card" style="margin-bottom: 0;">
       <h3
         style="font-size: 1.05rem; font-weight: 800; margin-bottom: 18px; color: var(--text-dark); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-input); padding-bottom: 12px;">
@@ -293,6 +332,23 @@
       icon.classList.remove('bi-eye-slash-fill');
       icon.classList.add('bi-eye-fill');
     }
+  }
+
+  function copyApiUrl() {
+    const codeEl = document.getElementById('apiEndpointUrl');
+    if (!codeEl) return;
+    const url = codeEl.innerText.trim();
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.getElementById('btnCopyApi');
+      if (btn) {
+        btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
+        btn.style.background = '#10b981';
+        setTimeout(() => {
+          btn.innerHTML = '<i class="bi bi-clipboard"></i> Copy';
+          btn.style.background = '#3b82f6';
+        }, 2000);
+      }
+    });
   }
 </script>
 {% endblock %}

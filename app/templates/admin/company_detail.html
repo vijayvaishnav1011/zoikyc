@@ -32,6 +32,13 @@
       <div class="company-header-address">
         Address: {{ company.address }}, {{ company.city }}, {{ company.state }} - {{ company.zip_code }}, {{ company.country }} &bull; GSTIN: <strong>{{ company.gstin or 'Not Provided' }}</strong>
       </div>
+      <div style="margin-top: 8px; font-size: 0.82rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span style="color: var(--text-muted);"><i class="bi bi-cpu"></i> Dedicated PAN API:</span>
+        <code style="background: rgba(37, 99, 235, 0.08); color: var(--tiancai-blue); padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 700;">https://zoikyc.com/api/pan/{{ company.client_id }}</code>
+        <a href="/api/pan/{{ company.client_id }}" target="_blank" style="color: var(--tiancai-blue); font-size: 0.78rem; text-decoration: none;">
+          <i class="bi bi-box-arrow-up-right"></i> Test Endpoint
+        </a>
+      </div>
     </div>
 
     <!-- Status Change Action Form -->

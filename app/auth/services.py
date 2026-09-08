@@ -19,18 +19,23 @@ import re
 def generate_unique_client_id(company_name):
     """
     Generates permanent unique Company Client ID:
-    Format: ZOI-{first 2 letters of company name uppercase + 5 random alphanumeric chars}
-    Example: ZOI-GO84920, ZOI-VI73812
+    Format: ZOI + first 2 letters of company name uppercase + random alphanumeric key
+    Example: ZOITA849201, ZOIDR738129
     """
-    clean_name = re.sub(r'[^a-zA-Z0-9]', '', company_name).upper()
+    clean_name = re.sub(r'[^a-zA-Z0-9]', '', company_name or '').upper()
     prefix = clean_name[:2] if len(clean_name) >= 2 else (clean_name + 'ZK')[:2]
     if not prefix:
         prefix = 'ZK'
 
     while True:
-        random_part = ''.join(random.choices(string.digits + string.ascii_uppercase, k=5))
-        candidate_id = f"ZOI-{prefix}{random_part}"
-        if not Company.query.filter_by(client_id=candidate_id).first():
+        random_part = ''.join(random.choices(string.digits + string.ascii_uppercase, k=6))
+        candidate_id = f"ZOI{prefix}{random_part}"
+        # Check uniqueness against both with and without hyphen
+        existing = Company.query.filter(
+            (Company.client_id == candidate_id) |
+            (Company.client_id == f"ZOI-{prefix}{random_part}")
+        ).first()
+        if not existing:
             return candidate_id
 
 def generate_otp():

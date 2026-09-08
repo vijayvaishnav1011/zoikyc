@@ -186,36 +186,62 @@ def get_check_json(check_id):
 
 
 @pan_bp.route('/api/pan', methods=['GET', 'POST'])
+@pan_bp.route('/api/pan/<client_id>', methods=['GET', 'POST'])
 @csrf.exempt
-def public_api_pan():
+def public_api_pan(client_id=None):
     """
     Public REST API endpoint for PAN verification using CVL KRA GetPANStatus.
+    Supports both universal (/api/pan) and company-dedicated (/api/pan/<client_id>) endpoints.
     Fetches CVL credentials from Company Profile and returns structured JSON.
     Can be called directly from Postman, cURL, or client applications.
     """
+    company = None
+
+    # 1. Resolve company if client_id is passed in the URL path
+    target_client_id = (client_id or '').strip()
+    if target_client_id:
+        clean_no_hyphen = target_client_id.replace('-', '').upper()
+        company = Company.query.filter(
+            (db.func.upper(Company.client_id) == target_client_id.upper()) |
+            (db.func.upper(db.func.replace(Company.client_id, '-', '')) == clean_no_hyphen)
+        ).first()
+
+        if not company:
+            return jsonify({
+                "success": False,
+                "error": f"Invalid client ID: '{target_client_id}'. No active organisation found with this ID."
+            }), 404
+
+    # 2. Return API specification and documentation on GET request
     if request.method == 'GET':
+        endpoint_url = f"/api/pan/{company.client_id}" if company else "/api/pan"
+        headers_info = {"Content-Type": "application/json"}
+        body_info = {
+            "pan": "ABCDE1234F (Required - 10-character PAN number)",
+            "dob": "DD/MM/YYYY (Optional - Date of Birth)"
+        }
+        if not company:
+            headers_info["X-API-Key"] = "YOUR_COMPANY_API_KEY (or client_id)"
+            body_info["client_id"] = "YOUR_CLIENT_ID (Optional if not in URL)"
+
         return jsonify({
             "service": "ZoiKYC PAN Verification API",
             "method": "GetPANStatus",
-            "endpoint": "/api/pan",
+            "company": company.name if company else "Universal",
+            "client_id": company.client_id if company else None,
+            "status": company.status if company else "active",
+            "endpoint": endpoint_url,
             "http_method": "POST",
-            "headers": {
-                "Content-Type": "application/json",
-                "X-API-Key": "YOUR_COMPANY_API_KEY (or client_id, optional if passed in body)"
-            },
-            "body_params": {
-                "pan": "ABCDE1234F (Required - 10-character PAN number)",
-                "dob": "DD/MM/YYYY (Optional - Date of Birth)",
-                "api_key": "YOUR_API_KEY (Optional if passed in headers)",
-                "client_id": "YOUR_CLIENT_ID (Optional)"
-            },
+            "headers": headers_info,
+            "body_params": body_info,
             "sample_request": {
                 "pan": "HRQPB8013L",
                 "dob": "26/11/2005"
-            }
+            },
+            "sample_curl": f"curl -X POST https://zoikyc.com{endpoint_url} -H 'Content-Type: application/json' -d '{{\"pan\": \"HRQPB8013L\", \"dob\": \"26/11/2005\"}}'"
         }), 200
 
-    # Read payload from JSON or Form body
+    # 3. Read payload from JSON or Form body
     payload_data = request.get_json(silent=True) or {}
     if not payload_data and request.form:
         payload_data = request.form.to_dict()
@@ -236,42 +262,51 @@ def public_api_pan():
             "error": "Missing required field: 'pan'. Please provide a 10-character PAN number."
         }), 400
 
-    # Resolve company credentials from Headers or Body
-    api_key = (
-        request.headers.get('X-API-Key') or 
-        request.headers.get('x-api-key') or 
-        request.headers.get('api_key') or
-        payload_data.get('api_key') or
-        ""
-    ).strip()
-
-    client_id = (
-        request.headers.get('X-Client-ID') or
-        request.headers.get('x-client-id') or
-        payload_data.get('client_id') or
-        ""
-    ).strip()
-
-    auth_header = request.headers.get('Authorization', '').strip()
-    if auth_header.lower().startswith('bearer '):
-        api_key = auth_header[7:].strip()
-
-    company = None
-    if api_key:
-        company = Company.query.filter((Company.api_key == api_key) | (Company.client_id == api_key)).first()
-    
-    if not company and client_id:
-        company = Company.query.filter_by(client_id=client_id).first()
-
-    if not company and current_user and current_user.is_authenticated:
-        company = current_user.company
-
-    # Fallback to the active company configured with CVL credentials
+    # 4. If company wasn't resolved via URL path, resolve from Headers or Body
     if not company:
-        company = Company.query.filter(
-            Company.pos_code.isnot(None),
-            Company.aes_key.isnot(None)
-        ).first()
+        api_key = (
+            request.headers.get('X-API-Key') or 
+            request.headers.get('x-api-key') or 
+            request.headers.get('api_key') or
+            payload_data.get('api_key') or
+            ""
+        ).strip()
+
+        body_client_id = (
+            request.headers.get('X-Client-ID') or
+            request.headers.get('x-client-id') or
+            payload_data.get('client_id') or
+            ""
+        ).strip()
+
+        auth_header = request.headers.get('Authorization', '').strip()
+        if auth_header.lower().startswith('bearer '):
+            api_key = auth_header[7:].strip()
+
+        if api_key:
+            clean_api_no_hyphen = api_key.replace('-', '').upper()
+            company = Company.query.filter(
+                (Company.api_key == api_key) | 
+                (Company.client_id == api_key) |
+                (db.func.upper(db.func.replace(Company.client_id, '-', '')) == clean_api_no_hyphen)
+            ).first()
+        
+        if not company and body_client_id:
+            clean_body_no_hyphen = body_client_id.replace('-', '').upper()
+            company = Company.query.filter(
+                (db.func.upper(Company.client_id) == body_client_id.upper()) |
+                (db.func.upper(db.func.replace(Company.client_id, '-', '')) == clean_body_no_hyphen)
+            ).first()
+
+        if not company and current_user and current_user.is_authenticated:
+            company = current_user.company
+
+        # Fallback to the active company configured with CVL credentials
+        if not company:
+            company = Company.query.filter(
+                Company.pos_code.isnot(None),
+                Company.aes_key.isnot(None)
+            ).first()
 
     # Call GetPANStatus gateway
     provider = PANVerificationProvider()
