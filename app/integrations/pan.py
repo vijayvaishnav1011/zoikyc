@@ -35,8 +35,10 @@ GET_PASSWORD_ENVELOPE = """\
                xmlns:tns="{ns}">
   <soap:Body>
     <tns:GetPassword>
-      <tns:Password>{password}</tns:Password>
-      <tns:PassKey>{passkey}</tns:PassKey>
+      <tns:webApi>
+        <tns:password>{password}</tns:password>
+        <tns:passKey>{passkey}</tns:passKey>
+      </tns:webApi>
     </tns:GetPassword>
   </soap:Body>
 </soap:Envelope>"""
@@ -46,13 +48,15 @@ GET_PAN_STATUS_ENVELOPE = """\
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
                xmlns:tns="{ns}">
   <soap:Body>
-    <tns:GetPANStatus>
-      <tns:panNo>{pan}</tns:panNo>
-      <tns:username>{username}</tns:username>
-      <tns:PosCode>{poscode}</tns:PosCode>
-      <tns:Password>{enc_password}</tns:Password>
-      <tns:PassKey>{passkey}</tns:PassKey>
-    </tns:GetPANStatus>
+    <tns:GetPanStatus>
+      <tns:webApi>
+        <tns:pan>{pan}</tns:pan>
+        <tns:userName>{username}</tns:userName>
+        <tns:posCode>{poscode}</tns:posCode>
+        <tns:password>{enc_password}</tns:password>
+        <tns:passKey>{passkey}</tns:passKey>
+      </tns:webApi>
+    </tns:GetPanStatus>
   </soap:Body>
 </soap:Envelope>"""
 
@@ -64,7 +68,7 @@ GET_PAN_STATUS_ENVELOPE = """\
 def _soap_headers(action: str) -> dict:
     return {
         "Content-Type": "text/xml; charset=utf-8",
-        "SOAPAction": f'"{SOAP_NS}/{action}"',
+        "SOAPAction": f'"{SOAP_NS}/ICVLPanInquiry/{action}"',
         "User-Agent": "ZoiKYC/1.0"
     }
 
@@ -179,8 +183,8 @@ class PANVerificationProvider(BaseKYCProvider):
           - password   → Company.api_password   (plaintext — encrypted per-request by GetPassword)
           - passkey    → Company.aes_key         (user-defined hash key sent to GetPassword)
         """
-        # Always use Production CVL KRA endpoint
-        base_url = "https://pancheck.www.kracvl.com/CVLPanInquiry.svc"
+        # Always use active CVL KRA endpoint
+        base_url = "https://krapancheck.cvlindia.com/CVLPanInquiry.svc"
 
         poscode = (
             (company.pos_code if company and company.pos_code else None) or
@@ -282,7 +286,7 @@ class PANVerificationProvider(BaseKYCProvider):
             resp = requests.post(
                 url,
                 data=body.encode("utf-8"),
-                headers=_soap_headers("GetPANStatus"),
+                headers=_soap_headers("GetPanStatus"),
                 timeout=25,
             )
         except requests.exceptions.Timeout:
