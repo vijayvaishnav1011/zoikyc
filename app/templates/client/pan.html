@@ -107,16 +107,20 @@
   }
   .pan-custom-input {
     width: 100%;
-    height: 48px;
-    padding: 10px 58px 10px 42px;
-    border: 1.5px solid #cbd5e1;
-    border-radius: 10px;
+    height: 44px;
+    padding: 6px 65px 6px 42px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
     font-size: 0.95rem;
-    font-weight: 700;
+    font-weight: 600;
     color: #1e293b;
     background: #ffffff;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    box-sizing: border-box;
+  }
+  .pan-custom-input:hover {
+    border-color: #94a3b8;
   }
   .pan-custom-input:focus {
     border-color: #7e22ce;
@@ -128,8 +132,8 @@
     right: 12px;
     font-size: 0.72rem;
     font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 6px;
+    padding: 2px 7px;
+    border-radius: 5px;
     background: #f1f5f9;
     color: #64748b;
     font-family: monospace;
@@ -141,48 +145,36 @@
     color: #16a34a;
     border: 1px solid #a7f3d0;
   }
-  .dob-picker-btn {
-    position: absolute;
-    right: 10px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 7px;
   .dob-custom-select {
+    display: block;
     width: 100%;
-    height: 48px;
-    padding: 10px 28px 10px 12px;
-    border: 1.5px solid #cbd5e1;
-    border-radius: 10px;
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: #1e293b;
+    height: 44px;
+    padding: 6px 30px 6px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: #334155;
     background-color: #ffffff;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 10px center;
-    background-size: 13px 10px;
+    background-size: 15px;
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    box-sizing: border-box;
+  }
+  .dob-custom-select:hover {
+    border-color: #94a3b8;
   }
   .dob-custom-select:focus {
     border-color: #7e22ce;
     outline: none;
     box-shadow: 0 0 0 3px rgba(126, 34, 206, 0.12);
-  }
-  .pan-form-single-row {
-    display: grid;
-    grid-template-columns: minmax(220px, 1fr) minmax(350px, 1.4fr) auto;
-    gap: 16px;
-    align-items: flex-end;
-  }
-  @media (max-width: 960px) {
-    .pan-form-single-row {
-      grid-template-columns: 1fr;
-    }
   }
 </style>
 
@@ -219,28 +211,28 @@
   </div>
 
   <!-- PAN Verification Form Card -->
-  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px;">
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
     <form method="POST" action="{{ url_for('pan.index') }}" id="panCheckForm">
       {{ form.hidden_tag() }}
 
-      <div class="pan-form-single-row" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: flex-end;">
+      <div style="max-width: 620px;">
 
         <!-- 1. PAN Number Input -->
-        <div>
-          <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #334155; margin-bottom: 6px;">
-            PAN Card Number <span style="color: #ef4444;">*</span>
+        <div style="margin-bottom: 18px;">
+          <label for="panInput" style="display: block; font-size: 0.88rem; font-weight: 600; color: #334155; margin-bottom: 6px;">
+            PAN Number <span style="color: #ef4444;">*</span>
           </label>
-          <div class="custom-input-group">
-            <i class="bi bi-credit-card-2-front-fill custom-input-icon" style="color: #6366f1;"></i>
+          <div class="custom-input-group" style="position: relative;">
+            <i class="bi bi-credit-card-2-front-fill custom-input-icon" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #6366f1; font-size: 1.1rem; pointer-events: none;"></i>
             {{ form.pan_number(
                 class="pan-custom-input", 
                 id="panInput", 
                 placeholder="e.g. ABCDE1234F",
                 maxlength="10",
                 autocomplete="off",
-                style="text-transform: uppercase; font-family: monospace; letter-spacing: 1.5px; font-size: 0.95rem;"
+                style="width: 100%; height: 44px; padding-left: 42px; padding-right: 70px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; font-weight: 600; text-transform: uppercase; font-family: monospace; letter-spacing: 1.5px; background: #ffffff; color: #1e293b; box-sizing: border-box;"
             ) }}
-            <span class="pan-count-badge" id="panBadge">0 / 10</span>
+            <span class="pan-count-badge" id="panBadge" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.72rem; font-weight: 700; padding: 2px 7px; border-radius: 5px; background: #f1f5f9; color: #64748b; font-family: monospace;">0 / 10</span>
           </div>
           {% if form.pan_number.errors %}
           <div style="color: #dc2626; font-size: 0.75rem; margin-top: 4px; font-weight: 600;">
@@ -250,45 +242,41 @@
         </div>
 
         <!-- 2. Date of Birth: 3 Separate Dropdown Selects (Day, Month, Year) -->
-        <div>
-          <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #334155; margin-bottom: 6px;">
-            Date of Birth <span style="color: #94a3b8; font-weight: 500; font-size: 0.76rem;">(Optional)</span>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-size: 0.88rem; font-weight: 600; color: #334155; margin-bottom: 6px;">
+            Date of Birth <span style="color: #94a3b8; font-weight: 400; font-size: 0.8rem;">(Optional)</span>
           </label>
           {{ form.dob(id="hiddenDobInput") }}
-          <div style="display: grid; grid-template-columns: 1fr 1.25fr 1fr; gap: 8px;">
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
             
             <!-- Day Select -->
-            <div style="position: relative;">
+            <div>
               <select name="dob_day" id="dobDay" class="dob-custom-select" onchange="syncDobValues()">
                 <option value="">Day</option>
                 {% for d in range(1, 32) %}
-                {% set day_str = "%02d"|format(d) %}
-                <option value="{{ day_str }}" {% if form.dob_day.data == day_str %}selected{% endif %}>{{ day_str }}</option>
+                {% set d_val = "%02d"|format(d) %}
+                <option value="{{ d_val }}" {% if form.dob_day.data == d_val or form.dob_day.data == d|string %}selected{% endif %}>{{ d }}</option>
                 {% endfor %}
               </select>
             </div>
 
             <!-- Month Select -->
-            <div style="position: relative;">
+            <div>
               <select name="dob_month" id="dobMonth" class="dob-custom-select" onchange="syncDobValues()">
                 <option value="">Month</option>
-                <option value="01" {% if form.dob_month.data == '01' %}selected{% endif %}>01 - Jan</option>
-                <option value="02" {% if form.dob_month.data == '02' %}selected{% endif %}>02 - Feb</option>
-                <option value="03" {% if form.dob_month.data == '03' %}selected{% endif %}>03 - Mar</option>
-                <option value="04" {% if form.dob_month.data == '04' %}selected{% endif %}>04 - Apr</option>
-                <option value="05" {% if form.dob_month.data == '05' %}selected{% endif %}>05 - May</option>
-                <option value="06" {% if form.dob_month.data == '06' %}selected{% endif %}>06 - Jun</option>
-                <option value="07" {% if form.dob_month.data == '07' %}selected{% endif %}>07 - Jul</option>
-                <option value="08" {% if form.dob_month.data == '08' %}selected{% endif %}>08 - Aug</option>
-                <option value="09" {% if form.dob_month.data == '09' %}selected{% endif %}>09 - Sep</option>
-                <option value="10" {% if form.dob_month.data == '10' %}selected{% endif %}>10 - Oct</option>
-                <option value="11" {% if form.dob_month.data == '11' %}selected{% endif %}>11 - Nov</option>
-                <option value="12" {% if form.dob_month.data == '12' %}selected{% endif %}>12 - Dec</option>
+                {% set months = [
+                  ('01', 'January'), ('02', 'February'), ('03', 'March'), ('04', 'April'),
+                  ('05', 'May'), ('06', 'June'), ('07', 'July'), ('08', 'August'),
+                  ('09', 'September'), ('10', 'October'), ('11', 'November'), ('12', 'December')
+                ] %}
+                {% for m_code, m_name in months %}
+                <option value="{{ m_code }}" {% if form.dob_month.data == m_code or form.dob_month.data == loop.index|string %}selected{% endif %}>{{ m_name }}</option>
+                {% endfor %}
               </select>
             </div>
 
             <!-- Year Select -->
-            <div style="position: relative;">
+            <div>
               <select name="dob_year" id="dobYear" class="dob-custom-select" onchange="syncDobValues()">
                 <option value="">Year</option>
                 {% for y in range(2026, 1939, -1) %}
@@ -306,10 +294,10 @@
           {% endif %}
         </div>
 
-        <!-- 3. Submit Button (in the same row) -->
-        <div style="white-space: nowrap;">
+        <!-- 3. Submit Button -->
+        <div>
           <button type="submit" id="btnSubmitPan" class="btn-purple-pill"
-            style="height: 48px; padding: 0 26px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; font-size: 0.92rem; border-radius: 10px; white-space: nowrap; box-shadow: 0 4px 14px rgba(126, 34, 206, 0.25);">
+            style="height: 44px; padding: 0 28px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; font-size: 0.92rem; border-radius: 6px; box-shadow: 0 4px 14px rgba(126, 34, 206, 0.22); cursor: pointer; border: none;">
             <i class="bi bi-shield-check" style="font-size: 1.05rem;"></i> Verify PAN Details
           </button>
         </div>
