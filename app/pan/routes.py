@@ -119,40 +119,50 @@ def index():
         charge_amount = Decimal('0.00')
 
         # Call PAN Verification Gateway (GetPANStatus)
-        provider = PANVerificationProvider()
-        verification_data = provider.verify_pan_with_dob(
-            pan_number=pan_number,
-            dob=dob,
-            company=company
-        )
+        try:
+            provider = PANVerificationProvider()
+            verification_data = provider.verify_pan_with_dob(
+                pan_number=pan_number,
+                dob=dob,
+                company=company
+            )
+        except Exception as prov_err:
+            import logging
+            logging.error(f"Error calling PAN verification provider: {prov_err}", exc_info=True)
+            verification_data = {
+                "success": False,
+                "status": "failed",
+                "status_message": f"Verification gateway error: {prov_err}",
+                "raw_response": {"error": str(prov_err)}
+            }
 
         # Save to database
-        record = PANVerification(
-            company_id=company.id,
-            user_id=current_user.id,
-            pan_number=pan_number,
-            dob=dob,
-            status=verification_data.get('status', 'failed'),
-            status_message=verification_data.get('status_message'),
-            full_name=verification_data.get('full_name'),
-            first_name=verification_data.get('first_name'),
-            middle_name=verification_data.get('middle_name'),
-            last_name=verification_data.get('last_name'),
-            category=verification_data.get('category'),
-            pan_status=verification_data.get('pan_status'),
-            dob_match=verification_data.get('dob_match'),
-            aadhaar_seeding_status=verification_data.get('aadhaar_seeding_status'),
-            cost_charged=charge_amount,
-            reference_id=verification_data.get('reference_id'),
-            raw_response=json.dumps(verification_data.get('raw_response', {})),
-            raw_request=verification_data.get('raw_request')
-        )
+        record = None
         try:
+            record = PANVerification(
+                company_id=company.id,
+                user_id=current_user.id,
+                pan_number=pan_number,
+                dob=dob,
+                status=verification_data.get('status', 'failed'),
+                status_message=verification_data.get('status_message'),
+                full_name=verification_data.get('full_name'),
+                first_name=verification_data.get('first_name'),
+                middle_name=verification_data.get('middle_name'),
+                last_name=verification_data.get('last_name'),
+                category=verification_data.get('category'),
+                pan_status=verification_data.get('pan_status'),
+                dob_match=verification_data.get('dob_match'),
+                aadhaar_seeding_status=verification_data.get('aadhaar_seeding_status'),
+                cost_charged=charge_amount,
+                reference_id=verification_data.get('reference_id'),
+                raw_response=json.dumps(verification_data.get('raw_response', {})),
+                raw_request=verification_data.get('raw_request')
+            )
             db.session.add(record)
             db.session.commit()
         except Exception as e:
             db.session.rollback()
-            # Log the error but don't crash the UI for the user
             import logging
             logging.error(f"Failed to save PAN Verification to database: {e}")
 
@@ -174,7 +184,9 @@ def index():
 
         result = {
             "record": record,
-            "data": verification_data
+            "data": verification_data,
+            "pan_number": pan_number,
+            "dob": dob
         }
 
         if verification_data.get('status') == 'verified':
