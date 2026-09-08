@@ -178,21 +178,9 @@ class PANVerificationProvider(BaseKYCProvider):
           - username   → Company.api_user_id
           - password   → Company.api_password   (plaintext — encrypted per-request by GetPassword)
           - passkey    → Company.aes_key         (user-defined hash key sent to GetPassword)
-
-        Production URL : pancheck.www.kracvl.com/CVLPanInquiry.svc
-        UAT URL        : krapancheck.cvlindia.com/CVLPanInquiry.svc
         """
-        env = (
-            SystemSetting.get_val('cvl_kra_env') or
-            os.getenv('CVL_KRA_ENV') or
-            'live'
-        ).strip().lower()
-
-        base_url = (
-            "https://pancheck.www.kracvl.com/CVLPanInquiry.svc"
-            if env == 'live'
-            else "https://krapancheck.cvlindia.com/CVLPanInquiry.svc"
-        )
+        # Always use Production CVL KRA endpoint
+        base_url = "https://pancheck.www.kracvl.com/CVLPanInquiry.svc"
 
         poscode = (
             (company.pos_code if company and company.pos_code else None) or
@@ -225,7 +213,6 @@ class PANVerificationProvider(BaseKYCProvider):
             "username": username,
             "password": password,
             "passkey": passkey,
-            "env": env,
         }
 
     # ── Step 1: GetPassword ───────────────────────────────────────────────────
