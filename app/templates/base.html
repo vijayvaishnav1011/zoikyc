@@ -10,7 +10,9 @@
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/zoi_icon.jpg') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   {% block extra_css %}{% endblock %}
@@ -84,11 +86,14 @@
 
         {% if current_user.role == 'super_admin' %}
         <!-- Super Admin Master Control -->
-        <div class="nav-group" style="margin-top: 16px; padding-top: 14px; border-top: 1px dashed rgba(168, 85, 247, 0.3);">
-          <div class="nav-group-label" style="color: #facc15; font-weight: 800;"><i class="bi bi-shield-lock-fill"></i> Master Admin</div>
+        <div class="nav-group"
+          style="margin-top: 16px; padding-top: 14px; border-top: 1px dashed rgba(168, 85, 247, 0.3);">
+          <div class="nav-group-label" style="color: #facc15; font-weight: 800;"><i class="bi bi-shield-lock-fill"></i>
+            Master Admin</div>
           <ul class="nav-list">
             <li class="nav-item">
-              <a href="{{ url_for('admin.index') }}" style="background: rgba(250, 204, 21, 0.12); color: #fef08a; font-weight: 700; border-radius: var(--radius-md);">
+              <a href="{{ url_for('admin.index') }}"
+                style="background: rgba(250, 204, 21, 0.12); color: #fef08a; font-weight: 700; border-radius: var(--radius-md);">
                 <i class="bi bi-speedometer2" style="color: #facc15;"></i> Open Admin Panel
               </a>
             </li>
@@ -101,7 +106,8 @@
       <div class="sidebar-footer-card">
         <div class="sidebar-org-name">{{ current_user.company.name if current_user.company else 'Organisation' }}</div>
         <div style="font-size: 0.72rem; color: var(--tiancai-purple-light); font-weight: 700; margin-top: 2px;">
-          ID: {{ current_user.company.client_id if current_user.company and current_user.company.client_id else 'ZOI-CLIENT' }}
+          ID: {{ current_user.company.client_id if current_user.company and current_user.company.client_id else
+          'ZOI-CLIENT' }}
         </div>
         <div class="sidebar-org-status">
           {% if current_user.company and current_user.company.status == 'active' %}
@@ -128,7 +134,8 @@
           {% if current_user.role == 'super_admin' %}
           <!-- Admin Panel Direct Switcher -->
           <a href="{{ url_for('admin.index') }}" style="text-decoration: none;">
-            <div class="lang-toggle-pill" style="background: linear-gradient(135deg, #3b0764 0%, #581c87 100%); color: #fef08a; border: 1px solid #a855f7; font-weight: 800;">
+            <div class="lang-toggle-pill"
+              style="background: linear-gradient(135deg, #3b0764 0%, #581c87 100%); color: #fef08a; border: 1px solid #a855f7; font-weight: 800;">
               <i class="bi bi-shield-lock-fill" style="color: #facc15;"></i> Admin Panel
             </div>
           </a>
@@ -191,17 +198,21 @@
       <!-- Left Purple Graphic Panel -->
       <div class="auth-split-left">
         <div class="auth-left-brand" style="display: flex; align-items: center; gap: 10px;">
-          <img src="{{ url_for('static', filename='images/zoi_icon.jpg') }}" alt="Zoi" style="width: 36px; height: 36px; border-radius: 9px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
-          <span style="font-size: 1.4rem; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">Zoi<span style="color: #f0abfc;">KYC</span></span>
+          <img src="{{ url_for('static', filename='images/zoi_icon.jpg') }}" alt="Zoi"
+            style="width: 36px; height: 36px; border-radius: 9px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+          <span style="font-size: 1.4rem; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">Zoi<span
+              style="color: #f0abfc;">KYC</span></span>
         </div>
 
         <!-- Futuristic Graphic Illustration -->
         <div class="auth-illustration-container">
-          <div class="illustration-svg-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px 0;">
-            <img src="{{ url_for('static', filename='images/zoi_icon.jpg') }}" alt="ZoiKYC" style="width: 120px; height: 120px; border-radius: 26px; box-shadow: 0 20px 45px rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.25);">
+          <div class="illustration-svg-box"
+            style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px 0;">
+            <img src="{{ url_for('static', filename='images/zoi_icon.jpg') }}" alt="ZoiKYC"
+              style="width: 120px; height: 120px; border-radius: 26px; box-shadow: 0 20px 45px rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.25);">
           </div>
 
-          <div class="auth-left-caption">ZoiKYC Enterprise</div>
+          <div class="auth-left-caption">ZoiKYC</div>
           <div class="auth-left-subcaption">Digital KYC &bull; KRA Status &bull; Aadhaar E-Sign</div>
         </div>
 

@@ -21,6 +21,13 @@ class Company(db.Model):
     # Custom per-client pricing and float rules configured by Super Admin
     per_kyc_price = db.Column(db.Numeric(10, 2), nullable=False, default=20.00)
     min_recharge_amount = db.Column(db.Numeric(10, 2), nullable=False, default=1000.00)
+    # Integration & Gateway Credentials
+    pos_code = db.Column(db.String(100), nullable=True)
+    api_user_id = db.Column(db.String(100), nullable=True)
+    api_password = db.Column(db.String(255), nullable=True)
+    aes_key = db.Column(db.String(255), nullable=True)
+    api_key = db.Column(db.String(255), nullable=True)
+
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 

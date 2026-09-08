@@ -42,3 +42,8 @@ uploads/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Postman
+.postman/
+postman/
+

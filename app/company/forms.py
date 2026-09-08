@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms import StringField, TextAreaField, SelectField, SubmitField
-from wtforms.validators import DataRequired, Length
+from wtforms.validators import DataRequired, Length, Optional
 
 class CompanyProfileForm(FlaskForm):
     company_name = StringField('Company / Organisation Name', validators=[
@@ -31,6 +31,24 @@ class CompanyProfileForm(FlaskForm):
     address = TextAreaField('Registered Address', validators=[
         DataRequired()
     ])
+
+    # Integration & Gateway Credentials
+    pos_code = StringField('POS Code', validators=[
+        Optional(), Length(max=100)
+    ])
+    api_user_id = StringField('API User ID', validators=[
+        Optional(), Length(max=100)
+    ])
+    api_password = StringField('API Password', validators=[
+        Optional(), Length(max=255)
+    ])
+    aes_key = StringField('AES Key', validators=[
+        Optional(), Length(max=255)
+    ])
+    api_key = StringField('API Key / Secret Token', validators=[
+        Optional(), Length(max=255)
+    ])
+
     submit = SubmitField('Save Profile Changes')
 
 

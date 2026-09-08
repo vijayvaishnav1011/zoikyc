@@ -37,6 +37,13 @@ def profile():
         company.zip_code = form.zip_code.data.strip()
         company.address = form.address.data.strip()
 
+        # Integration & Gateway Credentials
+        company.pos_code = form.pos_code.data.strip() if form.pos_code.data else None
+        company.api_user_id = form.api_user_id.data.strip() if form.api_user_id.data else None
+        company.api_password = form.api_password.data.strip() if form.api_password.data else None
+        company.aes_key = form.aes_key.data.strip() if form.aes_key.data else None
+        company.api_key = form.api_key.data.strip() if form.api_key.data else None
+
         db.session.commit()
         if is_verified:
             flash("Organisation contact details updated. Verified legal credentials remain locked.", "success")

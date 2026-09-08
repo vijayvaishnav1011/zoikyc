@@ -139,6 +139,68 @@
         {% if form.address.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.address.errors[0] }}</span>{% endif %}
       </div>
 
+      <!-- Section Divider: Gateway & API Credentials -->
+      <div style="margin-top: 28px; margin-bottom: 20px; padding-top: 20px; border-top: 1px dashed var(--border-input);">
+        <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <i class="bi bi-key-fill" style="color: var(--tiancai-purple-light);"></i> Gateway & API Integration Credentials
+        </h4>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">
+          Configure your KRA / Capricorn gateway authentication keys and credentials.
+        </p>
+      </div>
+
+      <!-- Row 6: POS Code & API User ID -->
+      <div class="ref-form-grid">
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="pos_code">POS Code</label>
+          {{ form.pos_code(class="ref-form-control", placeholder="e.g. POS10293") }}
+          {% if form.pos_code.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.pos_code.errors[0] }}</span>{% endif %}
+        </div>
+
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="api_user_id">API User ID</label>
+          {{ form.api_user_id(class="ref-form-control", placeholder="e.g. KRA_USER_01") }}
+          {% if form.api_user_id.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.api_user_id.errors[0] }}</span>{% endif %}
+        </div>
+      </div>
+
+      <!-- Row 7: API Password & AES Key -->
+      <div class="ref-form-grid">
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="api_password">API Password</label>
+          <div style="position: relative;">
+            {{ form.api_password(class="ref-form-control", type="password", id="apiPasswordInput", placeholder="Enter API Password") }}
+            <button type="button" onclick="togglePassVisibility('apiPasswordInput', 'passEyeIcon')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0;">
+              <i class="bi bi-eye-fill" id="passEyeIcon"></i>
+            </button>
+          </div>
+          {% if form.api_password.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.api_password.errors[0] }}</span>{% endif %}
+        </div>
+
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="aes_key">AES Key</label>
+          <div style="position: relative;">
+            {{ form.aes_key(class="ref-form-control", type="password", id="aesKeyInput", placeholder="Enter AES Key") }}
+            <button type="button" onclick="togglePassVisibility('aesKeyInput', 'aesEyeIcon')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0;">
+              <i class="bi bi-eye-fill" id="aesEyeIcon"></i>
+            </button>
+          </div>
+          {% if form.aes_key.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.aes_key.errors[0] }}</span>{% endif %}
+        </div>
+      </div>
+
+      <!-- Row 8: API Key / Secret Token -->
+      <div class="ref-form-group" style="margin-bottom: 24px;">
+        <label class="ref-form-label" for="api_key">API Key / Token</label>
+        <div style="position: relative;">
+          {{ form.api_key(class="ref-form-control", type="password", id="apiKeyInput", placeholder="Enter API Key / Token") }}
+          <button type="button" onclick="togglePassVisibility('apiKeyInput', 'apiKeyEyeIcon')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0;">
+            <i class="bi bi-eye-fill" id="apiKeyEyeIcon"></i>
+          </button>
+        </div>
+        {% if form.api_key.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.api_key.errors[0] }}</span>{% endif %}
+      </div>
+
       <button type="submit" class="btn-tiancai-pill" style="max-width: 260px;">
         <i class="bi bi-floppy-fill"></i> Save Profile Changes
       </button>
@@ -169,4 +231,23 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePassVisibility(inputId, iconId) {
+  const input = document.getElementById(inputId);
+  const icon = document.getElementById(iconId);
+  if (!input || !icon) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.remove('bi-eye-fill');
+    icon.classList.add('bi-eye-slash-fill');
+  } else {
+    input.type = 'password';
+    icon.classList.remove('bi-eye-slash-fill');
+    icon.classList.add('bi-eye-fill');
+  }
+}
+</script>
 {% endblock %}
