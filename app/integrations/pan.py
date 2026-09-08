@@ -292,15 +292,21 @@ class PANVerificationProvider(BaseKYCProvider):
                 if not err_msg and data.get("raw_decrypted"):
                     err_msg = data.get("raw_decrypted")
 
-                # Friendly explanations for standard CVL error codes
-                if err_code == "WEBERR-023":
-                    err_msg = "Invalid Encrypted Data (Your AES Key or POS Code does not match CVL KRA records)"
-                elif err_code == "WEBERR-004":
+                # Official explanations from CVL KRA Documentation (Section 5)
+                if err_code == "WEBERR-001":
+                    err_msg = "Invalid User ID / PosCode / Password / Access Privilege Not Set / Password Expired"
+                elif err_code == "WEBERR-004" or err_code == "WEBERR-026":
                     err_msg = "Invalid API Key"
+                elif err_code == "WEBERR-023":
+                    err_msg = "Invalid Encrypted Data (Your AES Key or POS Code does not match CVL KRA records)"
+                elif err_code == "WEBERR-025":
+                    err_msg = "API Key not provided"
+                elif err_code == "WEBERR-027":
+                    err_msg = "Invalid PAN format"
+                elif err_code == "WEBERR-029":
+                    err_msg = "Invalid IP Address (Your server IP is not whitelisted with CVL KRA)"
                 elif err_code == "WEBERR-005":
-                    err_msg = "IP Not Whitelisted (Your server IP must be registered with CVL KRA)"
-                elif err_code == "WEBERR-001":
-                    err_msg = "Invalid Username or Password"
+                    err_msg = "IP Not Whitelisted or Unknown CVL Error"
 
                 err = f"{err_msg} ({err_code})" if err_code and err_msg else (err_msg or err_code or f"Authentication error (HTTP {resp.status_code})")
                 return "", err
