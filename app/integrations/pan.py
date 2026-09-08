@@ -22,13 +22,53 @@ def base64_url_decode(data: str) -> bytes:
     padded_data = clean_data + "=" * (4 - len(clean_data) % 4) if len(clean_data) % 4 != 0 else clean_data
     return base64.urlsafe_b64decode(padded_data)
 
+def get_aes_key_bytes(aes_key_str: str) -> bytes:
+    """
+    Robustly resolves a 16, 24, or 32-byte AES key from either base64/base64url encoded
+    strings or raw string keys provided by CVL.
+    """
+    clean_key = (aes_key_str or "").strip()
+    if not clean_key:
+        return b'\0' * 16
+
+    # 1. Try URL-safe base64 decode
+    try:
+        decoded = base64_url_decode(clean_key)
+        if len(decoded) in (16, 24, 32):
+            return decoded
+    except Exception:
+        pass
+
+    # 2. Try standard base64 decode
+    try:
+        decoded = base64.b64decode(clean_key)
+        if len(decoded) in (16, 24, 32):
+            return decoded
+    except Exception:
+        pass
+
+    # 3. Check if raw utf-8 string matches standard key lengths
+    raw_bytes = clean_key.encode('utf-8')
+    if len(raw_bytes) in (16, 24, 32):
+        return raw_bytes
+
+    # 4. If length is slightly off, pad to 16, 24, or 32 bytes
+    if len(raw_bytes) < 16:
+        return raw_bytes.ljust(16, b'\0')
+    elif len(raw_bytes) < 24:
+        return raw_bytes.ljust(24, b'\0')
+    elif len(raw_bytes) < 32:
+        return raw_bytes.ljust(32, b'\0')
+    else:
+        return raw_bytes[:32]
+
 def cvl_encrypt(aes_key: str, plaintext: str) -> str:
     """
     Encrypts string using AES-CBC PKCS5Padding with randomly generated 16-byte IV.
     Returns 'iv:ciphertext' (both base64url encoded), as specified in Section 3 & 9 of CVL KRA doc.
     """
     iv = os.urandom(16)
-    key = base64_url_decode(aes_key)
+    key = get_aes_key_bytes(aes_key)
     cipher = AES.new(key, AES.MODE_CBC, iv)
     padded_data = pad(plaintext.strip().encode('utf-8'), AES.block_size)
     encrypted_bytes = cipher.encrypt(padded_data)
@@ -45,7 +85,7 @@ def cvl_decrypt(aes_key: str, encrypted_string: str) -> str:
         if ":" not in encrypted_string:
             return encrypted_string # Already plaintext or invalid format
         iv_str, cipher_str = encrypted_string.split(":", 1)
-        key = base64_url_decode(aes_key)
+        key = get_aes_key_bytes(aes_key)
         iv_bytes = base64_url_decode(iv_str)
         cipher_bytes = base64_url_decode(cipher_str)
         cipher = AES.new(key, AES.MODE_CBC, iv_bytes)
@@ -54,6 +94,7 @@ def cvl_decrypt(aes_key: str, encrypted_string: str) -> str:
     except Exception as e:
         logger.error(f"CVL decryption failed: {e}")
         return ""
+
 
 
 class PANVerificationProvider(BaseKYCProvider):
@@ -204,12 +245,16 @@ class PANVerificationProvider(BaseKYCProvider):
             return "", f"Failed to encrypt authentication packet: {str(e)}"
 
         try:
-            resp = requests.post(url, data=encrypted_payload, headers=headers, timeout=20)
-            data = resp.json()
+            # CVL expects json.dumps of the encrypted "iv:ciphertext" string
+            resp = requests.post(url, data=json.dumps(encrypted_payload), headers=headers, timeout=20)
+            raw = resp.json()
+            data = json.loads(raw) if isinstance(raw, str) else raw
             if data.get("success") == "1" and data.get("token"):
                 return data["token"], ""
             else:
-                err = data.get("error_message") or data.get("error_code") or f"Token error (HTTP {resp.status_code})"
+                err_code = data.get("error_code", "")
+                err_msg = data.get("error_message", "")
+                err = f"{err_msg} ({err_code})" if err_code and err_msg else (err_msg or err_code or f"Token error (HTTP {resp.status_code})")
                 return "", err
         except Exception as e:
             logger.error(f"Error calling CVL GetToken: {e}")
@@ -250,10 +295,10 @@ class PANVerificationProvider(BaseKYCProvider):
         creds = self._resolve_credentials(company)
 
         # If live credentials (API Key, AES Key, POS Code, Username, Password) are configured:
-        if creds["api_key"] and creds["aes_key"] and creds["poscode"] and creds["username"] and creds["password"]:
+        if creds["api_key"] and creds["aes_key"] and creds["poscode"] and creds["username"]:
             token, token_err = self.get_token(creds)
             if not token:
-                logger.warning(f"CVL GetToken failed: {token_err}. Retrying or reporting error.")
+                logger.warning(f"CVL GetToken failed: {token_err}.")
                 return {
                     "success": False,
                     "status": "failed",
@@ -284,8 +329,9 @@ class PANVerificationProvider(BaseKYCProvider):
 
             try:
                 enc_req = cvl_encrypt(creds["aes_key"], json.dumps(request_packet))
-                resp = requests.post(solicit_url, data=enc_req, headers=headers, timeout=25)
-                resp_json = resp.json()
+                resp = requests.post(solicit_url, data=json.dumps(enc_req), headers=headers, timeout=25)
+                raw_resp = resp.json()
+                resp_json = json.loads(raw_resp) if isinstance(raw_resp, str) else raw_resp
 
                 raw_details = resp_json.get("resdtls", "")
                 decrypted_str = raw_details
