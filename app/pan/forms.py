@@ -1,7 +1,7 @@
 import re
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
-from wtforms.validators import DataRequired, Length, Regexp
+from wtforms.validators import DataRequired, Length, Regexp, Optional
 
 class PANCheckForm(FlaskForm):
     pan_number = StringField(
@@ -19,11 +19,9 @@ class PANCheckForm(FlaskForm):
     )
     dob = StringField(
         'Date of Birth',
-        validators=[
-            DataRequired(message="Date of Birth is required.")
-        ],
+        validators=[Optional()],
         render_kw={
-            "placeholder": "DD/MM/YYYY",
+            "placeholder": "DD/MM/YYYY (Optional)",
             "autocomplete": "off",
             "class": "form-control custom-date-picker"
         }

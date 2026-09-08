@@ -48,7 +48,7 @@ def index():
 
     if form.validate_on_submit():
         pan_number = form.pan_number.data.strip().upper()
-        dob = form.dob.data.strip()
+        dob = (form.dob.data or "").strip()
 
         # Free service - no wallet deduction
         charge_amount = Decimal('0.00')

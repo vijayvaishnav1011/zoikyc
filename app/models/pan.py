@@ -12,7 +12,7 @@ class PANVerification(db.Model):
 
     # Inputs
     pan_number = db.Column(db.String(20), nullable=False, index=True)
-    dob = db.Column(db.String(20), nullable=False) # DD/MM/YYYY or YYYY-MM-DD
+    dob = db.Column(db.String(20), nullable=True, default='') # Optional for GetPANStatus
 
     # Verification Outcomes
     status = db.Column(db.String(50), nullable=False, default='pending') # verified, failed, invalid
