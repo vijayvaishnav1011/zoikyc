@@ -98,7 +98,9 @@ def process_wallet_recharge(company_id, amount, payment_method='razorpay', refer
         wallet = db.session.query(Wallet).filter_by(company_id=company_id).with_for_update().first()
         
         if not wallet:
-            return False, None, "Wallet not found for company."
+            wallet = Wallet(company_id=company_id, balance=Decimal('0.00'), status='active')
+            db.session.add(wallet)
+            db.session.flush()
 
         if wallet.status != 'active':
             return False, None, f"Wallet is currently {wallet.status}. Transaction rejected."
@@ -133,6 +135,51 @@ def process_wallet_recharge(company_id, amount, payment_method='razorpay', refer
     except Exception as e:
         db.session.rollback()
         return False, None, f"Failed to process transaction: {str(e)}"
+
+def sync_razorpay_payment_by_id(payment_id, company_id):
+    """
+    Fetches payment directly from Razorpay API. If captured/authorized and not yet credited,
+    credits the company wallet.
+    """
+    client = get_razorpay_client()
+    if not client:
+        return False, "Razorpay client not configured."
+    
+    try:
+        payment = client.payment.fetch(payment_id)
+        if not payment:
+            return False, f"Payment ID {payment_id} not found in Razorpay."
+        
+        status = payment.get('status')
+        if status == 'authorized':
+            payment = client.payment.capture(payment_id, payment.get('amount'))
+            status = payment.get('status')
+        
+        if status != 'captured':
+            return False, f"Payment status is '{status}', not captured. Cannot credit wallet."
+        
+        # Check if already processed
+        existing = db.session.query(WalletTransaction).filter_by(reference_id=payment_id).first()
+        if existing:
+            return True, "Payment has already been credited to your wallet."
+        
+        total_paid_inr = Decimal(str(payment.get('amount', 0))) / Decimal('100')
+        fee_percent, _ = get_platform_fee_config()
+        fee_ratio = Decimal(str(fee_percent)) / Decimal('100')
+        base_amount = (total_paid_inr / (Decimal('1') + fee_ratio)).quantize(Decimal('0.01'))
+        if base_amount <= Decimal('0.00'):
+            base_amount = total_paid_inr
+        
+        success, txn, msg = process_wallet_recharge(
+            company_id=company_id,
+            amount=base_amount,
+            payment_method='razorpay',
+            reference_id=payment_id,
+            description=f"Wallet Recharge via Razorpay ({payment_id})"
+        )
+        return success, msg
+    except Exception as e:
+        return False, str(e)
 
 
 from email.mime.application import MIMEApplication

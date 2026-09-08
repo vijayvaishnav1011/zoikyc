@@ -60,10 +60,15 @@ def transactions():
 def recharge():
     form = RechargeWalletForm()
     wallet = current_user.company.wallet if current_user.company else None
+    if not wallet and current_user.company_id:
+        wallet = Wallet(company_id=current_user.company_id, balance=Decimal('0.00'), status='active')
+        db.session.add(wallet)
+        db.session.commit()
+
     key_id = get_current_razorpay_key()
     fee_percent, fee_name = get_platform_fee_config()
     company = current_user.company
-    min_recharge = float(company.min_recharge_amount) if company and company.min_recharge_amount else 1000.0
+    min_recharge = 1.0
     per_kyc = float(company.per_kyc_price) if company and company.per_kyc_price else 20.0
 
     return render_template(
@@ -82,15 +87,14 @@ def recharge():
 def create_order():
     try:
         data = request.get_json(silent=True) or request.form
-        amount_val = data.get('amount', 1000)
+        amount_val = data.get('amount', 1)
         amount = Decimal(str(amount_val))
         
         company = current_user.company
-        min_recharge = float(company.min_recharge_amount) if company and company.min_recharge_amount else 1000.0
-        if amount < Decimal(str(min_recharge)):
+        if amount < Decimal('1.00'):
             return jsonify({
                 'success': False,
-                'message': f'Minimum recharge amount for your organisation is ₹{min_recharge:,.2f}.'
+                'message': 'Minimum recharge amount is ₹1.00.'
             }), 400
 
         key_id = get_current_razorpay_key()
@@ -189,3 +193,27 @@ def verify_payment():
 
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@wallet_bp.route('/wallet/sync-payment', methods=['POST'])
+@login_required
+def sync_payment():
+    try:
+        data = request.get_json(silent=True) or request.form
+        payment_id = (data.get('payment_id') or '').strip()
+        if not payment_id:
+            return jsonify({'success': False, 'message': 'Payment ID is required (e.g. pay_...)'}), 400
+
+        from app.wallet.services import sync_razorpay_payment_by_id
+        success, msg = sync_razorpay_payment_by_id(payment_id, current_user.company_id)
+        if success:
+            flash(f"Payment {payment_id} verified and credited to wallet!", "success")
+            return jsonify({
+                'success': True,
+                'message': msg,
+                'redirect_url': url_for('wallet.index')
+            })
+        else:
+            return jsonify({'success': False, 'message': msg}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
