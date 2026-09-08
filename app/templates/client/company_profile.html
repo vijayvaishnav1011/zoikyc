@@ -49,16 +49,16 @@
 </div>
 {% endif %}
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; align-items: start;">
-  <!-- Edit Profile Form Card -->
-  <div class="card" style="margin-bottom: 0;">
-    <h3
-      style="font-size: 1.05rem; font-weight: 800; margin-bottom: 20px; color: var(--text-dark); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-input); padding-bottom: 12px;">
-      <i class="bi bi-pencil-square" style="color: var(--tiancai-blue);"></i> Edit Organisation Profile
-    </h3>
+<form method="POST" action="{{ url_for('company.profile') }}">
+  {{ form.hidden_tag() }}
 
-    <form method="POST" action="{{ url_for('company.profile') }}">
-      {{ form.hidden_tag() }}
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; align-items: start;">
+    <!-- Edit Profile Form Card -->
+    <div class="card" style="margin-bottom: 0;">
+      <h3
+        style="font-size: 1.05rem; font-weight: 800; margin-bottom: 20px; color: var(--text-dark); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-input); padding-bottom: 12px;">
+        <i class="bi bi-pencil-square" style="color: var(--tiancai-blue);"></i> Edit Organisation Profile
+      </h3>
 
       <!-- Row 1: Company Name & Signatory Name -->
       <div class="ref-form-grid">
@@ -161,163 +161,123 @@
           form.address.errors[0] }}</span>{% endif %}
       </div>
 
-      <!-- Section Divider: Gateway & API Credentials -->
-      <div
-        style="margin-top: 28px; margin-bottom: 20px; padding-top: 20px; border-top: 1px dashed var(--border-input);">
-        <h4
-          style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-          <i class="bi bi-key-fill" style="color: var(--tiancai-purple-light);"></i> KRA
-        </h4>
-        <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">
-          Configure your KRA / Capricorn gateway authentication keys and credentials.
-        </p>
-      </div>
-
-      <!-- Row 6: POS Code & API User ID -->
-      <div class="ref-form-grid">
-        <div class="ref-form-group">
-          <label class="ref-form-label" for="pos_code">POS Code</label>
-          {{ form.pos_code(class="ref-form-control", placeholder="e.g. POS10293") }}
-          {% if form.pos_code.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
-            form.pos_code.errors[0] }}</span>{% endif %}
-        </div>
-
-        <div class="ref-form-group">
-          <label class="ref-form-label" for="api_user_id">API User ID</label>
-          {{ form.api_user_id(class="ref-form-control", placeholder="e.g. KRA_USER_01") }}
-          {% if form.api_user_id.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
-            form.api_user_id.errors[0] }}</span>{% endif %}
-        </div>
-      </div>
-
-      <!-- Row 7: API Password & AES Key -->
-      <div class="ref-form-grid">
-        <div class="ref-form-group">
-          <label class="ref-form-label" for="api_password">API Password</label>
-          <div style="position: relative;">
-            {{ form.api_password(class="ref-form-control", type="password", id="apiPasswordInput", placeholder="Enter
-            API Password") }}
-            <button type="button" onclick="togglePassVisibility('apiPasswordInput', 'passEyeIcon')"
-              style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0;">
-              <i class="bi bi-eye-fill" id="passEyeIcon"></i>
-            </button>
-          </div>
-          {% if form.api_password.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
-            form.api_password.errors[0] }}</span>{% endif %}
-        </div>
-
-        <div class="ref-form-group">
-          <label class="ref-form-label" for="aes_key">AES Key</label>
-          <div style="position: relative;">
-            {{ form.aes_key(class="ref-form-control", type="password", id="aesKeyInput", placeholder="Enter AES Key") }}
-            <button type="button" onclick="togglePassVisibility('aesKeyInput', 'aesEyeIcon')"
-              style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0;">
-              <i class="bi bi-eye-fill" id="aesEyeIcon"></i>
-            </button>
-          </div>
-          {% if form.aes_key.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
-            form.aes_key.errors[0] }}</span>{% endif %}
-        </div>
-      </div>
-
-      <!-- Row 8: API Key / Secret Token -->
-      <div class="ref-form-group" style="margin-bottom: 24px;">
-        <label class="ref-form-label" for="api_key">API Key / Token</label>
-        <div style="position: relative;">
-          {{ form.api_key(class="ref-form-control", type="password", id="apiKeyInput", placeholder="Enter API Key /
-          Token") }}
-          <button type="button" onclick="togglePassVisibility('apiKeyInput', 'apiKeyEyeIcon')"
-            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0;">
-            <i class="bi bi-eye-fill" id="apiKeyEyeIcon"></i>
-          </button>
-        </div>
-        {% if form.api_key.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
-          form.api_key.errors[0] }}</span>{% endif %}
-      </div>
-
       <button type="submit" class="btn-tiancai-pill" style="max-width: 260px;">
         <i class="bi bi-floppy-fill"></i> Save Profile Changes
       </button>
-    </form>
-  </div>
+    </div>
 
-  <!-- Team & User Access Panel -->
-  <div>
-    <!-- Dedicated API Endpoint Card -->
-    <div class="card"
-      style="margin-bottom: 20px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; border: 1px solid rgba(255,255,255,0.1);">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-        <span
-          style="font-size: 0.76rem; text-transform: uppercase; font-weight: 800; letter-spacing: 1px; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
-          <i class="bi bi-cpu-fill"></i> Dedicated PAN API
-        </span>
-        <span
-          style="font-size: 0.72rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 8px; border-radius: 12px; font-weight: 700;">
-          Active
-        </span>
-      </div>
+    <!-- Right Side Column: KRA Credentials & Team Members -->
+    <div>
+      <!-- KRA / Capricorn Gateway Credentials Card -->
+      <div class="card" style="margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid var(--border-input); padding-bottom: 12px;">
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin: 0; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-key-fill" style="color: var(--tiancai-purple-light);"></i> KRA Credentials
+          </h3>
+          <span class="metric-badge" style="background: rgba(126, 34, 206, 0.1); color: #7e22ce; font-size: 0.72rem; font-weight: 800;">
+            Gateway
+          </span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
+          Configure your KRA / Capricorn gateway authentication keys and credentials.
+        </p>
 
-      <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 10px; line-height: 1.4;">
-        Use your company's dedicated endpoint to verify PAN cards directly from your website or client system.
-      </p>
+        <!-- POS Code & API User ID -->
+        <div class="ref-form-grid" style="margin-bottom: 14px;">
+          <div class="ref-form-group">
+            <label class="ref-form-label" for="pos_code">POS Code</label>
+            {{ form.pos_code(class="ref-form-control", placeholder="e.g. POS10293") }}
+            {% if form.pos_code.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
+              form.pos_code.errors[0] }}</span>{% endif %}
+          </div>
 
-      <div
-        style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-        <code style="font-size: 0.76rem; color: #a5f3fc; word-break: break-all;"
-          id="apiEndpointUrl">https://zoikyc.com/api/pan/{{ company.client_id or 'ZOI-CLIENT' }}</code>
-        <button type="button" onclick="copyApiUrl()" id="btnCopyApi"
-          style="background: #3b82f6; border: none; color: #fff; border-radius: 6px; padding: 5px 10px; font-size: 0.72rem; font-weight: 700; cursor: pointer; white-space: nowrap; transition: 0.2s;">
-          <i class="bi bi-clipboard"></i> Copy
+          <div class="ref-form-group">
+            <label class="ref-form-label" for="api_user_id">API User ID</label>
+            {{ form.api_user_id(class="ref-form-control", placeholder="e.g. KRA_USER_01") }}
+            {% if form.api_user_id.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
+              form.api_user_id.errors[0] }}</span>{% endif %}
+          </div>
+        </div>
+
+        <!-- API Password & AES Key -->
+        <div class="ref-form-grid" style="margin-bottom: 14px;">
+          <div class="ref-form-group">
+            <label class="ref-form-label" for="api_password">API Password</label>
+            <div style="position: relative;">
+              {{ form.api_password(class="ref-form-control", type="password", id="apiPasswordInput", placeholder="Enter API Password") }}
+              <button type="button" onclick="togglePassVisibility('apiPasswordInput', 'passEyeIcon')"
+                style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0;">
+                <i class="bi bi-eye-fill" id="passEyeIcon"></i>
+              </button>
+            </div>
+            {% if form.api_password.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
+              form.api_password.errors[0] }}</span>{% endif %}
+          </div>
+
+          <div class="ref-form-group">
+            <label class="ref-form-label" for="aes_key">AES Key</label>
+            <div style="position: relative;">
+              {{ form.aes_key(class="ref-form-control", type="password", id="aesKeyInput", placeholder="Enter AES Key") }}
+              <button type="button" onclick="togglePassVisibility('aesKeyInput', 'aesEyeIcon')"
+                style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0;">
+                <i class="bi bi-eye-fill" id="aesEyeIcon"></i>
+              </button>
+            </div>
+            {% if form.aes_key.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
+              form.aes_key.errors[0] }}</span>{% endif %}
+          </div>
+        </div>
+
+        <!-- API Key / Token -->
+        <div class="ref-form-group" style="margin-bottom: 20px;">
+          <label class="ref-form-label" for="api_key">API Key / Token</label>
+          <div style="position: relative;">
+            {{ form.api_key(class="ref-form-control", type="password", id="apiKeyInput", placeholder="Enter API Key / Token") }}
+            <button type="button" onclick="togglePassVisibility('apiKeyInput', 'apiKeyEyeIcon')"
+              style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0;">
+              <i class="bi bi-eye-fill" id="apiKeyEyeIcon"></i>
+            </button>
+          </div>
+          {% if form.api_key.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
+            form.api_key.errors[0] }}</span>{% endif %}
+        </div>
+
+        <button type="submit" class="btn-tiancai-pill" style="max-width: 240px;">
+          <i class="bi bi-floppy-fill"></i> Save KRA Keys
         </button>
       </div>
 
-      <div style="font-size: 0.74rem; color: #cbd5e1; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-          <span style="color: #94a3b8;">Method:</span>
-          <strong style="color: #4ade80;">POST</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-          <span style="color: #94a3b8;">Payload:</span>
-          <code style="color: #e2e8f0; font-size: 0.72rem;">{"pan": "...", "dob": "DD/MM/YYYY"}</code>
-        </div>
-        <div style="margin-top: 8px; text-align: right;">
-          <a href="/api/pan/{{ company.client_id or 'ZOI-CLIENT' }}" target="_blank"
-            style="color: #38bdf8; text-decoration: none; font-size: 0.72rem;">
-            View API Docs <i class="bi bi-box-arrow-up-right"></i>
-          </a>
-        </div>
-      </div>
-    </div>
+      <!-- Team Members Card -->
+      <div class="card" style="margin-bottom: 0;">
+        <h3
+          style="font-size: 1.05rem; font-weight: 800; margin-bottom: 18px; color: var(--text-dark); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-input); padding-bottom: 12px;">
+          <i class="bi bi-people" style="color: var(--tiancai-blue);"></i> Team Members ({{ team_users | length }})
+        </h3>
 
-    <div class="card" style="margin-bottom: 0;">
-      <h3
-        style="font-size: 1.05rem; font-weight: 800; margin-bottom: 18px; color: var(--text-dark); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-input); padding-bottom: 12px;">
-        <i class="bi bi-people" style="color: var(--tiancai-blue);"></i> Team Members ({{ team_users | length }})
-      </h3>
-
-      <div style="display: flex; flex-direction: column; gap: 12px;">
-        {% for u in team_users %}
-        <div
-          style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8fafc; border-radius: var(--radius-md); border: 1px solid var(--border-input);">
-          <div class="avatar-circle" style="width: 36px; height: 36px; font-size: 0.85rem;">
-            {{ u.name[:1].upper() }}
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          {% for u in team_users %}
+          <div
+            style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8fafc; border-radius: var(--radius-md); border: 1px solid var(--border-input);">
+            <div class="avatar-circle" style="width: 36px; height: 36px; font-size: 0.85rem;">
+              {{ u.name[:1].upper() }}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div
+                style="font-size: 0.85rem; font-weight: 700; color: var(--text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {{ u.name }}</div>
+              <div
+                style="font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {{ u.email }}</div>
+            </div>
+            <span class="metric-badge badge-active" style="font-size: 0.65rem; text-transform: uppercase;">{{ u.role
+              }}</span>
           </div>
-          <div style="flex: 1; min-width: 0;">
-            <div
-              style="font-size: 0.85rem; font-weight: 700; color: var(--text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-              {{ u.name }}</div>
-            <div
-              style="font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-              {{ u.email }}</div>
-          </div>
-          <span class="metric-badge badge-active" style="font-size: 0.65rem; text-transform: uppercase;">{{ u.role
-            }}</span>
+          {% endfor %}
         </div>
-        {% endfor %}
       </div>
     </div>
   </div>
-</div>
+</form>
 {% endblock %}
 
 {% block extra_js %}
@@ -335,23 +295,6 @@
       icon.classList.remove('bi-eye-slash-fill');
       icon.classList.add('bi-eye-fill');
     }
-  }
-
-  function copyApiUrl() {
-    const codeEl = document.getElementById('apiEndpointUrl');
-    if (!codeEl) return;
-    const url = codeEl.innerText.trim();
-    navigator.clipboard.writeText(url).then(() => {
-      const btn = document.getElementById('btnCopyApi');
-      if (btn) {
-        btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
-        btn.style.background = '#10b981';
-        setTimeout(() => {
-          btn.innerHTML = '<i class="bi bi-clipboard"></i> Copy';
-          btn.style.background = '#3b82f6';
-        }, 2000);
-      }
-    });
   }
 </script>
 {% endblock %}
