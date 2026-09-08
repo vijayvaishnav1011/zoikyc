@@ -242,79 +242,7 @@
         </button>
       </div>
 
-      <!-- API Integration Card -->
-      <div class="card" style="margin-bottom: 20px; border-color: rgba(5, 150, 105, 0.25); background: linear-gradient(135deg, rgba(255,255,255,0.97) 0%, rgba(236,253,245,0.6) 100%);">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid rgba(5, 150, 105, 0.2); padding-bottom: 12px;">
-          <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin: 0; display: flex; align-items: center; gap: 8px;">
-            <i class="bi bi-braces" style="color: #059669;"></i> API Integration
-          </h3>
-          <span class="metric-badge" style="background: rgba(5, 150, 105, 0.1); color: #059669; font-size: 0.72rem; font-weight: 800;">
-            PAN Verify
-          </span>
-        </div>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">
-          Your dedicated PAN verification endpoint. Send <code style="background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:0.78rem;">pan</code> + <code style="background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:0.78rem;">dob</code> — ZoiKYC handles all CVL credentials securely on the backend.
-        </p>
 
-        <!-- Endpoint URL display -->
-        <div style="background: #0f172a; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; position: relative;">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-            <span style="background: #059669; color: white; font-size: 0.68rem; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-family: monospace;">POST</span>
-            <code id="apiEndpointUrl" style="color: #86efac; font-size: 0.82rem; font-family: monospace; word-break: break-all;">https://zoikyc.com/api/pan/{{ company.client_id }}</code>
-          </div>
-          <button onclick="copyApiEndpoint()" style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); border: none; color: #94a3b8; cursor: pointer; border-radius: 5px; padding: 4px 8px; font-size: 0.72rem;" title="Copy endpoint">
-            <i class="bi bi-copy" id="copyEndpointIcon"></i>
-          </button>
-        </div>
-
-        <!-- Request body info -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
-          <div style="background: #f8fafc; border: 1px solid var(--border-input); border-radius: 8px; padding: 10px;">
-            <div style="font-size: 0.7rem; font-weight: 700; color: #059669; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Required Fields</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace; line-height: 1.6;">
-              "pan": "ABCDE1234F"<br>
-              "dob": "DD/MM/YYYY"
-            </div>
-          </div>
-          <div style="background: #f8fafc; border: 1px solid var(--border-input); border-radius: 8px; padding: 10px;">
-            <div style="font-size: 0.7rem; font-weight: 700; color: #059669; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Content-Type</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace; line-height: 1.6;">
-              application/json<br>
-              <span style="color: #94a3b8;">No auth header needed</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- PHP Sample code -->
-        <div style="margin-bottom: 10px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-dark);">Sample PHP Integration</span>
-            <button onclick="copyPhpCode()" style="background: none; border: 1px solid var(--border-input); color: var(--text-muted); cursor: pointer; border-radius: 5px; padding: 3px 8px; font-size: 0.7rem;">
-              <i class="bi bi-copy"></i> Copy
-            </button>
-          </div>
-          <pre id="phpCodeBlock" style="background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 8px; font-size: 0.72rem; line-height: 1.6; overflow-x: auto; margin: 0; white-space: pre;"><span style="color:#64748b;">// Send from your portal</span>
-$response = file_get_contents('https://zoikyc.com/api/pan/{{ company.client_id }}',
-  false,
-  stream_context_create(['http' => [
-    'method'  => 'POST',
-    'header'  => 'Content-Type: application/json',
-    'content' => json_encode([
-      'pan' => $pan,
-      'dob' => $dob   <span style="color:#64748b;">// format: DD/MM/YYYY</span>
-    ])
-  ]])
-);
-$result = json_decode($response, true);
-<span style="color:#64748b;">// $result['success'], $result['full_name'], $result['status']</span></pre>
-        </div>
-
-        <!-- Architecture note -->
-        <div style="background: rgba(5, 150, 105, 0.07); border-left: 3px solid #059669; border-radius: 0 6px 6px 0; padding: 10px 12px; font-size: 0.75rem; color: #065f46; line-height: 1.5;">
-          <i class="bi bi-shield-check" style="margin-right: 4px;"></i>
-          <strong>Secure:</strong> CVL KRA credentials never leave ZoiKYC servers. Your portal only sends PAN + DOB.
-        </div>
-      </div>
 
       <!-- Team Members Card -->
       <div class="card" style="margin-bottom: 0;">
