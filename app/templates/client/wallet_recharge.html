@@ -93,31 +93,9 @@
         <i class="bi bi-credit-card"></i> <span id="payBtnText">Pay ₹1.00 via Razorpay</span>
       </button>
     </form>
-
-    <!-- Sync Recent Payment / Recovery Card -->
-    <div style="margin-top: 24px; padding-top: 20px; border-top: 1px dashed var(--border-input);">
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-        <div>
-          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-dark);">Already paid and balance didn't update?</span>
-          <p style="margin: 2px 0 0; font-size: 0.78rem; color: var(--text-muted);">Enter your Razorpay Payment ID (e.g. <code>pay_...</code>) to sync your balance instantly.</p>
-        </div>
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnToggleSync" style="font-size: 0.78rem; font-weight: 600; border-radius: 6px; padding: 4px 10px;" onclick="const s = document.getElementById('syncBox'); s.style.display = (s.style.display === 'none' ? 'block' : 'none');">
-          <i class="bi bi-arrow-repeat"></i> Sync Payment ID
-        </button>
-      </div>
-
-      <div id="syncBox" style="display: none; margin-top: 14px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px;">
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <input type="text" id="syncPaymentId" placeholder="e.g. pay_Q123456789abc" class="ref-form-control" style="flex: 1; min-width: 220px; font-family: monospace; font-size: 0.9rem;">
-          <button type="button" id="btnDoSync" class="btn btn-primary" style="background: #7e22ce; border-color: #7e22ce; font-weight: 700; padding: 0 18px; border-radius: 6px; font-size: 0.88rem;">
-            Verify & Credit Wallet
-          </button>
-        </div>
-        <div id="syncMsg" style="display: none; margin-top: 8px; font-size: 0.82rem; font-weight: 600;"></div>
-      </div>
-    </div>
   </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -268,58 +246,7 @@
     }
   });
 
-  // Sync Payment by ID handler
-  const btnDoSync = document.getElementById('btnDoSync');
-  const syncPaymentId = document.getElementById('syncPaymentId');
-  const syncMsg = document.getElementById('syncMsg');
-
-  if (btnDoSync && syncPaymentId) {
-    btnDoSync.addEventListener('click', async () => {
-      const payId = syncPaymentId.value.trim();
-      if (!payId) {
-        syncMsg.style.display = 'block';
-        syncMsg.style.color = '#dc2626';
-        syncMsg.textContent = 'Please enter your Razorpay Payment ID (e.g. pay_...).';
-        return;
-      }
-
-      btnDoSync.disabled = true;
-      btnDoSync.textContent = 'Verifying with Razorpay...';
-      syncMsg.style.display = 'none';
-
-      try {
-        const res = await fetch("{{ url_for('wallet.sync_payment') }}", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": csrfToken
-          },
-          body: JSON.stringify({ payment_id: payId })
-        });
-        const data = await res.json();
-        if (data.success) {
-          syncMsg.style.display = 'block';
-          syncMsg.style.color = '#16a34a';
-          syncMsg.textContent = 'Payment verified! ' + data.message + ' Redirecting...';
-          setTimeout(() => {
-            window.location.href = data.redirect_url || "{{ url_for('wallet.index') }}";
-          }, 1200);
-        } else {
-          syncMsg.style.display = 'block';
-          syncMsg.style.color = '#dc2626';
-          syncMsg.textContent = data.message || 'Verification failed.';
-          btnDoSync.disabled = false;
-          btnDoSync.textContent = 'Verify & Credit Wallet';
-        }
-      } catch (err) {
-        syncMsg.style.display = 'block';
-        syncMsg.style.color = '#dc2626';
-        syncMsg.textContent = err.message || 'Error communicating with server.';
-        btnDoSync.disabled = false;
-        btnDoSync.textContent = 'Verify & Credit Wallet';
-      }
-    });
-  }
 });
+
 </script>
 {% endblock %}
