@@ -90,6 +90,19 @@ def create_app(config_name=None):
                 db.session.commit()
             except Exception:
                 db.session.rollback()
+
+            # Auto-create pan_verifications columns if needed (upgrade path)
+            try:
+                db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS raw_request TEXT;"))
+                db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS raw_response TEXT;"))
+                db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS dob VARCHAR(20);"))
+                db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS reference_id VARCHAR(100);"))
+                db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS aadhaar_seeding_status VARCHAR(100);"))
+                db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS pan_status VARCHAR(50);"))
+                db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS dob_match BOOLEAN;"))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
             from app.models.company import Company
             from app.models.user import User
             from app.models.wallet import Wallet

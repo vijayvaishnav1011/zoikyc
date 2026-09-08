@@ -42,12 +42,36 @@ def index():
     if status_filter in ['verified', 'failed', 'invalid']:
         query = query.filter_by(status=status_filter)
 
-    recent_checks = query.order_by(PANVerification.created_at.desc()).limit(50).all()
+    def _fetch_stats_and_checks():
+        return (
+            query.order_by(PANVerification.created_at.desc()).limit(50).all(),
+            PANVerification.query.filter_by(company_id=company.id).count(),
+            PANVerification.query.filter_by(company_id=company.id, status='verified').count(),
+            PANVerification.query.filter_by(company_id=company.id, status='failed').count()
+        )
 
-    # Total counts for statistics
-    total_checks = PANVerification.query.filter_by(company_id=company.id).count()
-    verified_count = PANVerification.query.filter_by(company_id=company.id, status='verified').count()
-    failed_count = PANVerification.query.filter_by(company_id=company.id, status='failed').count()
+    try:
+        recent_checks, total_checks, verified_count, failed_count = _fetch_stats_and_checks()
+    except Exception as q_err:
+        db.session.rollback()
+        # Self-heal schema on the fly if column was missing
+        try:
+            from sqlalchemy import text
+            db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS raw_request TEXT;"))
+            db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS raw_response TEXT;"))
+            db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS dob VARCHAR(20);"))
+            db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS reference_id VARCHAR(100);"))
+            db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS aadhaar_seeding_status VARCHAR(100);"))
+            db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS pan_status VARCHAR(50);"))
+            db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS dob_match BOOLEAN;"))
+            db.session.commit()
+            recent_checks, total_checks, verified_count, failed_count = _fetch_stats_and_checks()
+        except Exception:
+            db.session.rollback()
+            recent_checks = []
+            total_checks = 0
+            verified_count = 0
+            failed_count = 0
 
     # Check if request is JSON API call
     is_json_req = request.is_json or request.args.get('format') == 'json' or request.headers.get('Accept') == 'application/json'
@@ -120,7 +144,8 @@ def index():
             aadhaar_seeding_status=verification_data.get('aadhaar_seeding_status'),
             cost_charged=charge_amount,
             reference_id=verification_data.get('reference_id'),
-            raw_response=json.dumps(verification_data.get('raw_response', {}))
+            raw_response=json.dumps(verification_data.get('raw_response', {})),
+            raw_request=verification_data.get('raw_request')
         )
         try:
             db.session.add(record)
@@ -158,7 +183,11 @@ def index():
             flash(f"PAN verification failed: {verification_data.get('status_message')}", "danger")
 
         # Refresh recent checks after submit
-        recent_checks = query.order_by(PANVerification.created_at.desc()).limit(50).all()
+        try:
+            recent_checks = query.order_by(PANVerification.created_at.desc()).limit(50).all()
+        except Exception:
+            db.session.rollback()
+            recent_checks = []
 
     return render_template(
         'client/pan.html',
