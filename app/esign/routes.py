@@ -192,27 +192,7 @@ def sign(doc_id):
         abort(403)
 
     if doc.status == 'sent_to_capricorn' and doc.redirect_url:
-        target_url = doc.redirect_url
-        if "?param=" in target_url:
-            param = target_url.split("?param=")[-1]
-            target_url = f"https://demo.esign.network/esigndoc/?param={param}"
-            if doc.redirect_url != target_url:
-                doc.redirect_url = target_url
-                db.session.commit()
-        elif "demo.esign.network" in target_url:
-            try:
-                head_resp = requests.get(target_url, allow_redirects=False, timeout=10)
-                loc = head_resp.headers.get("Location") or head_resp.headers.get("location")
-                if loc and "?param=" in loc:
-                    param = loc.split("?param=")[-1]
-                    target_url = f"https://demo.esign.network/esigndoc/?param={param}"
-                    doc.redirect_url = target_url
-                    db.session.commit()
-                else:
-                    target_url = "https://demo.esign.network/esigndoc/"
-            except Exception:
-                target_url = "https://demo.esign.network/esigndoc/"
-        return redirect(target_url)
+        return redirect(doc.redirect_url)
     elif doc.status == 'signed':
         flash("This document has already been digitally signed and sealed.", "info")
     else:

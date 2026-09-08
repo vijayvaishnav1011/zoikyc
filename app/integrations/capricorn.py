@@ -172,42 +172,27 @@ class CapricornESignProvider(BaseESignProvider):
             items = response_obj.get("responsedata", {}).get("items", {})
             item = items.get("item", {})
 
+            esign_url = item.get("esignurl")
             redirect_url = item.get("redirecturl")
             reference = item.get("reference")
             signed_pdf_url = item.get("signedpdfurl")
             returned_txn = item.get("txn") or txn_id
 
-            if not redirect_url and not reference:
+            # Directly use esignurl (continue link) from Capricorn for live signing
+            direct_signing_url = esign_url or redirect_url
+
+            if not direct_signing_url and not reference:
                 return {
                     "success": False,
-                    "error": f"Capricorn did not return redirect URL. Raw response: {data}"
+                    "error": f"Capricorn did not return redirect/esign URL. Raw response: {data}"
                 }
-
-            # Resolve to direct live demo.esign.network portal URL
-            direct_signing_url = redirect_url
-            if redirect_url:
-                try:
-                    if "/esigndoc/?param=" in redirect_url:
-                        direct_signing_url = redirect_url
-                    else:
-                        head_resp = requests.get(redirect_url, allow_redirects=False, timeout=10)
-                        loc = head_resp.headers.get("Location") or head_resp.headers.get("location")
-                        if loc and "?param=" in loc:
-                            param = loc.split("?param=")[-1]
-                            direct_signing_url = f"https://demo.esign.network/esigndoc/?param={param}"
-                        elif loc and loc.startswith("http"):
-                            direct_signing_url = loc
-                except Exception as e:
-                    logger.warning(f"Failed resolving direct demo.esign.network esigndoc URL: {e}")
-                    if "?param=" in redirect_url:
-                        param = redirect_url.split("?param=")[-1]
-                        direct_signing_url = f"https://demo.esign.network/esigndoc/?param={param}"
 
             return {
                 "success": True,
                 "txn": returned_txn,
                 "reference": reference,
                 "redirect_url": direct_signing_url or "https://demo.esign.network/esigndoc/",
+                "esign_url": esign_url,
                 "signed_pdf_url": signed_pdf_url,
                 "raw": data
             }
