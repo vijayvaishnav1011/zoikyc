@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+
+{% block title %}Company Profile — ZoiKYC{% endblock %}
+{% block page_title %}Company Profile{% endblock %}
+
+{% block content %}
+<!-- Overview Header Banner -->
+<div class="card"
+  style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(238, 242, 255, 0.8) 100%); border-color: rgba(79, 70, 229, 0.25); margin-bottom: 24px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <span
+        style="font-size: 0.8rem; text-transform: uppercase; color: var(--tiancai-blue); font-weight: 800; letter-spacing: 1.2px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+        <i class="bi bi-building"></i> Organisation Master Profile
+      </span>
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 4px;">
+        <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-dark); margin: 0;">
+          {{ company.name }}
+        </h1>
+        <span class="metric-badge"
+          style="background: rgba(37, 99, 235, 0.12); color: var(--tiancai-blue); font-size: 0.82rem; font-weight: 800; padding: 4px 10px;">
+          <i class="bi bi-hash"></i> {{ company.client_id or 'ZOI-CLIENT' }}
+        </span>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 6px;">
+        Client ID: <strong style="color: var(--tiancai-blue);">{{ company.client_id }}</strong> &bull; Signatory:
+        <strong>{{ company.authorised_signatory_name }}</strong> &bull; GSTIN: <strong>{{ company.gstin if company.gstin
+          else 'Not Provided' }}</strong>
+      </p>
+    </div>
+
+    <div>
+      {% if company.status == 'active' %}
+      <span class="metric-badge badge-active" style="padding: 6px 14px; font-size: 0.82rem;"><i
+          class="bi bi-patch-check-fill"></i> Verified & Active</span>
+      {% else %}
+      <span class="metric-badge"
+        style="background: rgba(217, 119, 6, 0.12); color: #d97706; padding: 6px 14px; font-size: 0.82rem;"><i
+          class="bi bi-clock-history"></i> Pending Verification</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if company.status == 'active' %}
+<!-- Verified Legal Lock Banner -->
+<div class="alert alert-info"
+  style="margin-bottom: 24px; background: rgba(37, 99, 235, 0.08); border-color: rgba(37, 99, 235, 0.25); color: #1e3a8a; font-size: 0.85rem; line-height: 1.5;">
+  <i class="bi bi-shield-lock-fill" style="color: var(--tiancai-blue); margin-right: 6px; font-size: 1rem;"></i>
+  <span><strong>Verified Business Profile (Read-Only Legal Fields):</strong> Your legal organization name, authorised
+    signatory, and GSTIN have been verified and permanently locked to ensure regulatory compliance. Contact support to
+    request modifications.</span>
+</div>
+{% endif %}
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; align-items: start;">
+  <!-- Edit Profile Form Card -->
+  <div class="card" style="margin-bottom: 0;">
+    <h3
+      style="font-size: 1.05rem; font-weight: 800; margin-bottom: 20px; color: var(--text-dark); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-input); padding-bottom: 12px;">
+      <i class="bi bi-pencil-square" style="color: var(--tiancai-blue);"></i> Edit Organisation Profile
+    </h3>
+
+    <form method="POST" action="{{ url_for('company.profile') }}">
+      {{ form.hidden_tag() }}
+
+      <!-- Row 1: Company Name & Signatory Name -->
+      <div class="ref-form-grid">
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="company_name">
+            Company / Organisation Name *
+            {% if company.status == 'active' %}<i class="bi bi-lock-fill" title="Locked after KYC verification"
+              style="color: #64748b; margin-left: 4px;"></i>{% endif %}
+          </label>
+          {% if company.status == 'active' %}
+          {{ form.company_name(class="ref-form-control", readonly=true, style="background-color: #f1f5f9; cursor:
+          not-allowed; color: #475569;") }}
+          {% else %}
+          {{ form.company_name(class="ref-form-control") }}
+          {% endif %}
+          {% if form.company_name.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
+            form.company_name.errors[0] }}</span>{% endif %}
+        </div>
+
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="authorised_signatory_name">
+            Authorised Signatory Name *
+            {% if company.status == 'active' %}<i class="bi bi-lock-fill" title="Locked after KYC verification"
+              style="color: #64748b; margin-left: 4px;"></i>{% endif %}
+          </label>
+          {% if company.status == 'active' %}
+          {{ form.authorised_signatory_name(class="ref-form-control", readonly=true, style="background-color: #f1f5f9;
+          cursor: not-allowed; color: #475569;") }}
+          {% else %}
+          {{ form.authorised_signatory_name(class="ref-form-control") }}
+          {% endif %}
+          {% if form.authorised_signatory_name.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
+            form.authorised_signatory_name.errors[0] }}</span>{% endif %}
+        </div>
+      </div>
+
+      <!-- Row 2: Phone & GSTIN -->
+      <div class="ref-form-grid">
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="phone">Business Phone *</label>
+          {{ form.phone(class="ref-form-control") }}
+          {% if form.phone.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.phone.errors[0]
+            }}</span>{% endif %}
+        </div>
+
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="gstin">
+            GSTIN Number
+            {% if company.status == 'active' and company.gstin %}<i class="bi bi-lock-fill"
+              title="Locked after KYC verification" style="color: #64748b; margin-left: 4px;"></i>{% endif %}
+          </label>
+          {% if company.status == 'active' and company.gstin %}
+          {{ form.gstin(class="ref-form-control", readonly=true, style="background-color: #f1f5f9; cursor: not-allowed;
+          color: #475569;") }}
+          {% else %}
+          {{ form.gstin(class="ref-form-control") }}
+          {% endif %}
+          {% if form.gstin.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.gstin.errors[0]
+            }}</span>{% endif %}
+        </div>
+      </div>
+
+      <!-- Row 3: Country & State -->
+      <div class="ref-form-grid">
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="country">Country *</label>
+          {{ form.country(class="ref-form-control") }}
+        </div>
+
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="state">State *</label>
+          {{ form.state(class="ref-form-control") }}
+          {% if form.state.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.state.errors[0]
+            }}</span>{% endif %}
+        </div>
+      </div>
+
+      <!-- Row 4: City & ZIP Code -->
+      <div class="ref-form-grid">
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="city">City *</label>
+          {{ form.city(class="ref-form-control") }}
+          {% if form.city.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.city.errors[0]
+            }}</span>{% endif %}
+        </div>
+
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="zip_code">ZIP / Postal Code *</label>
+          {{ form.zip_code(class="ref-form-control") }}
+          {% if form.zip_code.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
+            form.zip_code.errors[0] }}</span>{% endif %}
+        </div>
+      </div>
+
+      <!-- Row 5: Full Width Address -->
+      <div class="ref-form-group" style="margin-bottom: 24px;">
+        <label class="ref-form-label" for="address">Registered Business Address *</label>
+        {{ form.address(class="ref-form-control", rows="2", style="resize: vertical;") }}
+        {% if form.address.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
+          form.address.errors[0] }}</span>{% endif %}
+      </div>
+
+      <!-- Section Divider: Gateway & API Credentials -->
+      <div
+        style="margin-top: 28px; margin-bottom: 20px; padding-top: 20px; border-top: 1px dashed var(--border-input);">
+        <h4
+          style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <i class="bi bi-key-fill" style="color: var(--tiancai-purple-light);"></i> KRA
+        </h4>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">
+          Configure your KRA / Capricorn gateway authentication keys and credentials.
+        </p>
+      </div>
+
+      <!-- Row 6: POS Code & API User ID -->
+      <div class="ref-form-grid">
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="pos_code">POS Code</label>
+          {{ form.pos_code(class="ref-form-control", placeholder="e.g. POS10293") }}
+          {% if form.pos_code.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
+            form.pos_code.errors[0] }}</span>{% endif %}
+        </div>
+
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="api_user_id">API User ID</label>
+          {{ form.api_user_id(class="ref-form-control", placeholder="e.g. KRA_USER_01") }}
+          {% if form.api_user_id.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
+            form.api_user_id.errors[0] }}</span>{% endif %}
+        </div>
+      </div>
+
+      <!-- Row 7: API Password & AES Key -->
+      <div class="ref-form-grid">
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="api_password">API Password</label>
+          <div style="position: relative;">
+            {{ form.api_password(class="ref-form-control", type="password", id="apiPasswordInput", placeholder="Enter
+            API Password") }}
+            <button type="button" onclick="togglePassVisibility('apiPasswordInput', 'passEyeIcon')"
+              style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0;">
+              <i class="bi bi-eye-fill" id="passEyeIcon"></i>
+            </button>
+          </div>
+          {% if form.api_password.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
+            form.api_password.errors[0] }}</span>{% endif %}
+        </div>
+
+        <div class="ref-form-group">
+          <label class="ref-form-label" for="aes_key">AES Key</label>
+          <div style="position: relative;">
+            {{ form.aes_key(class="ref-form-control", type="password", id="aesKeyInput", placeholder="Enter AES Key") }}
+            <button type="button" onclick="togglePassVisibility('aesKeyInput', 'aesEyeIcon')"
+              style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0;">
+              <i class="bi bi-eye-fill" id="aesEyeIcon"></i>
+            </button>
+          </div>
+          {% if form.aes_key.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
+            form.aes_key.errors[0] }}</span>{% endif %}
+        </div>
+      </div>
+
+      <!-- Row 8: API Key / Secret Token -->
+      <div class="ref-form-group" style="margin-bottom: 24px;">
+        <label class="ref-form-label" for="api_key">API Key / Token</label>
+        <div style="position: relative;">
+          {{ form.api_key(class="ref-form-control", type="password", id="apiKeyInput", placeholder="Enter API Key /
+          Token") }}
+          <button type="button" onclick="togglePassVisibility('apiKeyInput', 'apiKeyEyeIcon')"
+            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0;">
+            <i class="bi bi-eye-fill" id="apiKeyEyeIcon"></i>
+          </button>
+        </div>
+        {% if form.api_key.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
+          form.api_key.errors[0] }}</span>{% endif %}
+      </div>
+
+      <button type="submit" class="btn-tiancai-pill" style="max-width: 260px;">
+        <i class="bi bi-floppy-fill"></i> Save Profile Changes
+      </button>
+    </form>
+  </div>
+
+  <!-- Team & User Access Panel -->
+  <div>
+    <div class="card" style="margin-bottom: 0;">
+      <h3
+        style="font-size: 1.05rem; font-weight: 800; margin-bottom: 18px; color: var(--text-dark); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-input); padding-bottom: 12px;">
+        <i class="bi bi-people" style="color: var(--tiancai-blue);"></i> Team Members ({{ team_users | length }})
+      </h3>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for u in team_users %}
+        <div
+          style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8fafc; border-radius: var(--radius-md); border: 1px solid var(--border-input);">
+          <div class="avatar-circle" style="width: 36px; height: 36px; font-size: 0.85rem;">
+            {{ u.name[:1].upper() }}
+          </div>
+          <div style="flex: 1; min-width: 0;">
+            <div
+              style="font-size: 0.85rem; font-weight: 700; color: var(--text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              {{ u.name }}</div>
+            <div
+              style="font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              {{ u.email }}</div>
+          </div>
+          <span class="metric-badge badge-active" style="font-size: 0.65rem; text-transform: uppercase;">{{ u.role
+            }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function togglePassVisibility(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    if (!input || !icon) return;
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.classList.remove('bi-eye-fill');
+      icon.classList.add('bi-eye-slash-fill');
+    } else {
+      input.type = 'password';
+      icon.classList.remove('bi-eye-slash-fill');
+      icon.classList.add('bi-eye-fill');
+    }
+  }
+</script>
+{% endblock %}

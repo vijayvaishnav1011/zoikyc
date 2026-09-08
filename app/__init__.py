@@ -38,6 +38,7 @@ def create_app(config_name=None):
     from app.company import company_bp
     from app.admin import admin_bp
     from app.esign import esign_bp
+    from app.pan import pan_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -45,6 +46,7 @@ def create_app(config_name=None):
     app.register_blueprint(company_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(esign_bp)
+    app.register_blueprint(pan_bp)
 
     # Health check endpoint
     @app.route('/health')

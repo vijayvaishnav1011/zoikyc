@@ -31,7 +31,7 @@ def index():
         company_id=current_user.company_id
     ).order_by(WalletTransaction.created_at.desc()).limit(5).all()
 
-    return render_template('wallet/index.html', wallet=wallet, company=company, transactions=transactions)
+    return render_template('client/wallet.html', wallet=wallet, company=company, transactions=transactions)
 
 @wallet_bp.route('/wallet/transactions')
 @login_required
@@ -49,7 +49,7 @@ def transactions():
     )
 
     return render_template(
-        'wallet/transactions.html',
+        'client/wallet_transactions.html',
         pagination=pagination,
         transactions=pagination.items,
         txn_type=txn_type
@@ -67,7 +67,7 @@ def recharge():
     per_kyc = float(company.per_kyc_price) if company and company.per_kyc_price else 20.0
 
     return render_template(
-        'wallet/recharge.html',
+        'client/wallet_recharge.html',
         form=form,
         wallet=wallet,
         razorpay_key_id=key_id,

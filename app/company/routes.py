@@ -54,7 +54,7 @@ def profile():
     team_users = User.query.filter_by(company_id=company.id).all()
 
     return render_template(
-        'company/profile.html',
+        'client/company_profile.html',
         form=form,
         company=company,
         team_users=team_users
@@ -94,7 +94,7 @@ def documents():
     uploaded_dict = {d.document_type: d for d in uploaded_docs}
 
     return render_template(
-        'company/documents.html',
+        'client/company_documents.html',
         form=form,
         company=company,
         required_docs=REQUIRED_DOCUMENTS,

@@ -40,7 +40,7 @@
       <nav class="sidebar-nav">
         <!-- Group 1: Core Platform -->
         <div class="nav-group">
-          <div class="nav-group-label">Core Platform</div>
+          <div class="nav-group-label">Dashboard</div>
           <ul class="nav-list">
             <li class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
               <a href="{{ url_for('dashboard.index') }}">
@@ -57,11 +57,16 @@
 
         <!-- Group 2: FinTech Services -->
         <div class="nav-group">
-          <div class="nav-group-label">FinTech Services</div>
+          <div class="nav-group-label">Services</div>
           <ul class="nav-list">
             <li class="nav-item {% if request.blueprint == 'esign' %}active{% endif %}">
               <a href="{{ url_for('esign.index') }}">
                 <i class="bi bi-pen-fill" style="color: var(--tiancai-blue);"></i> Aadhaar E-Sign
+              </a>
+            </li>
+            <li class="nav-item {% if request.blueprint == 'pan' %}active{% endif %}">
+              <a href="{{ url_for('pan.index') }}">
+                <i class="bi bi-person-vcard-fill" style="color: #10b981;"></i> Check PAN Card
               </a>
             </li>
           </ul>

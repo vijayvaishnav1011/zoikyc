@@ -16,7 +16,7 @@ def index():
         ).order_by(WalletTransaction.created_at.desc()).limit(5).all()
 
     return render_template(
-        'dashboard/index.html',
+        'client/dashboard.html',
         company=company,
         wallet=wallet,
         recent_transactions=recent_transactions

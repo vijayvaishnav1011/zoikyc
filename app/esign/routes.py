@@ -61,7 +61,7 @@ def index():
     is_kyc_active = (company.status == 'active')
 
     return render_template(
-        'esign/index.html',
+        'client/esign.html',
         documents=documents,
         counts=counts,
         current_status=status_filter,
@@ -146,7 +146,7 @@ def upload():
                 flash(f"{field_clean}: {err}", "danger")
 
     return render_template(
-        'esign/upload.html',
+        'client/esign_upload.html',
         form=form,
         company=company,
         wallet_balance=wallet_balance,

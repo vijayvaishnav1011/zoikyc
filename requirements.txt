@@ -14,3 +14,5 @@ razorpay==1.4.2
 setuptools<70.0.0
 reportlab>=4.0.0
 pillow>=9.0.0
+pycryptodome>=3.20.0
+requests>=2.31.0
