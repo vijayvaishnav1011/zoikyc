@@ -721,5 +721,27 @@ def preview_esign(doc_id):
     return send_file(full_path, as_attachment=False, download_name=download_name)
 
 
+@admin_bp.route('/pan-verifications')
+@admin_required
+def pan_verifications():
+    """Admin view for all PAN verifications including raw request and response payloads."""
+    from app.models.pan import PANVerification
+    page = request.args.get('page', 1, type=int)
+    search_query = request.args.get('q', '').strip()
 
+    query = PANVerification.query.join(Company)
+    if search_query:
+        search = f"%{search_query}%"
+        query = query.filter(
+            (PANVerification.pan_number.ilike(search)) |
+            (PANVerification.reference_id.ilike(search)) |
+            (Company.name.ilike(search))
+        )
+    
+    pagination = query.order_by(PANVerification.created_at.desc()).paginate(page=page, per_page=20, error_out=False)
 
+    return render_template(
+        'admin/pan_verifications.html',
+        pagination=pagination,
+        search_query=search_query
+    )

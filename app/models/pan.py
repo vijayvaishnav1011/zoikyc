@@ -31,6 +31,7 @@ class PANVerification(db.Model):
 
     # Raw Payload & Reference
     reference_id = db.Column(db.String(100), nullable=True, index=True)
+    raw_request = db.Column(db.Text, nullable=True)
     raw_response = db.Column(db.Text, nullable=True)
 
     # Timestamps

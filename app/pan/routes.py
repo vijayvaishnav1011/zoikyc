@@ -355,7 +355,8 @@ def public_api_pan(client_id=None):
                 aadhaar_seeding_status=verification_data.get('aadhaar_seeding_status'),
                 cost_charged=Decimal('0.00'),
                 reference_id=verification_data.get('reference_id'),
-                raw_response=json.dumps(verification_data.get('raw_response', {}))
+                raw_response=json.dumps(verification_data.get('raw_response', {})),
+                raw_request=verification_data.get('raw_request')
             )
             db.session.add(record)
             db.session.commit()

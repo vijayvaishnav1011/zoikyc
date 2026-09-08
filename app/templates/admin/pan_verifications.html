@@ -1,0 +1,157 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}PAN Verifications — Admin{% endblock %}
+{% block page_title %}PAN Verifications (API Logs){% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 24px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div>
+      <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--text-dark); margin: 0;">PAN API Verification Logs</h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Monitor all PAN verification requests and raw KRA API responses.</p>
+    </div>
+    
+    <form method="GET" style="display: flex; gap: 10px;">
+      <input type="text" name="q" value="{{ search_query }}" class="ref-form-control" placeholder="Search PAN, Ref ID or Company..." style="width: 300px; height: 38px;">
+      <button type="submit" class="btn-tiancai-pill" style="height: 38px; padding: 0 16px;">
+        <i class="bi bi-search"></i>
+      </button>
+      {% if search_query %}
+      <a href="{{ url_for('admin.pan_verifications') }}" class="btn-tiancai-pill" style="height: 38px; padding: 0 16px; background: #e2e8f0; color: #475569; border: none;">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="ref-table-container">
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Company</th>
+          <th>PAN Number</th>
+          <th>Status</th>
+          <th>Full Name</th>
+          <th>Request Payload</th>
+          <th>Response Payload</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in pagination.items %}
+        <tr>
+          <td>
+            <div style="font-size: 0.85rem; font-weight: 700;">{{ log.created_at.strftime('%Y-%m-%d') }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ log.created_at.strftime('%H:%M:%S UTC') }}</div>
+          </td>
+          <td>
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--tiancai-blue);">{{ log.company.name }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ log.company.client_id }}</div>
+          </td>
+          <td>
+            <span style="font-family: monospace; font-weight: 700;">{{ log.pan_number }}</span>
+          </td>
+          <td>
+            {% if log.status == 'verified' %}
+            <span class="metric-badge badge-active"><i class="bi bi-check-circle-fill"></i> Verified</span>
+            {% elif log.status == 'failed' %}
+            <span class="metric-badge" style="background: rgba(225, 29, 72, 0.1); color: #e11d48;"><i class="bi bi-x-circle-fill"></i> Failed</span>
+            {% else %}
+            <span class="metric-badge" style="background: rgba(245, 158, 11, 0.1); color: #d97706;"><i class="bi bi-exclamation-triangle-fill"></i> {{ log.status|title }}</span>
+            {% endif %}
+            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ log.status_message }}">{{ log.status_message }}</div>
+          </td>
+          <td>
+            <div style="font-size: 0.85rem; font-weight: 600;">{{ log.full_name or '-' }}</div>
+          </td>
+          <td>
+            <button onclick="showPayloadModal('Request Payload - {{ log.pan_number }}', '{{ log.raw_request | replace('\n', '') | replace('\'', '\\\'') | escape if log.raw_request else 'No request logged' }}')" class="btn-tiancai-pill" style="background: #f1f5f9; color: #475569; padding: 4px 10px; font-size: 0.75rem; border: 1px solid #cbd5e1;">
+              <i class="bi bi-code-slash"></i> View Sent
+            </button>
+          </td>
+          <td>
+            <button onclick="showPayloadModal('Response Payload - {{ log.pan_number }}', '{{ log.raw_response | replace('\n', '') | replace('\'', '\\\'') | escape if log.raw_response else 'No response logged' }}', true)" class="btn-tiancai-pill" style="background: rgba(37, 99, 235, 0.1); color: var(--tiancai-blue); padding: 4px 10px; font-size: 0.75rem; border: none;">
+              <i class="bi bi-braces"></i> View JSON
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+            <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 10px; color: #cbd5e1;"></i>
+            No PAN verifications found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+    <div style="font-size: 0.85rem; color: var(--text-muted);">
+      Showing {{ pagination.first }} to {{ pagination.last }} of {{ pagination.total }} records
+    </div>
+    <div style="display: flex; gap: 4px;">
+      {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if page_num %}
+          {% if page_num == pagination.page %}
+            <span style="background: var(--tiancai-blue); color: white; border-radius: 4px; padding: 4px 10px; font-size: 0.85rem; font-weight: 700;">{{ page_num }}</span>
+          {% else %}
+            <a href="{{ url_for('admin.pan_verifications', page=page_num, q=search_query) }}" style="background: #f1f5f9; color: var(--text-dark); border-radius: 4px; padding: 4px 10px; font-size: 0.85rem; text-decoration: none;">{{ page_num }}</a>
+          {% endif %}
+        {% else %}
+          <span style="padding: 4px 10px; color: var(--text-muted);">...</span>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Payload Modal -->
+<div id="payloadModal" class="ref-modal" style="display: none;">
+  <div class="ref-modal-content" style="max-width: 800px; width: 90%;">
+    <div class="ref-modal-header">
+      <h3 id="payloadModalTitle" style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--text-dark);"></h3>
+      <button onclick="closePayloadModal()" class="ref-modal-close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="ref-modal-body" style="background: #0f172a; padding: 0;">
+      <pre id="payloadContent" style="color: #e2e8f0; padding: 16px; margin: 0; font-size: 0.75rem; font-family: monospace; white-space: pre-wrap; word-wrap: break-word; max-height: 500px; overflow-y: auto;"></pre>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function showPayloadModal(title, content, formatJson = false) {
+    document.getElementById('payloadModalTitle').innerText = title;
+    const contentEl = document.getElementById('payloadContent');
+    
+    if (formatJson) {
+      try {
+        const parsed = JSON.parse(content);
+        contentEl.innerText = JSON.stringify(parsed, null, 2);
+      } catch (e) {
+        contentEl.innerText = content; // Fallback if not valid JSON
+      }
+    } else {
+      // For XML/SOAP requests, try to format slightly
+      contentEl.innerText = content;
+    }
+    
+    document.getElementById('payloadModal').style.display = 'flex';
+  }
+
+  function closePayloadModal() {
+    document.getElementById('payloadModal').style.display = 'none';
+  }
+
+  // Close modal when clicking outside
+  window.onclick = function(event) {
+    const modal = document.getElementById('payloadModal');
+    if (event.target == modal) {
+      modal.style.display = 'none';
+    }
+  }
+</script>
+{% endblock %}

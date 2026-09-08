@@ -263,10 +263,10 @@ class PANVerificationProvider(BaseKYCProvider):
 
     # ── Step 2: GetPANStatus ──────────────────────────────────────────────────
 
-    def call_get_pan_status(self, pan: str, creds: dict, enc_password: str) -> tuple[dict, str]:
+    def call_get_pan_status(self, pan: str, creds: dict, enc_password: str) -> tuple[dict, str, str]:
         """
         Calls CVL GetPANStatus SOAP method.
-        Returns (parsed_kyc_dict, error_message).
+        Returns (parsed_kyc_dict, error_message, raw_request_xml).
         """
         url = creds["base_url"]
         body = GET_PAN_STATUS_ENVELOPE.format(
@@ -286,21 +286,21 @@ class PANVerificationProvider(BaseKYCProvider):
                 timeout=25,
             )
         except requests.exceptions.Timeout:
-            return {}, "CVL KRA connection timed out during GetPANStatus (25s)"
+            return {}, "CVL KRA connection timed out during GetPANStatus (25s)", body
         except requests.exceptions.ConnectionError as e:
-            return {}, f"Cannot reach CVL KRA server: {e}"
+            return {}, f"Cannot reach CVL KRA server: {e}", body
 
         if resp.status_code != 200:
-            return {}, f"CVL GetPANStatus HTTP {resp.status_code}: {resp.text[:200]}"
+            return {}, f"CVL GetPANStatus HTTP {resp.status_code}: {resp.text[:200]}", body
 
         try:
             root = ET.fromstring(resp.text)
         except ET.ParseError as e:
-            return {}, f"CVL GetPANStatus: invalid XML — {e}: {resp.text[:200]}"
+            return {}, f"CVL GetPANStatus: invalid XML — {e}: {resp.text[:200]}", body
 
         err = _parse_error(root)
         if err:
-            return {}, f"CVL GetPANStatus error: {err}"
+            return {}, f"CVL GetPANStatus error: {err}", body
 
         # Extract APP_PAN_INQ fields
         inq = root.find(".//APP_PAN_INQ")
@@ -330,7 +330,7 @@ class PANVerificationProvider(BaseKYCProvider):
             "APP_TOTAL_REC":           s("APP_TOTAL_REC"),
         }
 
-        return result, ""
+        return result, "", body
 
     # ── Main entry: verify_pan_with_dob ──────────────────────────────────────
 
@@ -373,7 +373,7 @@ class PANVerificationProvider(BaseKYCProvider):
                 }
 
             # ── Step 2: GetPANStatus ─────────────────────────────────────────
-            kyc_data, err = self.call_get_pan_status(pan_clean, creds, enc_password)
+            kyc_data, err, raw_req_xml = self.call_get_pan_status(pan_clean, creds, enc_password)
             if err:
                 logger.warning(f"CVL GetPANStatus failed: {err}")
                 return {
@@ -381,6 +381,7 @@ class PANVerificationProvider(BaseKYCProvider):
                     "status": "failed",
                     "status_message": f"CVL KRA PAN Lookup Failed: {err}",
                     "raw_response": {"error": err},
+                    "raw_request": raw_req_xml
                 }
 
             # ── Parse response ───────────────────────────────────────────────
@@ -444,6 +445,7 @@ class PANVerificationProvider(BaseKYCProvider):
                 "remarks":              remarks,
                 "response_date":        resp_date,
                 "raw_response":         kyc_data,
+                "raw_request":          raw_req_xml,
             }
 
         # ── Sandbox fallback (no credentials configured) ─────────────────────

@@ -61,6 +61,11 @@
                 <i class="bi bi-pen-fill" style="color: #c084fc;"></i> E-Sign Dispatch
               </a>
             </li>
+            <li class="nav-item {% if request.endpoint == 'admin.pan_verifications' %}active{% endif %}">
+              <a href="{{ url_for('admin.pan_verifications') }}">
+                <i class="bi bi-braces" style="color: #10b981;"></i> PAN API Logs
+              </a>
+            </li>
           </ul>
         </div>
 
