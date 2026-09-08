@@ -13,6 +13,8 @@ from app.wallet.services import (
     calculate_recharge_amounts,
     send_wallet_recharge_email
 )
+from app.extensions import db
+from app.models.wallet import Wallet
 from app.models.transaction import WalletTransaction
 from app.models.setting import get_platform_fee_config
 
