@@ -95,12 +95,17 @@ def create_app(config_name=None):
             from app.models.wallet import Wallet
             from app.auth.services import generate_unique_client_id
 
-            # Auto-backfill any companies missing client_id
+            # Auto-backfill or standardize all companies to ZOI-<letters>-<15 digits> client_id format
             try:
-                missing_id_comps = Company.query.filter(Company.client_id.is_(None)).all()
-                for comp in missing_id_comps:
-                    comp.client_id = generate_unique_client_id(comp.name)
-                if missing_id_comps:
+                import re
+                client_id_regex = re.compile(r'^ZOI-[A-Z0-9]{2}-\d{15}$')
+                all_comps = Company.query.all()
+                updated_any = False
+                for comp in all_comps:
+                    if not comp.client_id or not client_id_regex.match(comp.client_id):
+                        comp.client_id = generate_unique_client_id(comp.name)
+                        updated_any = True
+                if updated_any:
                     db.session.commit()
             except Exception as be:
                 db.session.rollback()
