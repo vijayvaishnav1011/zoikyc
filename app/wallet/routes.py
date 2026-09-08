@@ -16,6 +16,7 @@ from app.wallet.services import (
 from app.extensions import db
 from app.models.wallet import Wallet
 from app.models.transaction import WalletTransaction
+from app.models.pending_recharge import PendingRecharge
 from app.models.setting import get_platform_fee_config
 
 def get_current_razorpay_key():
@@ -70,7 +71,7 @@ def recharge():
     key_id = get_current_razorpay_key()
     fee_percent, fee_name = get_platform_fee_config()
     company = current_user.company
-    min_recharge = 1.0
+    min_recharge = 1000.0
     per_kyc = float(company.per_kyc_price) if company and company.per_kyc_price else 20.0
 
     return render_template(
@@ -93,10 +94,10 @@ def create_order():
         amount = Decimal(str(amount_val))
         
         company = current_user.company
-        if amount < Decimal('1.00'):
+        if amount < Decimal('1000.00'):
             return jsonify({
                 'success': False,
-                'message': 'Minimum recharge amount is ₹1.00.'
+                'message': 'Minimum recharge amount is ₹1,000.00.'
             }), 400
 
         key_id = get_current_razorpay_key()
@@ -106,6 +107,22 @@ def create_order():
         order, err, base_amount, platform_fee, total_payable = create_razorpay_order(amount, company.id, company.name)
         
         if order:
+            # ── Record PendingRecharge so reconciler can recover missed callbacks ──
+            try:
+                pending = PendingRecharge(
+                    company_id=company.id,
+                    razorpay_order_id=order['id'],
+                    base_amount=base_amount,
+                    platform_fee=platform_fee,
+                    total_payable=total_payable,
+                    status='pending'
+                )
+                db.session.add(pending)
+                db.session.commit()
+            except Exception as pr_err:
+                db.session.rollback()
+                current_app.logger.warning(f"PendingRecharge record error (non-fatal): {pr_err}")
+
             return jsonify({
                 'success': True,
                 'order_id': order['id'],
@@ -164,6 +181,26 @@ def verify_payment():
         )
 
         if success:
+            # ── Mark the PendingRecharge as captured (stops reconciler from re-processing) ──
+            try:
+                pending = PendingRecharge.query.filter_by(
+                    razorpay_payment_id=razorpay_payment_id
+                ).first() or PendingRecharge.query.filter(
+                    PendingRecharge.company_id == current_user.company_id,
+                    PendingRecharge.status == 'pending'
+                ).order_by(PendingRecharge.created_at.desc()).first()
+
+                if pending:
+                    pending.status = 'captured'
+                    pending.razorpay_payment_id = razorpay_payment_id
+                    from datetime import datetime, timezone
+                    pending.updated_at = datetime.now(timezone.utc)
+                    db.session.add(pending)
+                    db.session.commit()
+            except Exception as mark_err:
+                db.session.rollback()
+                current_app.logger.warning(f"PendingRecharge mark-captured error (non-fatal): {mark_err}")
+
             # Asynchronously dispatch confirmation receipt email and PDF invoice to user's mailbox
             try:
                 comp = current_user.company

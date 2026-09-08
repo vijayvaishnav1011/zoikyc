@@ -82,7 +82,14 @@ def create_app(config_name=None):
                 db.session.rollback()
 
             from app.models.esign import ESignDocument
+            from app.models.pending_recharge import PendingRecharge  # ensure table exists
             db.create_all()
+            # Auto-create pending_recharges columns if needed (upgrade path)
+            try:
+                db.session.execute(text("ALTER TABLE pending_recharges ADD COLUMN IF NOT EXISTS failure_reason VARCHAR(255);"))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
             from app.models.company import Company
             from app.models.user import User
             from app.models.wallet import Wallet
@@ -150,5 +157,17 @@ def create_app(config_name=None):
 
         except Exception as e:
             app.logger.warning(f"Auto db initialization notice: {e}")
+
+    # Start background wallet reconciliation scheduler (daemon thread)
+    # Runs every 10 minutes to sync pending Razorpay orders with wallet credits
+    try:
+        # Only run in the main process (not in Flask reloader child process)
+        if os.environ.get('WERKZEUG_RUN_MAIN') != 'false':
+            from app.wallet.reconciliation import start_background_reconciler
+            start_background_reconciler(app)
+            app.logger.info("[WALLET] Background reconciler thread started (10-min cycle).")
+    except Exception as sched_err:
+
+        app.logger.warning(f"[WALLET] Could not start background reconciler: {sched_err}")
 
     return app

@@ -28,9 +28,8 @@
       <!-- Presets Grid -->
       <div class="ref-form-group" style="margin-bottom: 20px;">
         <label class="ref-form-label">Select Quick Amount Presets</label>
-        <div class="preset-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;">
-          <button type="button" class="btn-preset selected" data-amount="1" style="font-weight: 800; border-color: #7e22ce;">₹1 (Test)</button>
-          <button type="button" class="btn-preset" data-amount="1000">₹1,000</button>
+        <div class="preset-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+          <button type="button" class="btn-preset selected" data-amount="1000">₹1,000</button>
           <button type="button" class="btn-preset" data-amount="5000">₹5,000</button>
           <button type="button" class="btn-preset" data-amount="10000">₹10,000</button>
           <button type="button" class="btn-preset" data-amount="25000">₹25,000</button>
@@ -44,10 +43,10 @@
           <label class="ref-form-label" for="amount" style="margin-bottom: 0;">Recharge Amount (₹) *</label>
           <span
             style="font-size: 0.76rem; font-weight: 700; color: #059669; background: rgba(5, 150, 105, 0.1); padding: 3px 10px; border-radius: 12px;">
-            Min. Top-up: ₹1.00 (Test Enabled)
+            Min. Top-up: ₹1,000
           </span>
         </div>
-        {{ form.amount(class="ref-form-control", id="amount", value="1.00", placeholder="e.g. 1.00",
+        {{ form.amount(class="ref-form-control", id="amount", value="1000.00", placeholder="e.g. 1000.00",
         style="font-size: 1.2rem; font-weight: 800; color: #059669;") }}
         <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 5px;">
           KYC Verification Rate: <strong style="color: #7e22ce;">₹{{ "%.2f"|format(per_kyc_price) }} / KYC</strong>
@@ -139,7 +138,7 @@
     const summaryTotal = document.getElementById('summaryTotal');
 
     const platformFeePercent = {{ fee_percent }};
-    const minRechargeLimit = 1.0;
+    const minRechargeLimit = 1000.0;
 
   function updateBreakdown() {
     const rawVal = parseFloat(amountInput.value) || 0;
