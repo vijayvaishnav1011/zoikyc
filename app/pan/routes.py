@@ -1,6 +1,8 @@
 import os
+import re
 import json
 import time
+from datetime import datetime, timezone
 from decimal import Decimal
 from flask import render_template, redirect, url_for, flash, request, current_app, jsonify
 from flask_login import login_required, current_user
@@ -283,10 +285,11 @@ def get_check_json(check_id):
 @csrf.exempt
 def public_api_pan(client_id=None):
     """
-    Public REST API endpoint for PAN verification using CVL KRA GetPANStatus.
-    Supports both universal (/api/pan) and company-dedicated (/api/pan/<client_id>) endpoints.
-    Fetches CVL credentials from Company Profile and returns structured JSON.
-    Can be called directly from Postman, cURL, or client applications.
+    Dedicated REST API endpoint for PAN verification using CVL KRA GetPANStatus.
+    - Each company has their own dedicated endpoint (/api/pan/<client_id>) or X-API-Key.
+    - Fetches and strictly uses CVL credentials configured specifically for THAT company.
+    - Checks and debits company wallet per-KYC charge.
+    - Immutable audit logging in /admin/pan-verifications.
     """
     company = None
 
@@ -302,39 +305,95 @@ def public_api_pan(client_id=None):
         if not company:
             return jsonify({
                 "success": False,
+                "status": "not_found",
                 "error": f"Invalid client ID: '{target_client_id}'. No active organisation found with this ID."
             }), 404
 
-    # 2. Return API specification and documentation on GET request
+    # 2. If company wasn't resolved via URL path, resolve from Headers or Body
+    if not company:
+        api_key = (
+            request.headers.get('X-API-Key') or 
+            request.headers.get('x-api-key') or 
+            request.headers.get('api_key') or
+            ""
+        ).strip()
+
+        body_client_id = (
+            request.headers.get('X-Client-ID') or
+            request.headers.get('x-client-id') or
+            request.args.get('client_id') or
+            ""
+        ).strip()
+
+        auth_header = request.headers.get('Authorization', '').strip()
+        if auth_header.lower().startswith('bearer '):
+            api_key = auth_header[7:].strip()
+
+        if api_key:
+            clean_api_no_hyphen = api_key.replace('-', '').upper()
+            company = Company.query.filter(
+                (Company.api_key == api_key) | 
+                (Company.client_id == api_key) |
+                (db.func.upper(db.func.replace(Company.client_id, '-', '')) == clean_api_no_hyphen)
+            ).first()
+
+        if not company and body_client_id:
+            clean_body_no_hyphen = body_client_id.replace('-', '').upper()
+            company = Company.query.filter(
+                (db.func.upper(Company.client_id) == body_client_id.upper()) |
+                (db.func.upper(db.func.replace(Company.client_id, '-', '')) == clean_body_no_hyphen)
+            ).first()
+
+        if not company and current_user and current_user.is_authenticated:
+            company = current_user.company
+
+    # 3. Require valid company - NO random fallbacks!
+    if not company:
+        return jsonify({
+            "success": False,
+            "status": "unauthorized",
+            "error": "Authentication required. Please use your organisation's dedicated endpoint (e.g. /api/pan/<your_client_id>) or include 'X-API-Key' in the request headers."
+        }), 401
+
+    if company.status == 'suspended':
+        return jsonify({
+            "success": False,
+            "status": "forbidden",
+            "error": f"Organisation '{company.name}' is currently suspended. Please contact support."
+        }), 403
+
+    # 4. Return API specification and documentation on GET request
     if request.method == 'GET':
-        endpoint_url = f"/api/pan/{company.client_id}" if company else "/api/pan"
-        headers_info = {"Content-Type": "application/json"}
-        body_info = {
-            "pan": "ABCDE1234F (Required - 10-character PAN number)",
-            "dob": "DD/MM/YYYY (Required - Date of Birth)"
-        }
-        if not company:
-            headers_info["X-API-Key"] = "YOUR_COMPANY_API_KEY (or client_id)"
-            body_info["client_id"] = "YOUR_CLIENT_ID (Optional if not in URL)"
+        endpoint_url = f"/api/pan/{company.client_id}"
+        per_kyc = float(company.per_kyc_price if company.per_kyc_price is not None else 20.00)
+        wallet_bal = float(company.wallet.balance if company.wallet else 0.00)
 
         return jsonify({
-            "service": "ZoiKYC PAN Verification API",
+            "service": "ZoiKYC Dedicated PAN Verification API",
             "method": "GetPANStatus",
-            "company": company.name if company else "Universal",
-            "client_id": company.client_id if company else None,
-            "status": company.status if company else "active",
+            "organisation": company.name,
+            "client_id": company.client_id,
+            "status": company.status,
+            "per_kyc_fee": f"₹{per_kyc:.2f}",
+            "wallet_balance": f"₹{wallet_bal:.2f}",
             "endpoint": endpoint_url,
             "http_method": "POST",
-            "headers": headers_info,
-            "body_params": body_info,
+            "headers": {
+                "Content-Type": "application/json",
+                "X-API-Key": company.api_key or "YOUR_API_KEY"
+            },
+            "body_params": {
+                "pan": "ABCDE1234F (Required - 10-character PAN number)",
+                "dob": "DD/MM/YYYY (Required - Date of Birth)"
+            },
             "sample_request": {
                 "pan": "HRQPB8013L",
                 "dob": "26/11/2005"
             },
-            "sample_curl": f"curl -X POST https://zoikyc.com{endpoint_url} -H 'Content-Type: application/json' -d '{{\"pan\": \"HRQPB8013L\", \"dob\": \"26/11/2005\"}}'"
+            "sample_curl": f"curl -X POST https://zoikyc.com{endpoint_url} -H 'Content-Type: application/json' -H 'X-API-Key: {company.api_key or 'YOUR_KEY'}' -d '{{\"pan\": \"HRQPB8013L\", \"dob\": \"26/11/2005\"}}'"
         }), 200
 
-    # 3. Read payload from JSON or Form body
+    # 5. Read and validate request body
     payload_data = request.get_json(silent=True) or {}
     if not payload_data and request.form:
         payload_data = request.form.to_dict()
@@ -355,6 +414,13 @@ def public_api_pan(client_id=None):
             "error": "Missing required field: 'pan'. Please provide a 10-character PAN number."
         }), 400
 
+    if not re.fullmatch(r"[A-Z]{5}[0-9]{4}[A-Z]", pan_number):
+        return jsonify({
+            "success": False,
+            "status": "invalid",
+            "error": f"Invalid PAN format: '{pan_number}'. PAN must be 10 characters (5 letters, 4 digits, 1 letter)."
+        }), 400
+
     if not dob:
         return jsonify({
             "success": False,
@@ -362,53 +428,33 @@ def public_api_pan(client_id=None):
             "error": "Missing required field: 'dob'. Date of Birth is required (format DD/MM/YYYY)."
         }), 400
 
-    # 4. If company wasn't resolved via URL path, resolve from Headers or Body
-    if not company:
-        api_key = (
-            request.headers.get('X-API-Key') or 
-            request.headers.get('x-api-key') or 
-            request.headers.get('api_key') or
-            payload_data.get('api_key') or
-            ""
-        ).strip()
+    # 6. Verify that THIS specific company has CVL KRA credentials configured
+    has_creds = bool(
+        company.pos_code and 
+        company.api_user_id and 
+        company.api_password and 
+        company.aes_key
+    )
+    if not has_creds:
+        return jsonify({
+            "success": False,
+            "status": "gateway_not_configured",
+            "error": f"CVL KRA credentials are not configured for organisation '{company.name}'. The administrator must set up the POS Code, Username, Password, and AES key for this organisation in the Admin Portal."
+        }), 400
 
-        body_client_id = (
-            request.headers.get('X-Client-ID') or
-            request.headers.get('x-client-id') or
-            payload_data.get('client_id') or
-            ""
-        ).strip()
+    # 7. Check company wallet balance
+    per_kyc_fee = Decimal(str(company.per_kyc_price if company.per_kyc_price is not None else '20.00'))
+    wallet = company.wallet
+    current_balance = wallet.balance if wallet else Decimal('0.00')
 
-        auth_header = request.headers.get('Authorization', '').strip()
-        if auth_header.lower().startswith('bearer '):
-            api_key = auth_header[7:].strip()
+    if current_balance < per_kyc_fee:
+        return jsonify({
+            "success": False,
+            "status": "insufficient_funds",
+            "error": f"Insufficient wallet balance. Current balance is ₹{current_balance:,.2f}, but ₹{per_kyc_fee:,.2f} is required for this PAN verification. Please recharge your wallet."
+        }), 402
 
-        if api_key:
-            clean_api_no_hyphen = api_key.replace('-', '').upper()
-            company = Company.query.filter(
-                (Company.api_key == api_key) | 
-                (Company.client_id == api_key) |
-                (db.func.upper(db.func.replace(Company.client_id, '-', '')) == clean_api_no_hyphen)
-            ).first()
-        
-        if not company and body_client_id:
-            clean_body_no_hyphen = body_client_id.replace('-', '').upper()
-            company = Company.query.filter(
-                (db.func.upper(Company.client_id) == body_client_id.upper()) |
-                (db.func.upper(db.func.replace(Company.client_id, '-', '')) == clean_body_no_hyphen)
-            ).first()
-
-        if not company and current_user and current_user.is_authenticated:
-            company = current_user.company
-
-        # Fallback to the active company configured with CVL credentials
-        if not company:
-            company = Company.query.filter(
-                Company.pos_code.isnot(None),
-                Company.aes_key.isnot(None)
-            ).first()
-
-    # Call GetPANStatus gateway
+    # 8. Execute PAN verification using THIS company's credentials strictly
     client_ip = _extract_client_ip()
     user_agent_str = (request.headers.get('User-Agent') or '')[:250]
     start_time = time.time()
@@ -421,45 +467,70 @@ def public_api_pan(client_id=None):
     )
     duration_ms = int((time.time() - start_time) * 1000)
 
-    # If company is identified, record verification in database
-    record_id = None
-    if company:
+    # 9. Debit wallet balance if verification attempt executed
+    txn_ref = None
+    if per_kyc_fee > 0 and wallet and verification_data.get('status') != 'gateway_not_configured':
         try:
-            raw_resp_str = verification_data.get('raw_response')
-            if not isinstance(raw_resp_str, str):
-                raw_resp_str = json.dumps(raw_resp_str or {})
+            import uuid
+            balance_before = wallet.balance
+            wallet.balance -= per_kyc_fee
+            wallet.updated_at = datetime.now(timezone.utc)
 
-            record = PANVerification(
+            txn_ref = f"PAN_{uuid.uuid4().hex[:10].upper()}"
+            txn = WalletTransaction(
+                wallet_id=wallet.id,
                 company_id=company.id,
-                user_id=current_user.id if current_user and current_user.is_authenticated else None,
-                pan_number=pan_number,
-                dob=dob,
-                status=verification_data.get('status', 'failed'),
-                status_message=verification_data.get('status_message'),
-                full_name=verification_data.get('full_name'),
-                first_name=verification_data.get('first_name'),
-                middle_name=verification_data.get('middle_name'),
-                last_name=verification_data.get('last_name'),
-                category=verification_data.get('category'),
-                pan_status=verification_data.get('pan_status'),
-                dob_match=verification_data.get('dob_match'),
-                aadhaar_seeding_status=verification_data.get('aadhaar_seeding_status'),
-                cost_charged=Decimal('0.00'),
-                reference_id=verification_data.get('reference_id'),
-                raw_response=raw_resp_str,
-                raw_request=verification_data.get('raw_request'),
-                server_ip=get_outbound_server_ip(),
-                ip_address=client_ip,
-                method=verification_data.get('method', 'CVL KRA'),
-                endpoint=request.path,
-                user_agent=user_agent_str,
-                duration_ms=duration_ms
+                type='debit',
+                amount=per_kyc_fee,
+                balance_before=balance_before,
+                balance_after=wallet.balance,
+                reference_id=txn_ref,
+                description=f"PAN Verification API: {pan_number}",
+                status='success'
             )
-            db.session.add(record)
-            db.session.commit()
-            record_id = record.id
-        except Exception:
-            db.session.rollback()
+            db.session.add(txn)
+        except Exception as deb_err:
+            current_app.logger.error(f"Error debiting wallet for company {company.id}: {deb_err}")
+
+    # 10. Record immutable PAN verification log in database
+    record_id = None
+    try:
+        raw_resp_str = verification_data.get('raw_response')
+        if not isinstance(raw_resp_str, str):
+            raw_resp_str = json.dumps(raw_resp_str or {})
+
+        record = PANVerification(
+            company_id=company.id,
+            user_id=current_user.id if current_user and current_user.is_authenticated else None,
+            pan_number=pan_number,
+            dob=dob,
+            status=verification_data.get('status', 'failed'),
+            status_message=verification_data.get('status_message'),
+            full_name=verification_data.get('full_name'),
+            first_name=verification_data.get('first_name'),
+            middle_name=verification_data.get('middle_name'),
+            last_name=verification_data.get('last_name'),
+            category=verification_data.get('category'),
+            pan_status=verification_data.get('pan_status'),
+            dob_match=verification_data.get('dob_match'),
+            aadhaar_seeding_status=verification_data.get('aadhaar_seeding_status'),
+            cost_charged=per_kyc_fee,
+            reference_id=verification_data.get('reference_id') or txn_ref or f"ZOI-{int(time.time())}",
+            raw_response=raw_resp_str,
+            raw_request=verification_data.get('raw_request'),
+            server_ip=get_outbound_server_ip(),
+            ip_address=client_ip,
+            method=verification_data.get('method', 'CVL KRA'),
+            endpoint=request.path,
+            user_agent=user_agent_str,
+            duration_ms=duration_ms
+        )
+        db.session.add(record)
+        db.session.commit()
+        record_id = record.id
+    except Exception as db_err:
+        db.session.rollback()
+        current_app.logger.error(f"Error logging PAN verification record: {db_err}")
 
     status_code = 200 if verification_data.get('success') else 400 if verification_data.get('status') == 'invalid' else 200
 
@@ -476,14 +547,14 @@ def public_api_pan(client_id=None):
         "dob_match": verification_data.get('dob_match'),
         "aadhaar_seeding": verification_data.get('aadhaar_seeding_status'),
         "status_message": verification_data.get('status_message'),
-        "reference_id": verification_data.get('reference_id'),
+        "reference_id": record.reference_id if record_id and 'record' in locals() else txn_ref,
         "record_id": record_id,
         "method": verification_data.get('method', 'GetPANStatus'),
-        "company": company.name if company else None,
-        "client_id": company.client_id if company else None,
-        "ip_address": client_ip,
-        "duration_ms": duration_ms,
-        "raw_response": verification_data.get('raw_response')
+        "organisation": company.name,
+        "client_id": company.client_id,
+        "billed_amount": f"₹{per_kyc_fee:.2f}",
+        "wallet_balance": f"₹{wallet.balance:.2f}" if wallet else "₹0.00",
+        "duration_ms": duration_ms
     }), status_code
 
 

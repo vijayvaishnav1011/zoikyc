@@ -37,5 +37,10 @@ class Company(db.Model):
     transactions = db.relationship('WalletTransaction', backref='company', lazy='dynamic', cascade='all, delete-orphan')
     documents = db.relationship('CompanyDocument', backref='company', lazy='dynamic', cascade='all, delete-orphan')
 
+    def generate_api_key(self):
+        import secrets
+        self.api_key = f"zoi_live_{secrets.token_hex(16)}"
+        return self.api_key
+
     def __repr__(self):
         return f"<Company {self.name} (ID: {self.id})>"

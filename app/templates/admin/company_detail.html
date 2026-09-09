@@ -232,6 +232,144 @@
   </form>
 </div>
 
+<!-- Dedicated Client API & CVL KRA Integration Card -->
+<div class="card" style="margin-bottom: 24px; border: 1.5px solid #e2e8f0;">
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+    <div>
+      <span class="metric-badge" style="background: rgba(37, 99, 235, 0.12); color: #2563eb; font-weight: 800; font-size: 0.72rem; margin-bottom: 6px; display: inline-block;">
+        <i class="bi bi-cpu-fill"></i> API Integration Engine
+      </span>
+      <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+        <i class="bi bi-key-fill" style="color: #2563eb;"></i> Dedicated PAN API & Gateway Credentials
+      </h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 2px;">
+        Manage this organisation's dedicated API endpoint, secret key, and company-specific CVL KRA gateway credentials.
+      </p>
+    </div>
+
+    <!-- Live Status Indicator -->
+    <div style="display: flex; gap: 8px; align-items: center;">
+      {% if company.pos_code and company.api_user_id and company.api_password and company.aes_key %}
+        <span class="metric-badge" style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; font-size: 0.78rem; font-weight: 700; padding: 6px 12px;">
+          <i class="bi bi-check-circle-fill"></i> Gateway Configured
+        </span>
+      {% else %}
+        <span class="metric-badge" style="background: #fffbeb; color: #d97706; border: 1px solid #fde68a; font-size: 0.78rem; font-weight: 700; padding: 6px 12px;">
+          <i class="bi bi-exclamation-triangle-fill"></i> Missing Gateway Credentials
+        </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- API URL & Secret Key Ribbon -->
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+      
+      <!-- Dedicated Endpoint -->
+      <div>
+        <label style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px;">
+          <i class="bi bi-globe" style="color: #2563eb;"></i> Dedicated PAN API Endpoint
+        </label>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <input type="text" readonly value="https://zoikyc.com/api/pan/{{ company.client_id }}" id="clientApiEndpointInput" class="ref-form-control" style="font-family: monospace; font-size: 0.8rem; background: #ffffff; font-weight: 600; color: #1e293b;" />
+          <button type="button" onclick="copyFieldValue('clientApiEndpointInput', this)" class="btn-table-manage" style="white-space: nowrap; padding: 8px 14px;">
+            <i class="bi bi-clipboard"></i> Copy
+          </button>
+        </div>
+      </div>
+
+      <!-- Secret API Key -->
+      <div>
+        <label style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px;">
+          <i class="bi bi-shield-lock" style="color: #7e22ce;"></i> Company Secret API Key (Header: <code>X-API-Key</code>)
+        </label>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <input type="text" readonly value="{{ company.api_key or 'No API key generated yet' }}" id="clientApiKeyInput" class="ref-form-control" style="font-family: monospace; font-size: 0.8rem; background: #ffffff; font-weight: 600; color: #7e22ce;" />
+          {% if company.api_key %}
+          <button type="button" onclick="copyFieldValue('clientApiKeyInput', this)" class="btn-table-manage" style="white-space: nowrap; padding: 8px 14px;">
+            <i class="bi bi-clipboard"></i> Copy
+          </button>
+          {% endif %}
+          <form method="POST" action="{{ url_for('admin.regenerate_company_api_key', company_id=company.id) }}" style="margin: 0;" onsubmit="return confirm('Generate a new API key for this organisation? Any client using the old key will need to update.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="btn-purple-pill" style="padding: 8px 14px; font-size: 0.78rem; white-space: nowrap;">
+              <i class="bi bi-arrow-repeat"></i> {% if company.api_key %}Regenerate{% else %}Generate Key{% endif %}
+            </button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Gateway Credentials Form -->
+  <form method="POST" action="{{ url_for('admin.update_company_gateway_credentials', company_id=company.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+    <div style="font-size: 0.82rem; font-weight: 700; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+      <i class="bi bi-shield-fill-check" style="color: #059669;"></i> CVL KRA Gateway Credentials for {{ company.name }}
+    </div>
+
+    <div class="ref-form-grid" style="margin-bottom: 14px;">
+      <!-- POS Code -->
+      <div class="ref-form-group">
+        <label class="ref-form-label">
+          <span>POS Code *</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);">(Assigned by CVL KRA)</span>
+        </label>
+        <input type="text" name="pos_code" value="{{ company.pos_code or '' }}" placeholder="e.g. 2500016409" class="ref-form-control" style="font-family: monospace; font-weight: 600;" />
+      </div>
+
+      <!-- API User ID -->
+      <div class="ref-form-group">
+        <label class="ref-form-label">
+          <span>API User ID / Username *</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);">(CVL KRA Login Username)</span>
+        </label>
+        <input type="text" name="api_user_id" value="{{ company.api_user_id or '' }}" placeholder="e.g. USER_PROD_01" class="ref-form-control" style="font-family: monospace; font-weight: 600;" />
+      </div>
+
+      <!-- API Password -->
+      <div class="ref-form-group">
+        <label class="ref-form-label">
+          <span>API Password *</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);">(CVL KRA Account Password)</span>
+        </label>
+        <input type="text" name="api_password" value="{{ company.api_password or '' }}" placeholder="Enter CVL Password" class="ref-form-control" style="font-family: monospace;" />
+      </div>
+    </div>
+
+    <div class="ref-form-grid" style="margin-bottom: 16px;">
+      <!-- AES Key -->
+      <div class="ref-form-group">
+        <label class="ref-form-label">
+          <span>AES-192 Key (PassKey) *</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);">(24-byte Base64-URL string for payload encryption)</span>
+        </label>
+        <input type="text" name="aes_key" value="{{ company.aes_key or '' }}" placeholder="Enter AES-192 Base64-URL key from CVL" class="ref-form-control" style="font-family: monospace; font-size: 0.8rem;" />
+      </div>
+
+      <!-- CVL API Key -->
+      <div class="ref-form-group">
+        <label class="ref-form-label">
+          <span>CVL REST API Key</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);">(api_key header for REST endpoints)</span>
+        </label>
+        <input type="text" name="api_key" value="{{ company.api_key or '' }}" placeholder="Enter CVL API Key" class="ref-form-control" style="font-family: monospace; font-size: 0.8rem;" />
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div style="font-size: 0.78rem; color: #64748b;">
+        <i class="bi bi-info-circle"></i> Outbound requests to CVL KRA will use these credentials automatically when this company's API is invoked.
+      </div>
+      <button type="submit" class="btn-purple-pill" style="background: #2563eb;">
+        <i class="bi bi-check-circle"></i> Save Gateway Credentials
+      </button>
+    </div>
+  </form>
+</div>
+
 <!-- Two Columns: Manual Wallet Adjustment & Team Users -->
 <div class="admin-split-grid">
   
@@ -393,5 +531,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+function copyFieldValue(elementId, btn) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
+    btn.style.background = '#059669';
+    btn.style.color = '#ffffff';
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      btn.style.background = '';
+      btn.style.color = '';
+    }, 2000);
+  }).catch(e => {
+    prompt('Copy to clipboard:', el.value);
+  });
+}
 </script>
 {% endblock %}

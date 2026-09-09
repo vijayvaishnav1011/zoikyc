@@ -443,6 +443,30 @@ def send_low_balance_alert(company_id):
 
     return redirect(request.referrer or url_for('admin.company_detail', company_id=company.id))
 
+@admin_bp.route('/companies/<int:company_id>/gateway-credentials', methods=['POST'])
+@admin_required
+def update_company_gateway_credentials(company_id):
+    company = Company.query.get_or_404(company_id)
+    company.pos_code = request.form.get('pos_code', '').strip() or None
+    company.api_user_id = request.form.get('api_user_id', '').strip() or None
+    company.api_password = request.form.get('api_password', '').strip() or None
+    company.aes_key = request.form.get('aes_key', '').strip() or None
+    company.api_key = request.form.get('api_key', '').strip() or None
+    company.updated_at = datetime.now(timezone.utc)
+    db.session.commit()
+    flash(f"Gateway & CVL credentials for '{company.name}' successfully saved!", "success")
+    return redirect(url_for('admin.company_detail', company_id=company.id))
+
+@admin_bp.route('/companies/<int:company_id>/regenerate-api-key', methods=['POST'])
+@admin_required
+def regenerate_company_api_key(company_id):
+    company = Company.query.get_or_404(company_id)
+    new_key = company.generate_api_key()
+    company.updated_at = datetime.now(timezone.utc)
+    db.session.commit()
+    flash(f"New API key generated for '{company.name}': {new_key}", "success")
+    return redirect(url_for('admin.company_detail', company_id=company.id))
+
 @admin_bp.route('/settings', methods=['GET', 'POST'])
 @admin_required
 def settings():
