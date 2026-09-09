@@ -384,10 +384,10 @@ def public_api_pan(client_id=None):
                 "dob": "DD/MM/YYYY (Required - Date of Birth)"
             },
             "sample_request": {
-                "pan": "HRQPB8013L",
-                "dob": "26/11/2005"
+                "pan": "ABCDE1234F",
+                "dob": "01/01/1990"
             },
-            "sample_curl": f"curl -X POST https://zoikyc.com{endpoint_url} -H 'Content-Type: application/json' -H 'X-API-Key: {company.api_key or 'YOUR_KEY'}' -d '{{\"pan\": \"HRQPB8013L\", \"dob\": \"26/11/2005\"}}'"
+            "sample_curl": f"curl -X POST https://zoikyc.com{endpoint_url} -H 'Content-Type: application/json' -H 'X-API-Key: {company.api_key or 'YOUR_KEY'}' -d '{{\"pan\": \"ABCDE1234F\", \"dob\": \"01/01/1990\"}}'"
         }), 200
 
     # 5. Read and validate request body

@@ -38,7 +38,7 @@ def cvl_decrypt(aes_key: str, enc_string: str) -> str:
     except Exception as e:
         return f"Decryption Error: {e}"
 
-def test_cvl_flow(poscode, username, password, api_key, aes_key, pan="HRQPB8013L"):
+def test_cvl_flow(poscode, username, password, api_key, aes_key, pan="ABCDE1234F"):
     print("=" * 60)
     print(" 🚀 CVL KRA REST API Verification & Payload Generator")
     print("=" * 60)
@@ -140,7 +140,7 @@ def test_cvl_flow(poscode, username, password, api_key, aes_key, pan="HRQPB8013L
 
 if __name__ == "__main__":
     if len(sys.argv) >= 6:
-        test_cvl_flow(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6] if len(sys.argv) > 6 else "HRQPB8013L")
+        test_cvl_flow(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6] if len(sys.argv) > 6 else "ABCDE1234F")
     else:
         print("Usage: python3 scripts/test_cvl_cli.py <poscode> <username> <password> <api_key> <aes_key> [pan]")
-        print("Example: python3 scripts/test_cvl_cli.py 2500016409 user123 pass456 key_abc aes_key_xyz HRQPB8013L")
+        print("Example: python3 scripts/test_cvl_cli.py 2500016409 user123 pass456 key_abc aes_key_xyz ABCDE1234F")
