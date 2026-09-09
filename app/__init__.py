@@ -100,6 +100,11 @@ def create_app(config_name=None):
             _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS aadhaar_seeding_status VARCHAR(100);")
             _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS pan_status VARCHAR(50);")
             _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS dob_match BOOLEAN;")
+            _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS ip_address VARCHAR(100);")
+            _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS method VARCHAR(100);")
+            _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS endpoint VARCHAR(255);")
+            _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS user_agent VARCHAR(255);")
+            _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS duration_ms INTEGER;")
             from app.models.company import Company
             from app.models.user import User
             from app.models.wallet import Wallet

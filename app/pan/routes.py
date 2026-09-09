@@ -1,4 +1,5 @@
 import json
+import time
 from decimal import Decimal
 from flask import render_template, redirect, url_for, flash, request, current_app, jsonify
 from flask_login import login_required, current_user
@@ -10,6 +11,16 @@ from app.models.wallet import Wallet
 from app.models.transaction import WalletTransaction
 from app.models.company import Company
 from app.integrations.pan import PANVerificationProvider
+
+def _extract_client_ip():
+    """Extracts client IP prioritizing reverse proxies / Cloudflare headers."""
+    if request.headers.get('CF-Connecting-IP'):
+        return request.headers.get('CF-Connecting-IP').strip()
+    if request.headers.get('X-Forwarded-For'):
+        return request.headers.get('X-Forwarded-For').split(',')[0].strip()
+    if request.headers.get('X-Real-IP'):
+        return request.headers.get('X-Real-IP').strip()
+    return request.remote_addr or '127.0.0.1'
 
 @pan_bp.route('/services/pan', methods=['GET', 'POST'])
 @login_required
@@ -54,7 +65,7 @@ def index():
         recent_checks, total_checks, verified_count, failed_count = _fetch_stats_and_checks()
     except Exception as q_err:
         db.session.rollback()
-        # Self-heal schema on the fly if column was missing
+        # Self-heal schema on the fly if columns are missing
         try:
             from sqlalchemy import text
             db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS raw_request TEXT;"))
@@ -64,6 +75,11 @@ def index():
             db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS aadhaar_seeding_status VARCHAR(100);"))
             db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS pan_status VARCHAR(50);"))
             db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS dob_match BOOLEAN;"))
+            db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS ip_address VARCHAR(100);"))
+            db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS method VARCHAR(100);"))
+            db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS endpoint VARCHAR(255);"))
+            db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS user_agent VARCHAR(255);"))
+            db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS duration_ms INTEGER;"))
             db.session.commit()
             recent_checks, total_checks, verified_count, failed_count = _fetch_stats_and_checks()
         except Exception:
@@ -117,6 +133,9 @@ def index():
     if should_process and pan_number:
         # Free service - no wallet deduction
         charge_amount = Decimal('0.00')
+        client_ip = _extract_client_ip()
+        user_agent_str = (request.headers.get('User-Agent') or '')[:250]
+        start_time = time.time()
 
         # Call PAN Verification Gateway (GetPANStatus)
         try:
@@ -133,12 +152,18 @@ def index():
                 "success": False,
                 "status": "failed",
                 "status_message": f"Verification gateway error: {prov_err}",
+                "method": "CVL Gateway Error",
                 "raw_response": {"error": str(prov_err)}
             }
+        duration_ms = int((time.time() - start_time) * 1000)
 
         # Save to database
         record = None
         try:
+            raw_resp_str = verification_data.get('raw_response')
+            if not isinstance(raw_resp_str, str):
+                raw_resp_str = json.dumps(raw_resp_str or {})
+
             record = PANVerification(
                 company_id=company.id,
                 user_id=current_user.id,
@@ -156,8 +181,13 @@ def index():
                 aadhaar_seeding_status=verification_data.get('aadhaar_seeding_status'),
                 cost_charged=charge_amount,
                 reference_id=verification_data.get('reference_id'),
-                raw_response=json.dumps(verification_data.get('raw_response', {})),
-                raw_request=verification_data.get('raw_request')
+                raw_response=raw_resp_str,
+                raw_request=verification_data.get('raw_request'),
+                ip_address=client_ip,
+                method=verification_data.get('method', 'CVL KRA'),
+                endpoint=request.path,
+                user_agent=user_agent_str,
+                duration_ms=duration_ms
             )
             db.session.add(record)
             db.session.commit()
@@ -178,8 +208,10 @@ def index():
                 "pan_status": verification_data.get('pan_status'),
                 "aadhaar_seeding_status": verification_data.get('aadhaar_seeding_status'),
                 "reference_id": verification_data.get('reference_id'),
-                "method": "GetPANStatus",
-                "raw_response": verification_data.get('raw_response')
+                "method": verification_data.get('method', 'GetPANStatus'),
+                "raw_response": verification_data.get('raw_response'),
+                "ip_address": client_ip,
+                "duration_ms": duration_ms
             })
 
         result = {
@@ -223,24 +255,7 @@ def get_check_json(check_id):
     """Returns the full JSON payload for any PAN verification record."""
     company = current_user.company
     record = PANVerification.query.filter_by(id=check_id, company_id=company.id).first_or_404()
-    return jsonify({
-        "id": record.id,
-        "pan_number": record.pan_number,
-        "dob": record.dob,
-        "status": record.status,
-        "status_message": record.status_message,
-        "full_name": record.full_name,
-        "first_name": record.first_name,
-        "middle_name": record.middle_name,
-        "last_name": record.last_name,
-        "category": record.category,
-        "pan_status": record.pan_status,
-        "aadhaar_seeding_status": record.aadhaar_seeding_status,
-        "reference_id": record.reference_id,
-        "method": "GetPANStatus",
-        "created_at": record.created_at.isoformat(),
-        "raw_response": record.response_dict
-    })
+    return jsonify(record.to_dict())
 
 
 @pan_bp.route('/api/pan', methods=['GET', 'POST'])
@@ -374,17 +389,26 @@ def public_api_pan(client_id=None):
             ).first()
 
     # Call GetPANStatus gateway
+    client_ip = _extract_client_ip()
+    user_agent_str = (request.headers.get('User-Agent') or '')[:250]
+    start_time = time.time()
+
     provider = PANVerificationProvider()
     verification_data = provider.verify_pan_with_dob(
         pan_number=pan_number,
         dob=dob,
         company=company
     )
+    duration_ms = int((time.time() - start_time) * 1000)
 
     # If company is identified, record verification in database
     record_id = None
     if company:
         try:
+            raw_resp_str = verification_data.get('raw_response')
+            if not isinstance(raw_resp_str, str):
+                raw_resp_str = json.dumps(raw_resp_str or {})
+
             record = PANVerification(
                 company_id=company.id,
                 user_id=current_user.id if current_user and current_user.is_authenticated else None,
@@ -402,8 +426,13 @@ def public_api_pan(client_id=None):
                 aadhaar_seeding_status=verification_data.get('aadhaar_seeding_status'),
                 cost_charged=Decimal('0.00'),
                 reference_id=verification_data.get('reference_id'),
-                raw_response=json.dumps(verification_data.get('raw_response', {})),
-                raw_request=verification_data.get('raw_request')
+                raw_response=raw_resp_str,
+                raw_request=verification_data.get('raw_request'),
+                ip_address=client_ip,
+                method=verification_data.get('method', 'CVL KRA'),
+                endpoint=request.path,
+                user_agent=user_agent_str,
+                duration_ms=duration_ms
             )
             db.session.add(record)
             db.session.commit()
@@ -428,9 +457,11 @@ def public_api_pan(client_id=None):
         "status_message": verification_data.get('status_message'),
         "reference_id": verification_data.get('reference_id'),
         "record_id": record_id,
-        "method": "GetPANStatus",
+        "method": verification_data.get('method', 'GetPANStatus'),
         "company": company.name if company else None,
         "client_id": company.client_id if company else None,
+        "ip_address": client_ip,
+        "duration_ms": duration_ms,
         "raw_response": verification_data.get('raw_response')
     }), status_code
 

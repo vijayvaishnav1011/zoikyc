@@ -288,10 +288,23 @@ class PANVerificationProvider(BaseKYCProvider):
         except Exception as e:
             return "", f"Failed to encrypt credentials: {e}", ""
 
+        req_log = json.dumps({
+            "api": "CVL KRA REST V2.6 (GetToken)",
+            "url": url,
+            "method": "POST",
+            "headers": {"Content-Type": "application/json", "api_key": creds.get("api_key")},
+            "payload": {
+                "username": creds.get("username"),
+                "poscode": creds.get("poscode"),
+                "password": "***" if creds.get("password") else ""
+            },
+            "encrypted_envelope": encrypted_payload
+        }, indent=2)
+
         try:
             resp = requests.post(url, data=json.dumps(encrypted_payload), headers=headers, timeout=20)
             if resp.status_code != 200:
-                return "", f"CVL GetToken HTTP {resp.status_code}: {resp.text[:200]}", encrypted_payload
+                return "", f"CVL GetToken HTTP {resp.status_code}: {resp.text[:200]}", req_log
 
             raw_resp = resp.json() if resp.text.startswith('"') else resp.text
             if isinstance(raw_resp, str) and ":" in raw_resp:
@@ -311,7 +324,7 @@ class PANVerificationProvider(BaseKYCProvider):
             token = data.get("token") or data.get("Token")
             if token:
                 logger.info("CVL REST GetToken succeeded — JWT token obtained")
-                return token, "", encrypted_payload
+                return token, "", req_log
 
             err_code = (data.get("error_code") or data.get("ErrorCode") or "").strip()
             err_msg = (data.get("error_message") or data.get("ErrorMessage") or "").strip()
@@ -321,7 +334,7 @@ class PANVerificationProvider(BaseKYCProvider):
                 err = f"{err_msg} ({err_code})"
             else:
                 err = err_msg or err_code or "Authentication failed"
-            return "", err, encrypted_payload
+            return "", err, req_log
         except Exception as e:
             return "", str(e), encrypted_payload
 
@@ -346,10 +359,26 @@ class PANVerificationProvider(BaseKYCProvider):
         except Exception as e:
             return {}, f"Encryption error: {e}", packet
 
+        req_log = json.dumps({
+            "api": "CVL KRA REST V2.6 (GetPanStatus)",
+            "url": url,
+            "method": "POST",
+            "headers": {
+                "Content-Type": "application/json",
+                "user-agent": "CustomUsrAgnt",
+                "Token": (token[:30] + "...") if token and len(token) > 30 else (token or "")
+            },
+            "payload": {
+                "pan": pan,
+                "poscode": creds.get("poscode")
+            },
+            "encrypted_envelope": enc_packet
+        }, indent=2)
+
         try:
             resp = requests.post(url, data=json.dumps(enc_packet), headers=headers, timeout=25)
             if resp.status_code != 200:
-                return {}, f"CVL GetPanStatus HTTP {resp.status_code}: {resp.text[:200]}", enc_packet
+                return {}, f"CVL GetPanStatus HTTP {resp.status_code}: {resp.text[:200]}", req_log
 
             raw_resp = resp.json() if resp.text.startswith('"') else resp.text
             if isinstance(raw_resp, str) and ":" in raw_resp:
@@ -385,9 +414,9 @@ class PANVerificationProvider(BaseKYCProvider):
             if isinstance(inq, list) and len(inq) > 0:
                 inq = inq[0]
 
-            return {**inq, **summ}, "", enc_packet
+            return {**inq, **summ}, "", req_log
         except Exception as e:
-            return {}, str(e), enc_packet
+            return {}, str(e), req_log
 
     # ── SOAP API Methods (https://krapancheck.cvlindia.com/) ──────────────────
 
@@ -610,6 +639,7 @@ class PANVerificationProvider(BaseKYCProvider):
                         "success": False,
                         "status": "failed",
                         "status_message": f"CVL KRA REST Lookup Failed: {pan_err}",
+                        "method": "CVL REST V2.6",
                         "raw_response": {"error": pan_err},
                         "raw_request": raw_pan_req
                     }
@@ -619,6 +649,7 @@ class PANVerificationProvider(BaseKYCProvider):
                     "success": False,
                     "status": "failed",
                     "status_message": f"CVL KRA Authentication Failed: {token_err}",
+                    "method": "CVL REST V2.6",
                     "raw_response": {"error": token_err},
                     "raw_request": raw_token_req
                 }
@@ -638,7 +669,9 @@ class PANVerificationProvider(BaseKYCProvider):
                     "success": False,
                     "status": "failed",
                     "status_message": f"CVL KRA Authentication Failed: {err}",
+                    "method": "CVL SOAP V6.0",
                     "raw_response": {"error": err},
+                    "raw_request": f"SOAP GetPassword envelope for {creds.get('username')}"
                 }
 
             kyc_data, err, raw_req_xml = self.call_get_pan_status(pan_clean, creds, enc_password)
@@ -647,6 +680,7 @@ class PANVerificationProvider(BaseKYCProvider):
                     "success": False,
                     "status": "failed",
                     "status_message": f"CVL KRA PAN Lookup Failed: {err}",
+                    "method": "CVL SOAP V6.0",
                     "raw_response": {"error": err},
                     "raw_request": raw_req_xml
                 }

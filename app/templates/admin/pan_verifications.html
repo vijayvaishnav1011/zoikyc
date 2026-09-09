@@ -1,23 +1,61 @@
 {% extends 'admin/base.html' %}
 
-{% block title %}PAN Verifications — Admin{% endblock %}
-{% block page_title %}PAN Verifications (API Logs){% endblock %}
+{% block title %}PAN API Traffic & Audit Logs — Admin{% endblock %}
+{% block page_title %}PAN Verification Traffic Logs{% endblock %}
 
 {% block content %}
+<!-- Overview Metric Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+  <div class="card" style="padding: 18px 20px; border-left: 4px solid var(--tiancai-blue); margin-bottom: 0;">
+    <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Total Requests</div>
+    <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-dark); margin-top: 4px;">{{ total_logs }}</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Across all organizations</div>
+  </div>
+
+  <div class="card" style="padding: 18px 20px; border-left: 4px solid #10b981; margin-bottom: 0;">
+    <div style="font-size: 0.8rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em;">Verified Successfully</div>
+    <div style="font-size: 1.8rem; font-weight: 800; color: #10b981; margin-top: 4px;">{{ verified_logs }}</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Valid KRA Records Returned</div>
+  </div>
+
+  <div class="card" style="padding: 18px 20px; border-left: 4px solid #e11d48; margin-bottom: 0;">
+    <div style="font-size: 0.8rem; font-weight: 700; color: #e11d48; text-transform: uppercase; letter-spacing: 0.05em;">Failed / Blocked</div>
+    <div style="font-size: 1.8rem; font-weight: 800; color: #e11d48; margin-top: 4px;">{{ failed_logs }}</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Authentication / IP Restrictions</div>
+  </div>
+</div>
+
+<!-- Main Table Card -->
 <div class="card" style="margin-bottom: 24px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
     <div>
-      <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--text-dark); margin: 0;">PAN API Verification Logs</h2>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Monitor all PAN verification requests and raw KRA API responses.</p>
+      <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--text-dark); margin: 0;">
+        <i class="bi bi-hdd-network" style="color: var(--tiancai-blue); margin-right: 8px;"></i>Full Outbound & Inbound Audit Trail
+      </h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+        Inspect exact requests sent to CVL KRA, live responses received, user identity, and originating IP addresses.
+      </p>
     </div>
-    
-    <form method="GET" style="display: flex; gap: 10px;">
-      <input type="text" name="q" value="{{ search_query }}" class="ref-form-control" placeholder="Search PAN, Ref ID or Company..." style="width: 300px; height: 38px;">
-      <button type="submit" class="btn-tiancai-pill" style="height: 38px; padding: 0 16px;">
-        <i class="bi bi-search"></i>
-      </button>
-      {% if search_query %}
-      <a href="{{ url_for('admin.pan_verifications') }}" class="btn-tiancai-pill" style="height: 38px; padding: 0 16px; background: #e2e8f0; color: #475569; border: none;">Clear</a>
+
+    <!-- Filter & Search Controls -->
+    <form method="GET" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+      <select name="status" onchange="this.form.submit()" class="ref-form-control" style="width: 140px; height: 38px; font-size: 0.85rem; padding: 0 10px;">
+        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Statuses</option>
+        <option value="verified" {% if status_filter == 'verified' %}selected{% endif %}>Verified Only</option>
+        <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>Failed Only</option>
+      </select>
+
+      <div style="position: relative;">
+        <input type="text" name="q" value="{{ search_query }}" class="ref-form-control" placeholder="Search PAN, IP, User, Co..." style="width: 260px; height: 38px; font-size: 0.85rem; padding-right: 32px;">
+        <button type="submit" style="position: absolute; right: 8px; top: 9px; border: none; background: transparent; color: var(--text-muted); cursor: pointer;">
+          <i class="bi bi-search"></i>
+        </button>
+      </div>
+
+      {% if search_query or status_filter != 'all' %}
+      <a href="{{ url_for('admin.pan_verifications') }}" class="btn-tiancai-pill" style="height: 38px; padding: 0 14px; background: #e2e8f0; color: #475569; border: none; font-size: 0.85rem; display: inline-flex; align-items: center;">
+        <i class="bi bi-x-circle" style="margin-right: 4px;"></i> Clear
+      </a>
       {% endif %}
     </form>
   </div>
@@ -26,58 +64,111 @@
     <table class="ref-table">
       <thead>
         <tr>
-          <th>Date</th>
-          <th>Company</th>
-          <th>PAN Number</th>
-          <th>Status</th>
-          <th>Full Name</th>
-          <th>Request Payload</th>
-          <th>Response Payload</th>
+          <th style="min-width: 140px;">Timestamp</th>
+          <th style="min-width: 170px;">User & Company</th>
+          <th style="min-width: 130px;">Client IP</th>
+          <th style="min-width: 140px;">Target PAN</th>
+          <th style="min-width: 110px;">Gateway</th>
+          <th style="min-width: 180px;">Status & Message</th>
+          <th style="min-width: 80px;">Latency</th>
+          <th style="text-align: right; min-width: 110px;">Action</th>
         </tr>
       </thead>
       <tbody>
         {% for log in pagination.items %}
         <tr>
+          <!-- Timestamp -->
           <td>
-            <div style="font-size: 0.85rem; font-weight: 700;">{{ log.created_at.strftime('%Y-%m-%d') }}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ log.created_at.strftime('%H:%M:%S UTC') }}</div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-dark);">{{ log.created_at.strftime('%Y-%m-%d') }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ log.created_at.strftime('%H:%M:%S') }} UTC</div>
           </td>
+
+          <!-- User & Company -->
           <td>
-            <div style="font-size: 0.85rem; font-weight: 700; color: var(--tiancai-blue);">{{ log.company.name }}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ log.company.client_id }}</div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--tiancai-blue);">
+              {{ log.company.name if log.company else 'System' }}
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-dark); margin-top: 2px;">
+              <i class="bi bi-person-circle" style="font-size: 0.7rem; color: var(--text-muted);"></i>
+              {% if log.user %}
+                {{ log.user.email }}
+              {% else %}
+                <span style="color: var(--text-muted); font-style: italic;">Public API / Automated</span>
+              {% endif %}
+            </div>
           </td>
+
+          <!-- Client IP Address -->
           <td>
-            <span style="font-family: monospace; font-weight: 700;">{{ log.pan_number }}</span>
+            <span style="display: inline-block; font-family: monospace; font-size: 0.78rem; font-weight: 700; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0; color: #334155;" title="{{ log.user_agent or 'No User-Agent logged' }}">
+              <i class="bi bi-globe" style="font-size: 0.7rem; margin-right: 3px; color: #64748b;"></i>{{ log.ip_address or '127.0.0.1' }}
+            </span>
           </td>
+
+          <!-- Target PAN & Name -->
+          <td>
+            <span style="font-family: monospace; font-weight: 800; font-size: 0.9rem; color: #0f172a; letter-spacing: 0.05em;">
+              {{ log.pan_number }}
+            </span>
+            <div style="font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;" title="{{ log.full_name or 'N/A' }}">
+              {{ log.full_name or '-' }}
+            </div>
+          </td>
+
+          <!-- Gateway Method -->
+          <td>
+            {% if 'REST' in (log.method or '') %}
+            <span style="display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: rgba(37, 99, 235, 0.1); color: #2563eb;">
+              <i class="bi bi-lightning-charge-fill"></i> REST V2.6
+            </span>
+            {% elif 'SOAP' in (log.method or '') %}
+            <span style="display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: rgba(147, 51, 234, 0.1); color: #9333ea;">
+              <i class="bi bi-code-square"></i> SOAP V6.0
+            </span>
+            {% else %}
+            <span style="display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: #f1f5f9; color: #64748b;">
+              {{ log.method or 'CVL KRA' }}
+            </span>
+            {% endif %}
+          </td>
+
+          <!-- Status & Message -->
           <td>
             {% if log.status == 'verified' %}
-            <span class="metric-badge badge-active"><i class="bi bi-check-circle-fill"></i> Verified</span>
+            <span class="metric-badge badge-active" style="padding: 2px 8px; font-size: 0.75rem;"><i class="bi bi-check-circle-fill"></i> Verified</span>
             {% elif log.status == 'failed' %}
-            <span class="metric-badge" style="background: rgba(225, 29, 72, 0.1); color: #e11d48;"><i class="bi bi-x-circle-fill"></i> Failed</span>
+            <span class="metric-badge" style="background: rgba(225, 29, 72, 0.1); color: #e11d48; padding: 2px 8px; font-size: 0.75rem;"><i class="bi bi-x-circle-fill"></i> Failed</span>
             {% else %}
-            <span class="metric-badge" style="background: rgba(245, 158, 11, 0.1); color: #d97706;"><i class="bi bi-exclamation-triangle-fill"></i> {{ log.status|title }}</span>
+            <span class="metric-badge" style="background: rgba(245, 158, 11, 0.1); color: #d97706; padding: 2px 8px; font-size: 0.75rem;"><i class="bi bi-exclamation-triangle-fill"></i> {{ log.status|title }}</span>
             {% endif %}
-            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ log.status_message }}">{{ log.status_message }}</div>
+
+            {% if log.status_message %}
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ log.status_message }}">
+              {{ log.status_message }}
+            </div>
+            {% endif %}
           </td>
+
+          <!-- Latency -->
           <td>
-            <div style="font-size: 0.85rem; font-weight: 600;">{{ log.full_name or '-' }}</div>
+            <span style="font-size: 0.78rem; font-weight: 600; color: #64748b;">
+              {% if log.duration_ms %}{{ log.duration_ms }} ms{% else %}-{% endif %}
+            </span>
           </td>
-          <td>
-            <button onclick="showPayloadModal('Request Payload - {{ log.pan_number }}', '{{ log.raw_request | replace('\n', '') | replace('\'', '\\\'') | escape if log.raw_request else 'No request logged' }}')" class="btn-tiancai-pill" style="background: #f1f5f9; color: #475569; padding: 4px 10px; font-size: 0.75rem; border: 1px solid #cbd5e1;">
-              <i class="bi bi-code-slash"></i> View Sent
-            </button>
-          </td>
-          <td>
-            <button onclick="showPayloadModal('Response Payload - {{ log.pan_number }}', '{{ log.raw_response | replace('\n', '') | replace('\'', '\\\'') | escape if log.raw_response else 'No response logged' }}', true)" class="btn-tiancai-pill" style="background: rgba(37, 99, 235, 0.1); color: var(--tiancai-blue); padding: 4px 10px; font-size: 0.75rem; border: none;">
-              <i class="bi bi-braces"></i> View JSON
+
+          <!-- Inspect Action -->
+          <td style="text-align: right;">
+            <button onclick="openInspectorModal({{ log.id }})" class="btn-tiancai-pill" style="padding: 5px 12px; font-size: 0.78rem; background: #f8fafc; color: var(--tiancai-blue); border: 1px solid #cbd5e1; cursor: pointer;">
+              <i class="bi bi-eye"></i> Inspect
             </button>
           </td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
-            <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 10px; color: #cbd5e1;"></i>
-            No PAN verifications found.
+          <td colspan="8" style="text-align: center; padding: 50px 20px; color: var(--text-muted);">
+            <i class="bi bi-inbox" style="font-size: 2.5rem; display: block; margin-bottom: 12px; color: #cbd5e1;"></i>
+            <div style="font-weight: 700; font-size: 1rem; color: var(--text-dark);">No API Traffic Logs Found</div>
+            <p style="font-size: 0.85rem; margin-top: 4px;">Adjust your search query or run a verification from the client panel.</p>
           </td>
         </tr>
         {% endfor %}
@@ -85,8 +176,9 @@
     </table>
   </div>
 
+  <!-- Pagination -->
   {% if pagination.pages > 1 %}
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 12px;">
     <div style="font-size: 0.85rem; color: var(--text-muted);">
       Showing {{ pagination.first }} to {{ pagination.last }} of {{ pagination.total }} records
     </div>
@@ -96,7 +188,7 @@
           {% if page_num == pagination.page %}
             <span style="background: var(--tiancai-blue); color: white; border-radius: 4px; padding: 4px 10px; font-size: 0.85rem; font-weight: 700;">{{ page_num }}</span>
           {% else %}
-            <a href="{{ url_for('admin.pan_verifications', page=page_num, q=search_query) }}" style="background: #f1f5f9; color: var(--text-dark); border-radius: 4px; padding: 4px 10px; font-size: 0.85rem; text-decoration: none;">{{ page_num }}</a>
+            <a href="{{ url_for('admin.pan_verifications', page=page_num, q=search_query, status=status_filter) }}" style="background: #f1f5f9; color: var(--text-dark); border-radius: 4px; padding: 4px 10px; font-size: 0.85rem; text-decoration: none;">{{ page_num }}</a>
           {% endif %}
         {% else %}
           <span style="padding: 4px 10px; color: var(--text-muted);">...</span>
@@ -107,15 +199,131 @@
   {% endif %}
 </div>
 
-<!-- Payload Modal -->
-<div id="payloadModal" class="ref-modal" style="display: none;">
-  <div class="ref-modal-content" style="max-width: 800px; width: 90%;">
-    <div class="ref-modal-header">
-      <h3 id="payloadModalTitle" style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--text-dark);"></h3>
-      <button onclick="closePayloadModal()" class="ref-modal-close"><i class="bi bi-x-lg"></i></button>
+<!-- Comprehensive Transaction Inspector Modal -->
+<div id="inspectorModal" class="ref-modal" style="display: none; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999;">
+  <div class="ref-modal-content" style="max-width: 900px; width: 94%; max-height: 90vh; display: flex; flex-direction: column; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+    
+    <!-- Modal Header -->
+    <div style="padding: 16px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <h3 id="modalTitle" style="margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-dark);">
+            Transaction Details
+          </h3>
+          <span id="modalStatusBadge" class="metric-badge"></span>
+        </div>
+        <div id="modalSubtitle" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;"></div>
+      </div>
+      <button onclick="closeInspectorModal()" style="border: none; background: #e2e8f0; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #475569;">
+        <i class="bi bi-x-lg"></i>
+      </button>
     </div>
-    <div class="ref-modal-body" style="background: #0f172a; padding: 0;">
-      <pre id="payloadContent" style="color: #e2e8f0; padding: 16px; margin: 0; font-size: 0.75rem; font-family: monospace; white-space: pre-wrap; word-wrap: break-word; max-height: 500px; overflow-y: auto;"></pre>
+
+    <!-- Quick Meta Ribbon -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; padding: 12px 24px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; font-size: 0.78rem;">
+      <div>
+        <span style="color: var(--text-muted); display: block;">Client IP</span>
+        <strong id="metaIp" style="color: #0f172a; font-family: monospace;">-</strong>
+      </div>
+      <div>
+        <span style="color: var(--text-muted); display: block;">Initiating User</span>
+        <strong id="metaUser" style="color: #0f172a;">-</strong>
+      </div>
+      <div>
+        <span style="color: var(--text-muted); display: block;">Organization</span>
+        <strong id="metaCompany" style="color: #0f172a;">-</strong>
+      </div>
+      <div>
+        <span style="color: var(--text-muted); display: block;">Engine / Method</span>
+        <strong id="metaMethod" style="color: #0f172a;">-</strong>
+      </div>
+      <div>
+        <span style="color: var(--text-muted); display: block;">Latency</span>
+        <strong id="metaLatency" style="color: #0f172a;">-</strong>
+      </div>
+    </div>
+
+    <!-- Modal Tabs -->
+    <div style="display: flex; border-bottom: 1px solid #e2e8f0; background: #ffffff; padding: 0 24px;">
+      <button id="tabBtnRequest" onclick="switchInspectorTab('request')" style="padding: 12px 18px; border: none; background: transparent; font-weight: 700; font-size: 0.85rem; color: var(--tiancai-blue); border-bottom: 2px solid var(--tiancai-blue); cursor: pointer;">
+        <i class="bi bi-arrow-up-right-circle" style="margin-right: 6px;"></i>Outbound Request (What We Sent)
+      </button>
+      <button id="tabBtnResponse" onclick="switchInspectorTab('response')" style="padding: 12px 18px; border: none; background: transparent; font-weight: 700; font-size: 0.85rem; color: #64748b; border-bottom: 2px solid transparent; cursor: pointer;">
+        <i class="bi bi-arrow-down-left-circle" style="margin-right: 6px;"></i>Inbound Response (What We Received)
+      </button>
+      <button id="tabBtnMeta" onclick="switchInspectorTab('meta')" style="padding: 12px 18px; border: none; background: transparent; font-weight: 700; font-size: 0.85rem; color: #64748b; border-bottom: 2px solid transparent; cursor: pointer;">
+        <i class="bi bi-info-circle" style="margin-right: 6px;"></i>Audit & Network Metadata
+      </button>
+    </div>
+
+    <!-- Tab Contents -->
+    <div class="ref-modal-body" style="padding: 16px 24px; overflow-y: auto; flex: 1; background: #0f172a;">
+      <!-- Tab 1: Request -->
+      <div id="tabContentRequest">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="color: #94a3b8; font-size: 0.75rem; font-weight: 600;">PAYLOAD SENT TO CVL KRA SERVER:</span>
+          <button onclick="copyToClipboard('requestRawText', this)" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #f8fafc; font-size: 0.72rem; padding: 4px 10px; border-radius: 4px; cursor: pointer;">
+            <i class="bi bi-clipboard"></i> Copy Request
+          </button>
+        </div>
+        <pre id="requestRawText" style="color: #38bdf8; margin: 0; font-size: 0.8rem; font-family: 'SFMono-Regular', Consolas, Menlo, monospace; white-space: pre-wrap; word-wrap: break-word; line-height: 1.5;"></pre>
+      </div>
+
+      <!-- Tab 2: Response -->
+      <div id="tabContentResponse" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="color: #94a3b8; font-size: 0.75rem; font-weight: 600;">RESPONSE RETURNED BY CVL KRA SERVER:</span>
+          <button onclick="copyToClipboard('responseRawText', this)" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #f8fafc; font-size: 0.72rem; padding: 4px 10px; border-radius: 4px; cursor: pointer;">
+            <i class="bi bi-clipboard"></i> Copy Response
+          </button>
+        </div>
+        <pre id="responseRawText" style="color: #4ade80; margin: 0; font-size: 0.8rem; font-family: 'SFMono-Regular', Consolas, Menlo, monospace; white-space: pre-wrap; word-wrap: break-word; line-height: 1.5;"></pre>
+      </div>
+
+      <!-- Tab 3: Metadata -->
+      <div id="tabContentMeta" style="display: none; background: #1e293b; padding: 18px; border-radius: 8px;">
+        <table style="width: 100%; font-size: 0.82rem; color: #cbd5e1; border-collapse: collapse;">
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <td style="padding: 8px 0; color: #94a3b8; width: 180px;">PAN Number:</td>
+            <td id="metaPanVal" style="font-family: monospace; font-weight: 700; color: #f8fafc;">-</td>
+          </tr>
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <td style="padding: 8px 0; color: #94a3b8;">Client IP Address:</td>
+            <td id="metaIpVal" style="font-family: monospace; color: #38bdf8;">-</td>
+          </tr>
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <td style="padding: 8px 0; color: #94a3b8;">User Agent / Client:</td>
+            <td id="metaUaVal" style="word-break: break-all;">-</td>
+          </tr>
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <td style="padding: 8px 0; color: #94a3b8;">Endpoint URL:</td>
+            <td id="metaEndpointVal" style="font-family: monospace;">-</td>
+          </tr>
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <td style="padding: 8px 0; color: #94a3b8;">Gateway Method:</td>
+            <td id="metaMethodVal">-</td>
+          </tr>
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <td style="padding: 8px 0; color: #94a3b8;">Timestamp:</td>
+            <td id="metaTimeVal">-</td>
+          </tr>
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <td style="padding: 8px 0; color: #94a3b8;">Reference ID:</td>
+            <td id="metaRefVal" style="font-family: monospace;">-</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #94a3b8;">Status Message:</td>
+            <td id="metaStatusMsgVal" style="color: #fca5a5;">-</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div style="padding: 12px 24px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: flex-end;">
+      <button onclick="closeInspectorModal()" class="btn-tiancai-pill" style="padding: 6px 18px; font-size: 0.85rem; background: #e2e8f0; color: #334155; border: none; cursor: pointer;">
+        Close Inspector
+      </button>
     </div>
   </div>
 </div>
@@ -123,35 +331,161 @@
 
 {% block extra_js %}
 <script>
-  function showPayloadModal(title, content, formatJson = false) {
-    document.getElementById('payloadModalTitle').innerText = title;
-    const contentEl = document.getElementById('payloadContent');
+  let currentLogData = null;
+
+  function openInspectorModal(logId) {
+    const modal = document.getElementById('inspectorModal');
+    modal.style.display = 'flex';
     
-    if (formatJson) {
+    // Show loading state
+    document.getElementById('modalTitle').innerText = 'Loading Transaction #' + logId + '...';
+    document.getElementById('requestRawText').innerText = 'Fetching request payload from database...';
+    document.getElementById('responseRawText').innerText = 'Fetching response payload from database...';
+    
+    fetch('/admin/pan-verifications/' + logId + '/details')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load transaction details: HTTP ' + res.status);
+        return res.json();
+      })
+      .then(data => {
+        currentLogData = data;
+        populateModal(data);
+      })
+      .catch(err => {
+        document.getElementById('modalTitle').innerText = 'Error Loading Details';
+        document.getElementById('requestRawText').innerText = err.message;
+        document.getElementById('responseRawText').innerText = err.message;
+      });
+  }
+
+  function populateModal(data) {
+    document.getElementById('modalTitle').innerText = 'Transaction #' + data.id + ' — ' + data.pan_number;
+    document.getElementById('modalSubtitle').innerText = 'Executed on ' + data.created_at + ' via ' + data.method;
+    
+    // Status badge
+    const badge = document.getElementById('modalStatusBadge');
+    if (data.status === 'verified') {
+      badge.className = 'metric-badge badge-active';
+      badge.innerHTML = '<i class="bi bi-check-circle-fill"></i> Verified';
+      badge.style.background = '#10b981';
+      badge.style.color = '#ffffff';
+    } else if (data.status === 'failed') {
+      badge.className = 'metric-badge';
+      badge.innerHTML = '<i class="bi bi-x-circle-fill"></i> Failed';
+      badge.style.background = '#e11d48';
+      badge.style.color = '#ffffff';
+    } else {
+      badge.className = 'metric-badge';
+      badge.innerHTML = data.status;
+      badge.style.background = '#f59e0b';
+      badge.style.color = '#ffffff';
+    }
+
+    // Ribbon values
+    document.getElementById('metaIp').innerText = data.ip_address || '127.0.0.1';
+    document.getElementById('metaUser').innerText = data.user ? (data.user.name || data.user.email) : 'Public API';
+    document.getElementById('metaCompany').innerText = data.company ? data.company.name : 'System';
+    document.getElementById('metaMethod').innerText = data.method || 'CVL KRA';
+    document.getElementById('metaLatency').innerText = (data.duration_ms || 0) + ' ms';
+
+    // Format Request
+    const reqBox = document.getElementById('requestRawText');
+    if (data.raw_request) {
       try {
-        const parsed = JSON.parse(content);
-        contentEl.innerText = JSON.stringify(parsed, null, 2);
+        const parsed = JSON.parse(data.raw_request);
+        reqBox.innerText = JSON.stringify(parsed, null, 2);
       } catch (e) {
-        contentEl.innerText = content; // Fallback if not valid JSON
+        reqBox.innerText = data.raw_request;
       }
     } else {
-      // For XML/SOAP requests, try to format slightly
-      contentEl.innerText = content;
+      reqBox.innerText = 'No outbound payload logged for this transaction.';
     }
-    
-    document.getElementById('payloadModal').style.display = 'flex';
+
+    // Format Response
+    const respBox = document.getElementById('responseRawText');
+    if (data.raw_response) {
+      try {
+        const parsed = JSON.parse(data.raw_response);
+        respBox.innerText = JSON.stringify(parsed, null, 2);
+      } catch (e) {
+        respBox.innerText = data.raw_response;
+      }
+    } else {
+      respBox.innerText = 'No inbound response logged for this transaction.';
+    }
+
+    // Meta tab values
+    document.getElementById('metaPanVal').innerText = data.pan_number;
+    document.getElementById('metaIpVal').innerText = data.ip_address || 'Unknown';
+    document.getElementById('metaUaVal').innerText = data.user_agent || '-';
+    document.getElementById('metaEndpointVal').innerText = data.endpoint || '/services/pan';
+    document.getElementById('metaMethodVal').innerText = data.method || 'CVL KRA';
+    document.getElementById('metaTimeVal').innerText = data.created_at;
+    document.getElementById('metaRefVal').innerText = data.reference_id || '-';
+    document.getElementById('metaStatusMsgVal').innerText = data.status_message || '-';
+
+    // Default to Request tab
+    switchInspectorTab('request');
   }
 
-  function closePayloadModal() {
-    document.getElementById('payloadModal').style.display = 'none';
+  function switchInspectorTab(tab) {
+    const btnReq = document.getElementById('tabBtnRequest');
+    const btnResp = document.getElementById('tabBtnResponse');
+    const btnMeta = document.getElementById('tabBtnMeta');
+
+    const contentReq = document.getElementById('tabContentRequest');
+    const contentResp = document.getElementById('tabContentResponse');
+    const contentMeta = document.getElementById('tabContentMeta');
+
+    // Reset styles
+    [btnReq, btnResp, btnMeta].forEach(b => {
+      b.style.color = '#64748b';
+      b.style.borderBottom = '2px solid transparent';
+    });
+    contentReq.style.display = 'none';
+    contentResp.style.display = 'none';
+    contentMeta.style.display = 'none';
+
+    if (tab === 'request') {
+      btnReq.style.color = 'var(--tiancai-blue)';
+      btnReq.style.borderBottom = '2px solid var(--tiancai-blue)';
+      contentReq.style.display = 'block';
+    } else if (tab === 'response') {
+      btnResp.style.color = '#10b981';
+      btnResp.style.borderBottom = '2px solid #10b981';
+      contentResp.style.display = 'block';
+    } else if (tab === 'meta') {
+      btnMeta.style.color = 'var(--tiancai-blue)';
+      btnMeta.style.borderBottom = '2px solid var(--tiancai-blue)';
+      contentMeta.style.display = 'block';
+    }
   }
 
-  // Close modal when clicking outside
+  function closeInspectorModal() {
+    document.getElementById('inspectorModal').style.display = 'none';
+  }
+
+  function copyToClipboard(elementId, btn) {
+    const text = document.getElementById(elementId).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const origText = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
+      btn.style.background = '#10b981';
+      setTimeout(() => {
+        btn.innerHTML = origText;
+        btn.style.background = 'rgba(255, 255, 255, 0.1)';
+      }, 2000);
+    }).catch(err => {
+      alert('Could not copy to clipboard: ' + err);
+    });
+  }
+
+  // Close modal when clicking on dark backdrop
   window.onclick = function(event) {
-    const modal = document.getElementById('payloadModal');
-    if (event.target == modal) {
+    const modal = document.getElementById('inspectorModal');
+    if (event.target === modal) {
       modal.style.display = 'none';
     }
-  }
+  };
 </script>
 {% endblock %}

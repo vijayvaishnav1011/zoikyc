@@ -728,20 +728,45 @@ def pan_verifications():
     from app.models.pan import PANVerification
     page = request.args.get('page', 1, type=int)
     search_query = request.args.get('q', '').strip()
+    status_filter = request.args.get('status', 'all').strip().lower()
 
-    query = PANVerification.query.join(Company)
+    query = PANVerification.query.outerjoin(Company).outerjoin(User, PANVerification.user_id == User.id)
     if search_query:
         search = f"%{search_query}%"
         query = query.filter(
             (PANVerification.pan_number.ilike(search)) |
             (PANVerification.reference_id.ilike(search)) |
-            (Company.name.ilike(search))
+            (PANVerification.ip_address.ilike(search)) |
+            (PANVerification.status_message.ilike(search)) |
+            (Company.name.ilike(search)) |
+            (User.email.ilike(search))
         )
-    
-    pagination = query.order_by(PANVerification.created_at.desc()).paginate(page=page, per_page=20, error_out=False)
+
+    if status_filter in ['verified', 'failed', 'invalid']:
+        query = query.filter(PANVerification.status == status_filter)
+
+    pagination = query.order_by(PANVerification.created_at.desc()).paginate(page=page, per_page=25, error_out=False)
+
+    # Quick overview metrics
+    total_logs = PANVerification.query.count()
+    verified_logs = PANVerification.query.filter_by(status='verified').count()
+    failed_logs = PANVerification.query.filter_by(status='failed').count()
 
     return render_template(
         'admin/pan_verifications.html',
         pagination=pagination,
-        search_query=search_query
+        search_query=search_query,
+        status_filter=status_filter,
+        total_logs=total_logs,
+        verified_logs=verified_logs,
+        failed_logs=failed_logs
     )
+
+
+@admin_bp.route('/pan-verifications/<int:log_id>/details')
+@admin_required
+def pan_verification_details(log_id):
+    """Returns complete JSON inspection payload for a PAN verification log."""
+    from app.models.pan import PANVerification
+    log = PANVerification.query.get_or_404(log_id)
+    return jsonify(log.to_dict())
