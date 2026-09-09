@@ -770,4 +770,23 @@ def pan_verification_details(log_id):
     """Returns complete JSON inspection payload for a PAN verification log."""
     from app.models.pan import PANVerification
     log = PANVerification.query.get_or_404(log_id)
-    return jsonify(log.to_dict())
+    try:
+        return jsonify(log.to_dict())
+    except Exception as e:
+        import traceback
+        current_app.logger.error(f"Error serializing PAN verification {log_id}: {traceback.format_exc()}")
+        return jsonify({
+            "id": log.id,
+            "pan_number": log.pan_number,
+            "status": log.status,
+            "status_message": log.status_message or "",
+            "server_ip": getattr(log, 'server_ip', '187.127.139.6') or '187.127.139.6',
+            "ip_address": getattr(log, 'ip_address', '127.0.0.1') or '127.0.0.1',
+            "method": getattr(log, 'method', 'CVL KRA'),
+            "duration_ms": getattr(log, 'duration_ms', 0) or 0,
+            "created_at": log.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") if log.created_at else "-",
+            "raw_request": log.raw_request or "",
+            "raw_response": log.raw_response or "",
+            "user": {"email": log.user.email if log.user else "Public API"},
+            "company": {"name": log.company.name if log.company else "System"}
+        })

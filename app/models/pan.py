@@ -67,22 +67,28 @@ class PANVerification(db.Model):
 
     def to_dict(self):
         user_info = None
-        if self.user:
-            user_info = {
-                "id": self.user.id,
-                "name": f"{self.user.first_name or ''} {self.user.last_name or ''}".strip() or self.user.email,
-                "email": self.user.email,
-                "role": self.user.role if hasattr(self.user, 'role') else 'user'
-            }
+        try:
+            if self.user:
+                user_info = {
+                    "id": self.user.id,
+                    "name": getattr(self.user, 'name', '') or getattr(self.user, 'email', ''),
+                    "email": getattr(self.user, 'email', ''),
+                    "role": getattr(self.user, 'role', 'user')
+                }
+        except Exception:
+            user_info = None
 
         company_info = None
-        if self.company:
-            company_info = {
-                "id": self.company.id,
-                "name": self.company.name,
-                "client_id": self.company.client_id or f"ZOI-{self.company.id}",
-                "pos_code": self.company.pos_code
-            }
+        try:
+            if self.company:
+                company_info = {
+                    "id": self.company.id,
+                    "name": getattr(self.company, 'name', ''),
+                    "client_id": getattr(self.company, 'client_id', '') or f"ZOI-{self.company.id}",
+                    "pos_code": getattr(self.company, 'pos_code', '')
+                }
+        except Exception:
+            company_info = None
 
         return {
             "id": self.id,
