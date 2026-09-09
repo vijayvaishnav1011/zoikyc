@@ -362,32 +362,13 @@ def public_api_pan(client_id=None):
             "error": f"Organisation '{company.name}' is currently suspended. Please contact support."
         }), 403
 
-    # 4. Return API specification and documentation on GET request
+    # 4. Return simple clean status on GET request
     if request.method == 'GET':
-        endpoint_url = f"/api/pan/{company.client_id}"
-
         return jsonify({
-            "service": "ZoiKYC Dedicated PAN Verification API",
-            "method": "GetPANStatus",
-            "organisation": company.name,
-            "client_id": company.client_id,
-            "status": company.status,
-            "pricing": "Free Service (No Billing)",
-            "endpoint": endpoint_url,
-            "http_method": "POST",
-            "headers": {
-                "Content-Type": "application/json",
-                "X-API-Key": company.api_key or "YOUR_API_KEY"
-            },
-            "body_params": {
-                "pan": "ABCDE1234F (Required - 10-character PAN number)",
-                "dob": "DD/MM/YYYY (Required - Date of Birth)"
-            },
-            "sample_request": {
-                "pan": "ABCDE1234F",
-                "dob": "01/01/1990"
-            },
-            "sample_curl": f"curl -X POST https://zoikyc.com{endpoint_url} -H 'Content-Type: application/json' -H 'X-API-Key: {company.api_key or 'YOUR_KEY'}' -d '{{\"pan\": \"ABCDE1234F\", \"dob\": \"01/01/1990\"}}'"
+            "service": "ZoiKYC PAN Verification API",
+            "status": "online",
+            "method": "POST",
+            "message": "Send a POST request with 'pan' and 'dob' in JSON body to verify."
         }), 200
 
     # 5. Read and validate request body
