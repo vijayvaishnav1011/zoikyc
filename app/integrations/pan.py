@@ -226,6 +226,9 @@ class PANVerificationProvider(BaseKYCProvider):
             SystemSetting.get_val('cvl_kra_poscode') or
             os.getenv('CVL_KRA_POSCODE') or ""
         ).strip()
+        # In CVL KRA, POS Code is the 10-digit number (e.g. 2500016409), not textual alias
+        if poscode.upper() == "ELITEFINS":
+            poscode = "2500016409"
 
         username = (
             (company.api_user_id if company and company.api_user_id else None) or
@@ -310,9 +313,14 @@ class PANVerificationProvider(BaseKYCProvider):
                 logger.info("CVL REST GetToken succeeded — JWT token obtained")
                 return token, "", encrypted_payload
 
-            err_code = data.get("error_code") or data.get("ErrorCode") or ""
-            err_msg = data.get("error_message") or data.get("ErrorMessage") or ""
-            err = f"{err_msg} ({err_code})" if err_code and err_msg else (err_msg or err_code or "Authentication failed")
+            err_code = (data.get("error_code") or data.get("ErrorCode") or "").strip()
+            err_msg = (data.get("error_message") or data.get("ErrorMessage") or "").strip()
+            if err_code == "WEBERR-029" or "INVALID IP ADDRESS" in err_msg.upper():
+                err = f"CVL KRA IP Whitelist Error (WEBERR-029): The server IP sending this request is not whitelisted by CVL KRA for POS Code {creds.get('poscode')}. Please ensure your server's public IP is whitelisted in the CVL KRA portal."
+            elif err_code and err_msg:
+                err = f"{err_msg} ({err_code})"
+            else:
+                err = err_msg or err_code or "Authentication failed"
             return "", err, encrypted_payload
         except Exception as e:
             return "", str(e), encrypted_payload
