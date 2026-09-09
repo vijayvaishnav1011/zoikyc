@@ -225,45 +225,31 @@
   </form>
 </div>
 
-<!-- 1. ZoiKYC Client API (Client Access) -->
+<!-- 1. ZoiKYC Client API -->
 <div class="card" style="margin-bottom: 16px; padding: 18px 22px; border: 1px solid #e2e8f0;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
     <div style="display: flex; align-items: center; gap: 8px;">
-      <i class="bi bi-code-square" style="color: #2563eb; font-size: 1.1rem;"></i>
-      <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--text-dark); margin: 0;">ZoiKYC Client API</h3>
-      <span class="metric-badge" style="background: rgba(37, 99, 235, 0.1); color: #2563eb; font-size: 0.7rem; padding: 2px 8px;">Client Access</span>
+      <i class="bi bi-link-45deg" style="color: #2563eb; font-size: 1.2rem;"></i>
+      <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--text-dark); margin: 0;">ZoiKYC Client API Endpoint</h3>
+      <span class="metric-badge" style="background: rgba(37, 99, 235, 0.1); color: #2563eb; font-size: 0.7rem; padding: 2px 8px;">Direct POST</span>
     </div>
+    <form method="POST" action="{{ url_for('admin.regenerate_company_api_key', company_id=company.id) }}" style="margin: 0;" onsubmit="return confirm('Regenerate API Key for this client?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit" class="btn-table-manage" style="padding: 5px 12px; font-size: 0.76rem; height: 32px;">
+        <i class="bi bi-arrow-repeat"></i> Regenerate Key
+      </button>
+    </form>
   </div>
 
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
-    <!-- Endpoint -->
-    <div>
-      <label style="font-size: 0.74rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px;">PAN API Endpoint</label>
-      <div style="display: flex; gap: 6px;">
-        <input type="text" readonly value="https://zoikyc.com/api/pan/{{ company.client_id }}" id="clientApiEndpointInput" class="ref-form-control" style="font-family: monospace; font-size: 0.78rem; padding: 6px 10px; height: 34px; background: #f8fafc;" />
-        <button type="button" onclick="copyFieldValue('clientApiEndpointInput', this)" class="btn-table-manage" style="padding: 6px 12px; font-size: 0.78rem; height: 34px;">
-          <i class="bi bi-clipboard"></i> Copy
-        </button>
-      </div>
+  <div>
+    <div style="display: flex; gap: 6px;">
+      <input type="text" readonly value="https://zoikyc.com/api/pan/{{ company.api_key or company.client_id }}" id="clientApiEndpointInput" class="ref-form-control" style="font-family: monospace; font-size: 0.84rem; font-weight: 700; color: #2563eb; background: #f8fafc; height: 36px;" />
+      <button type="button" onclick="copyFieldValue('clientApiEndpointInput', this)" class="btn-purple-pill" style="padding: 6px 14px; font-size: 0.8rem; height: 36px; white-space: nowrap;">
+        <i class="bi bi-clipboard"></i> Copy Endpoint
+      </button>
     </div>
-
-    <!-- API Key -->
-    <div>
-      <label style="font-size: 0.74rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px;">Client API Key (<code>X-API-Key</code>)</label>
-      <div style="display: flex; gap: 6px;">
-        <input type="text" readonly value="{{ company.api_key or 'None' }}" id="clientApiKeyInput" class="ref-form-control" style="font-family: monospace; font-size: 0.78rem; padding: 6px 10px; height: 34px; color: #7e22ce; background: #f8fafc;" />
-        {% if company.api_key %}
-        <button type="button" onclick="copyFieldValue('clientApiKeyInput', this)" class="btn-table-manage" style="padding: 6px 12px; font-size: 0.78rem; height: 34px;">
-          <i class="bi bi-clipboard"></i> Copy
-        </button>
-        {% endif %}
-        <form method="POST" action="{{ url_for('admin.regenerate_company_api_key', company_id=company.id) }}" style="margin: 0;" onsubmit="return confirm('Generate a new API key for this client?');">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-          <button type="submit" class="btn-purple-pill" style="padding: 6px 12px; font-size: 0.75rem; height: 34px; white-space: nowrap;">
-            <i class="bi bi-arrow-repeat"></i> {% if company.api_key %}Regenerate{% else %}Generate{% endif %}
-          </button>
-        </form>
-      </div>
+    <div style="font-size: 0.74rem; color: #64748b; margin-top: 6px;">
+      Direct Endpoint: Call <code>POST</code> with JSON <code>{"pan": "ABCDE1234F", "dob": "01/01/1990"}</code>. No separate API header needed.
     </div>
   </div>
 </div>

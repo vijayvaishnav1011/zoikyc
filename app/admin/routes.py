@@ -140,6 +140,9 @@ def companies():
 @admin_required
 def company_detail(company_id):
     company = Company.query.get_or_404(company_id)
+    if not company.api_key:
+        company.generate_api_key()
+        db.session.commit()
     users = company.users.order_by(User.created_at.asc()).all()
     documents = company.documents.order_by(CompanyDocument.created_at.desc()).all()
     transactions = company.transactions.order_by(WalletTransaction.created_at.desc()).limit(15).all()

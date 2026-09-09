@@ -281,24 +281,25 @@ def get_check_json(check_id):
 
 
 @pan_bp.route('/api/pan', methods=['GET', 'POST'])
-@pan_bp.route('/api/pan/<client_id>', methods=['GET', 'POST'])
+@pan_bp.route('/api/pan/<path:api_key>', methods=['GET', 'POST'])
 @csrf.exempt
-def public_api_pan(client_id=None):
+def public_api_pan(api_key=None):
     """
     Dedicated REST API endpoint for PAN verification using CVL KRA GetPANStatus.
-    - Each company has their own dedicated endpoint (/api/pan/<client_id>) or X-API-Key.
+    - Simplest URL: https://zoikyc.com/api/pan/<api_key>
+    - The API key in the URL serves as both the endpoint and authentication.
     - Fetches and strictly uses CVL credentials configured specifically for THAT company.
-    - Checks and debits company wallet per-KYC charge.
     - Immutable audit logging in /admin/pan-verifications.
     """
     company = None
 
-    # 1. Resolve company if client_id is passed in the URL path
-    target_client_id = (client_id or '').strip()
-    if target_client_id:
-        clean_no_hyphen = target_client_id.replace('-', '').upper()
+    # 1. Resolve company if api_key or client_id is passed directly in the URL path
+    target_key = (api_key or '').strip()
+    if target_key:
+        clean_no_hyphen = target_key.replace('-', '').upper()
         company = Company.query.filter(
-            (db.func.upper(Company.client_id) == target_client_id.upper()) |
+            (Company.api_key == target_key) |
+            (db.func.upper(Company.client_id) == target_key.upper()) |
             (db.func.upper(db.func.replace(Company.client_id, '-', '')) == clean_no_hyphen)
         ).first()
 
@@ -306,7 +307,7 @@ def public_api_pan(client_id=None):
             return jsonify({
                 "success": False,
                 "status": "not_found",
-                "error": f"Invalid client ID: '{target_client_id}'. No active organisation found with this ID."
+                "error": f"Invalid API Key: '{target_key}'. No active organisation found with this key."
             }), 404
 
     # 2. If company wasn't resolved via URL path, resolve from Headers or Body
