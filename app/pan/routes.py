@@ -365,8 +365,6 @@ def public_api_pan(client_id=None):
     # 4. Return API specification and documentation on GET request
     if request.method == 'GET':
         endpoint_url = f"/api/pan/{company.client_id}"
-        per_kyc = float(company.per_kyc_price if company.per_kyc_price is not None else 20.00)
-        wallet_bal = float(company.wallet.balance if company.wallet else 0.00)
 
         return jsonify({
             "service": "ZoiKYC Dedicated PAN Verification API",
@@ -374,8 +372,7 @@ def public_api_pan(client_id=None):
             "organisation": company.name,
             "client_id": company.client_id,
             "status": company.status,
-            "per_kyc_fee": f"₹{per_kyc:.2f}",
-            "wallet_balance": f"₹{wallet_bal:.2f}",
+            "pricing": "Free Service (No Billing)",
             "endpoint": endpoint_url,
             "http_method": "POST",
             "headers": {
@@ -442,19 +439,7 @@ def public_api_pan(client_id=None):
             "error": f"CVL KRA credentials are not configured for organisation '{company.name}'. The administrator must set up the POS Code, Username, Password, and AES key for this organisation in the Admin Portal."
         }), 400
 
-    # 7. Check company wallet balance
-    per_kyc_fee = Decimal(str(company.per_kyc_price if company.per_kyc_price is not None else '20.00'))
-    wallet = company.wallet
-    current_balance = wallet.balance if wallet else Decimal('0.00')
-
-    if current_balance < per_kyc_fee:
-        return jsonify({
-            "success": False,
-            "status": "insufficient_funds",
-            "error": f"Insufficient wallet balance. Current balance is ₹{current_balance:,.2f}, but ₹{per_kyc_fee:,.2f} is required for this PAN verification. Please recharge your wallet."
-        }), 402
-
-    # 8. Execute PAN verification using THIS company's credentials strictly
+    # 7. Execute PAN verification using THIS company's credentials strictly (No Billing / Free Service)
     client_ip = _extract_client_ip()
     user_agent_str = (request.headers.get('User-Agent') or '')[:250]
     start_time = time.time()
@@ -467,33 +452,9 @@ def public_api_pan(client_id=None):
     )
     duration_ms = int((time.time() - start_time) * 1000)
 
-    # 9. Debit wallet balance if verification attempt executed
-    txn_ref = None
-    if per_kyc_fee > 0 and wallet and verification_data.get('status') != 'gateway_not_configured':
-        try:
-            import uuid
-            balance_before = wallet.balance
-            wallet.balance -= per_kyc_fee
-            wallet.updated_at = datetime.now(timezone.utc)
-
-            txn_ref = f"PAN_{uuid.uuid4().hex[:10].upper()}"
-            txn = WalletTransaction(
-                wallet_id=wallet.id,
-                company_id=company.id,
-                type='debit',
-                amount=per_kyc_fee,
-                balance_before=balance_before,
-                balance_after=wallet.balance,
-                reference_id=txn_ref,
-                description=f"PAN Verification API: {pan_number}",
-                status='success'
-            )
-            db.session.add(txn)
-        except Exception as deb_err:
-            current_app.logger.error(f"Error debiting wallet for company {company.id}: {deb_err}")
-
-    # 10. Record immutable PAN verification log in database
+    # 8. Record immutable PAN verification log in database (Zero cost)
     record_id = None
+    txn_ref = f"PAN_{int(time.time())}"
     try:
         raw_resp_str = verification_data.get('raw_response')
         if not isinstance(raw_resp_str, str):
@@ -514,8 +475,8 @@ def public_api_pan(client_id=None):
             pan_status=verification_data.get('pan_status'),
             dob_match=verification_data.get('dob_match'),
             aadhaar_seeding_status=verification_data.get('aadhaar_seeding_status'),
-            cost_charged=per_kyc_fee,
-            reference_id=verification_data.get('reference_id') or txn_ref or f"ZOI-{int(time.time())}",
+            cost_charged=Decimal('0.00'),
+            reference_id=verification_data.get('reference_id') or txn_ref,
             raw_response=raw_resp_str,
             raw_request=verification_data.get('raw_request'),
             server_ip=get_outbound_server_ip(),
@@ -552,8 +513,6 @@ def public_api_pan(client_id=None):
         "method": verification_data.get('method', 'GetPANStatus'),
         "organisation": company.name,
         "client_id": company.client_id,
-        "billed_amount": f"₹{per_kyc_fee:.2f}",
-        "wallet_balance": f"₹{wallet.balance:.2f}" if wallet else "₹0.00",
         "duration_ms": duration_ms
     }), status_code
 
