@@ -477,6 +477,7 @@
 
           <!-- Action -->
           <td style="text-align: right;">
+            <script type="application/json" id="log-data-{{ log.id }}">{{ log.to_dict() | tojson | safe }}</script>
             <button type="button" onclick="openInspectorModal({{ log.id }})" class="btn-table-manage">
               <i class="bi bi-code-slash"></i>
               <span>Inspect</span>
@@ -696,7 +697,19 @@
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 
-    // Loading indicators
+    // 1. Instant load from embedded DOM data (zero latency, zero network error)
+    const embeddedEl = document.getElementById('log-data-' + logId);
+    if (embeddedEl) {
+      try {
+        const data = JSON.parse(embeddedEl.textContent);
+        renderModalData(data);
+        return;
+      } catch (err) {
+        console.warn('Error parsing embedded log payload, falling back to fetch:', err);
+      }
+    }
+
+    // 2. Fallback to async fetch if data not in DOM
     document.getElementById('modalTxnTitle').innerText = 'Loading Transaction #' + logId + '...';
     document.getElementById('modalCodeRequest').innerText = 'Loading outbound request payload...';
     document.getElementById('modalCodeResponse').innerText = 'Loading inbound response payload...';

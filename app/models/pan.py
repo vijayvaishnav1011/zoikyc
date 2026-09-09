@@ -70,7 +70,7 @@ class PANVerification(db.Model):
         try:
             if self.user:
                 user_info = {
-                    "id": self.user.id,
+                    "id": getattr(self.user, 'id', None),
                     "name": getattr(self.user, 'name', '') or getattr(self.user, 'email', ''),
                     "email": getattr(self.user, 'email', ''),
                     "role": getattr(self.user, 'role', 'user')
@@ -82,19 +82,28 @@ class PANVerification(db.Model):
         try:
             if self.company:
                 company_info = {
-                    "id": self.company.id,
+                    "id": getattr(self.company, 'id', None),
                     "name": getattr(self.company, 'name', ''),
-                    "client_id": getattr(self.company, 'client_id', '') or f"ZOI-{self.company.id}",
+                    "client_id": getattr(self.company, 'client_id', '') or f"ZOI-{self.company_id}",
                     "pos_code": getattr(self.company, 'pos_code', '')
                 }
         except Exception:
             company_info = None
 
+        created_str = "-"
+        created_iso = None
+        try:
+            if self.created_at:
+                created_str = self.created_at.strftime("%Y-%m-%d %H:%M:%S UTC")
+                created_iso = self.created_at.isoformat()
+        except Exception:
+            pass
+
         return {
             "id": self.id,
-            "pan_number": self.pan_number,
+            "pan_number": self.pan_number or "",
             "dob": self.dob or "-",
-            "status": self.status,
+            "status": self.status or "unknown",
             "status_message": self.status_message or "",
             "full_name": self.full_name or "-",
             "first_name": self.first_name or "",
@@ -106,14 +115,14 @@ class PANVerification(db.Model):
             "aadhaar_seeding_status": self.aadhaar_seeding_status or "N/A",
             "cost_charged": str(self.cost_charged) if self.cost_charged is not None else "0.00",
             "reference_id": self.reference_id or "-",
-            "server_ip": self.server_ip or "187.127.139.6",
-            "ip_address": self.ip_address or "Unknown",
-            "method": self.method or "CVL KRA",
-            "endpoint": self.endpoint or "/services/pan",
-            "user_agent": self.user_agent or "-",
-            "duration_ms": self.duration_ms or 0,
-            "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") if self.created_at else "-",
-            "created_at_iso": self.created_at.isoformat() if self.created_at else None,
+            "server_ip": getattr(self, 'server_ip', '187.127.139.6') or '187.127.139.6',
+            "ip_address": getattr(self, 'ip_address', '127.0.0.1') or '127.0.0.1',
+            "method": getattr(self, 'method', 'CVL KRA') or 'CVL KRA',
+            "endpoint": getattr(self, 'endpoint', '/services/pan') or '/services/pan',
+            "user_agent": getattr(self, 'user_agent', '-') or '-',
+            "duration_ms": getattr(self, 'duration_ms', 0) or 0,
+            "created_at": created_str,
+            "created_at_iso": created_iso,
             "user": user_info,
             "company": company_info,
             "raw_request": self.raw_request or "",
