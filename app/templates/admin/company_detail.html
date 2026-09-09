@@ -6,7 +6,8 @@
 {% block content %}
 <!-- Back to Companies Link -->
 <div style="margin-bottom: 16px;">
-  <a href="{{ url_for('admin.companies') }}" style="color: var(--tiancai-blue); text-decoration: none; font-weight: 700; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 6px;">
+  <a href="{{ url_for('admin.companies') }}"
+    style="color: var(--tiancai-blue); text-decoration: none; font-weight: 700; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 6px;">
     <i class="bi bi-arrow-left"></i> Back to All Companies
   </a>
 </div>
@@ -30,7 +31,8 @@
         <span>Phone: <strong>{{ company.phone }}</strong></span>
       </div>
       <div class="company-header-address">
-        Address: {{ company.address }}, {{ company.city }}, {{ company.state }} - {{ company.zip_code }}, {{ company.country }} &bull; GSTIN: <strong>{{ company.gstin or 'Not Provided' }}</strong>
+        Address: {{ company.address }}, {{ company.city }}, {{ company.state }} - {{ company.zip_code }}, {{
+        company.country }} &bull; GSTIN: <strong>{{ company.gstin or 'Not Provided' }}</strong>
       </div>
     </div>
 
@@ -38,22 +40,30 @@
     <div class="company-header-status-box">
       <div>
         {% if company.status == 'active' %}
-          <span class="metric-badge badge-active" style="padding: 8px 16px; font-size: 0.85rem;"><i class="bi bi-check-circle-fill"></i> Active (Verified)</span>
+        <span class="metric-badge badge-active" style="padding: 8px 16px; font-size: 0.85rem;"><i
+            class="bi bi-check-circle-fill"></i> Active (Verified)</span>
         {% elif company.status == 'suspended' %}
-          <span class="metric-badge" style="background: rgba(220, 38, 38, 0.15); color: #dc2626; padding: 8px 16px; font-size: 0.85rem;"><i class="bi bi-x-circle-fill"></i> Suspended</span>
+        <span class="metric-badge"
+          style="background: rgba(220, 38, 38, 0.15); color: #dc2626; padding: 8px 16px; font-size: 0.85rem;"><i
+            class="bi bi-x-circle-fill"></i> Suspended</span>
         {% else %}
-          <span class="metric-badge" style="background: rgba(217, 119, 6, 0.15); color: #d97706; padding: 8px 16px; font-size: 0.85rem;"><i class="bi bi-clock-history"></i> Pending Verification</span>
+        <span class="metric-badge"
+          style="background: rgba(217, 119, 6, 0.15); color: #d97706; padding: 8px 16px; font-size: 0.85rem;"><i
+            class="bi bi-clock-history"></i> Pending Verification</span>
         {% endif %}
       </div>
 
-      <form method="POST" action="{{ url_for('admin.update_company_status', company_id=company.id) }}" class="company-status-form">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <form method="POST" action="{{ url_for('admin.update_company_status', company_id=company.id) }}"
+        class="company-status-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <select name="status" class="ref-form-control" style="padding: 8px 12px; font-size: 0.82rem; height: auto;">
-          <option value="active" {% if company.status == 'active' %}selected{% endif %}>Active</option>
-          <option value="pending_verification" {% if company.status == 'pending_verification' %}selected{% endif %}>Pending Verification</option>
-          <option value="suspended" {% if company.status == 'suspended' %}selected{% endif %}>Suspended</option>
+          <option value="active" {% if company.status=='active' %}selected{% endif %}>Active</option>
+          <option value="pending_verification" {% if company.status=='pending_verification' %}selected{% endif %}>
+            Pending Verification</option>
+          <option value="suspended" {% if company.status=='suspended' %}selected{% endif %}>Suspended</option>
         </select>
-        <button type="submit" class="btn-tiancai-pill" style="padding: 8px 16px; font-size: 0.82rem; width: auto; min-height: auto; white-space: nowrap;">
+        <button type="submit" class="btn-tiancai-pill"
+          style="padding: 8px 16px; font-size: 0.82rem; width: auto; min-height: auto; white-space: nowrap;">
           Update Status
         </button>
       </form>
@@ -65,13 +75,17 @@
 <div class="card" style="margin-bottom: 24px;">
   <div class="admin-doc-card-header">
     <div>
-      <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark);">Mandatory Compliance Documents Verification (4)</h3>
-      <p style="font-size: 0.82rem; color: var(--text-muted);">Review uploaded legal documents. Approving all 4 automatically verifies the organization.</p>
+      <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark);">Mandatory Compliance Documents
+        Verification (4)</h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted);">Review uploaded legal documents. Approving all 4
+        automatically verifies the organization.</p>
     </div>
 
-    <form method="POST" action="{{ url_for('admin.approve_all_documents', company_id=company.id) }}" class="admin-approve-all-form">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-      <button type="submit" class="btn-tiancai-pill" style="padding: 8px 18px; font-size: 0.82rem; width: auto; min-height: auto; background: #059669; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);">
+    <form method="POST" action="{{ url_for('admin.approve_all_documents', company_id=company.id) }}"
+      class="admin-approve-all-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <button type="submit" class="btn-tiancai-pill"
+        style="padding: 8px 18px; font-size: 0.82rem; width: auto; min-height: auto; background: #059669; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);">
         <i class="bi bi-check-all"></i> Approve All 4 Documents & Activate
       </button>
     </form>
@@ -85,15 +99,15 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 6px;">
           <span style="font-weight: 800; font-size: 0.9rem; color: var(--text-dark);">{{ title }}</span>
           {% if doc %}
-            {% if doc.status == 'approved' %}
-              <span class="metric-badge badge-active" style="font-size: 0.7rem;">Approved</span>
-            {% elif doc.status == 'rejected' %}
-              <span class="metric-badge badge-debit" style="font-size: 0.7rem;">Rejected</span>
-            {% else %}
-              <span class="metric-badge" style="background: #fef3c7; color: #d97706; font-size: 0.7rem;">Under Review</span>
-            {% endif %}
+          {% if doc.status == 'approved' %}
+          <span class="metric-badge badge-active" style="font-size: 0.7rem;">Approved</span>
+          {% elif doc.status == 'rejected' %}
+          <span class="metric-badge badge-debit" style="font-size: 0.7rem;">Rejected</span>
           {% else %}
-            <span class="metric-badge" style="background: #e2e8f0; color: #64748b; font-size: 0.7rem;">Not Uploaded</span>
+          <span class="metric-badge" style="background: #fef3c7; color: #d97706; font-size: 0.7rem;">Under Review</span>
+          {% endif %}
+          {% else %}
+          <span class="metric-badge" style="background: #e2e8f0; color: #64748b; font-size: 0.7rem;">Not Uploaded</span>
           {% endif %}
         </div>
 
@@ -118,25 +132,30 @@
 
       {% if doc %}
       <div class="admin-doc-actions">
-        <a href="{{ url_for('admin.download_document', doc_id=doc.id) }}" target="_blank" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 12px; font-size: 0.78rem;">
+        <a href="{{ url_for('admin.download_document', doc_id=doc.id) }}" target="_blank" class="lang-toggle-pill"
+          style="text-decoration: none; padding: 6px 12px; font-size: 0.78rem;">
           <i class="bi bi-eye"></i> View
         </a>
 
         {% if doc.status != 'approved' %}
-        <form method="POST" action="{{ url_for('admin.document_action', doc_id=doc.id) }}" style="display: inline; flex: 1 1 auto;">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <form method="POST" action="{{ url_for('admin.document_action', doc_id=doc.id) }}"
+          style="display: inline; flex: 1 1 auto;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
           <input type="hidden" name="action" value="approve">
-          <button type="submit" class="lang-toggle-pill" style="background: #d1fae5; color: #065f46; border: none; cursor: pointer; padding: 6px 12px; font-size: 0.78rem; width: 100%;">
+          <button type="submit" class="lang-toggle-pill"
+            style="background: #d1fae5; color: #065f46; border: none; cursor: pointer; padding: 6px 12px; font-size: 0.78rem; width: 100%;">
             <i class="bi bi-check-lg"></i> Approve
           </button>
         </form>
         {% endif %}
 
         {% if doc.status != 'rejected' %}
-        <form method="POST" action="{{ url_for('admin.document_action', doc_id=doc.id) }}" style="display: inline; flex: 1 1 auto;">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <form method="POST" action="{{ url_for('admin.document_action', doc_id=doc.id) }}"
+          style="display: inline; flex: 1 1 auto;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
           <input type="hidden" name="action" value="reject">
-          <button type="submit" class="lang-toggle-pill" style="background: #ffe4e6; color: #9f1239; border: none; cursor: pointer; padding: 6px 12px; font-size: 0.78rem; width: 100%;">
+          <button type="submit" class="lang-toggle-pill"
+            style="background: #ffe4e6; color: #9f1239; border: none; cursor: pointer; padding: 6px 12px; font-size: 0.78rem; width: 100%;">
             <i class="bi bi-x-lg"></i> Reject
           </button>
         </form>
@@ -152,10 +171,12 @@
 <div class="card pricing-limits-card">
   <div class="pricing-card-header">
     <div>
-      <span class="metric-badge" style="background: rgba(126, 34, 206, 0.12); color: #7e22ce; font-weight: 800; font-size: 0.72rem; margin-bottom: 6px; display: inline-block;">
+      <span class="metric-badge"
+        style="background: rgba(126, 34, 206, 0.12); color: #7e22ce; font-weight: 800; font-size: 0.72rem; margin-bottom: 6px; display: inline-block;">
         <i class="bi bi-tag-fill"></i> Commercial Terms
       </span>
-      <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+      <h3
+        style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
         <i class="bi bi-cash-coin" style="color: #7e22ce;"></i> Per-KYC Pricing & Recharge Limits
       </h3>
       <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 2px;">
@@ -166,16 +187,18 @@
     <!-- Quick Live Status Pill -->
     <div class="pricing-live-badges">
       <div class="pricing-pill-item">
-        <span style="color: var(--text-muted);">Per KYC:</span> <strong style="color: #7e22ce;">₹{{ "%.2f"|format(company.per_kyc_price) }}</strong>
+        <span style="color: var(--text-muted);">Per KYC:</span> <strong style="color: #7e22ce;">₹{{
+          "%.2f"|format(company.per_kyc_price) }}</strong>
       </div>
       <div class="pricing-pill-item">
-        <span style="color: var(--text-muted);">Min Recharge:</span> <strong style="color: #059669;">₹{{ "%.2f"|format(company.min_recharge_amount) }}</strong>
+        <span style="color: var(--text-muted);">Min Recharge:</span> <strong style="color: #059669;">₹{{
+          "%.2f"|format(company.min_recharge_amount) }}</strong>
       </div>
     </div>
   </div>
 
   <form method="POST" action="{{ url_for('admin.update_company_pricing', company_id=company.id) }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
     <div class="ref-form-grid" style="margin-bottom: 18px;">
       <!-- 1. Per-KYC Verification Price -->
@@ -193,7 +216,9 @@
         </div>
         <div style="position: relative;">
           <span class="currency-prefix" style="color: #7e22ce;">₹</span>
-          <input type="number" step="0.01" min="0" name="per_kyc_price" id="perKycInput" value="{{ '%.2f'|format(company.per_kyc_price) }}" required class="ref-form-control" style="padding-left: 30px; font-weight: 800; color: #7e22ce;">
+          <input type="number" step="0.01" min="0" name="per_kyc_price" id="perKycInput"
+            value="{{ '%.2f'|format(company.per_kyc_price) }}" required class="ref-form-control"
+            style="padding-left: 30px; font-weight: 800; color: #7e22ce;">
         </div>
       </div>
 
@@ -212,7 +237,9 @@
         </div>
         <div style="position: relative;">
           <span class="currency-prefix" style="color: #059669;">₹</span>
-          <input type="number" step="0.01" min="1" name="min_recharge_amount" id="minRechInput" value="{{ '%.2f'|format(company.min_recharge_amount) }}" required class="ref-form-control" style="padding-left: 30px; font-weight: 800; color: #059669;">
+          <input type="number" step="0.01" min="1" name="min_recharge_amount" id="minRechInput"
+            value="{{ '%.2f'|format(company.min_recharge_amount) }}" required class="ref-form-control"
+            style="padding-left: 30px; font-weight: 800; color: #059669;">
         </div>
       </div>
     </div>
@@ -227,14 +254,19 @@
 
 <!-- 1. ZoiKYC Client API -->
 <div class="card" style="margin-bottom: 16px; padding: 18px 22px; border: 1px solid #e2e8f0;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+  <div
+    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
     <div style="display: flex; align-items: center; gap: 8px;">
       <i class="bi bi-link-45deg" style="color: #2563eb; font-size: 1.2rem;"></i>
-      <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--text-dark); margin: 0;">ZoiKYC Client API Endpoint</h3>
-      <span class="metric-badge" style="background: rgba(37, 99, 235, 0.1); color: #2563eb; font-size: 0.7rem; padding: 2px 8px;">Direct POST</span>
+      <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--text-dark); margin: 0;">ZoiKYC Client API Endpoint
+      </h3>
+      <span class="metric-badge"
+        style="background: rgba(37, 99, 235, 0.1); color: #2563eb; font-size: 0.7rem; padding: 2px 8px;">Direct
+        POST</span>
     </div>
-    <form method="POST" action="{{ url_for('admin.regenerate_company_api_key', company_id=company.id) }}" style="margin: 0;" onsubmit="return confirm('Regenerate API Key for this client?');">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <form method="POST" action="{{ url_for('admin.regenerate_company_api_key', company_id=company.id) }}"
+      style="margin: 0;" onsubmit="return confirm('Regenerate API Key for this client?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <button type="submit" class="btn-table-manage" style="padding: 5px 12px; font-size: 0.76rem; height: 32px;">
         <i class="bi bi-arrow-repeat"></i> Regenerate Key
       </button>
@@ -243,13 +275,13 @@
 
   <div>
     <div style="display: flex; gap: 6px;">
-      <input type="text" readonly value="https://zoikyc.com/api/pan/{{ company.api_key or company.client_id }}" id="clientApiEndpointInput" class="ref-form-control" style="font-family: monospace; font-size: 0.84rem; font-weight: 700; color: #2563eb; background: #f8fafc; height: 36px;" />
-      <button type="button" onclick="copyFieldValue('clientApiEndpointInput', this)" class="btn-purple-pill" style="padding: 6px 14px; font-size: 0.8rem; height: 36px; white-space: nowrap;">
+      <input type="text" readonly value="https://zoikyc.com/api/pan/{{ company.api_key or company.client_id }}"
+        id="clientApiEndpointInput" class="ref-form-control"
+        style="font-family: monospace; font-size: 0.84rem; font-weight: 700; color: #2563eb; background: #f8fafc; height: 36px;" />
+      <button type="button" onclick="copyFieldValue('clientApiEndpointInput', this)" class="btn-purple-pill"
+        style="padding: 6px 14px; font-size: 0.8rem; height: 36px; white-space: nowrap;">
         <i class="bi bi-clipboard"></i> Copy Endpoint
       </button>
-    </div>
-    <div style="font-size: 0.74rem; color: #64748b; margin-top: 6px;">
-      Direct Endpoint: Call <code>POST</code> with JSON <code>{"pan": "ABCDE1234F", "dob": "01/01/1990"}</code>. No separate API header needed.
     </div>
   </div>
 </div>
@@ -257,52 +289,77 @@
 <!-- 2. CVL KRA Provider Credentials (External Gateway) -->
 <div class="card" style="margin-bottom: 20px; padding: 18px 22px; border: 1px solid #e2e8f0;">
   <form method="POST" action="{{ url_for('admin.update_company_gateway_credentials', company_id=company.id) }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+    <div
+      style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
       <div style="display: flex; align-items: center; gap: 8px;">
         <i class="bi bi-shield-lock" style="color: #7e22ce; font-size: 1.1rem;"></i>
-        <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--text-dark); margin: 0;">CVL KRA Provider Credentials</h3>
-        <span class="metric-badge" style="background: rgba(126, 34, 206, 0.1); color: #7e22ce; font-size: 0.7rem; padding: 2px 8px;">External Gateway</span>
+        <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--text-dark); margin: 0;">CVL KRA Provider
+          Credentials</h3>
+        <span class="metric-badge"
+          style="background: rgba(126, 34, 206, 0.1); color: #7e22ce; font-size: 0.7rem; padding: 2px 8px;">External
+          Gateway</span>
       </div>
       <div>
         {% if company.pos_code and company.api_user_id and company.api_password and company.aes_key %}
-          <span class="metric-badge" style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; font-size: 0.74rem; font-weight: 700; padding: 3px 9px;">
-            <i class="bi bi-check-circle-fill"></i> Configured
-          </span>
+        <span class="metric-badge"
+          style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; font-size: 0.74rem; font-weight: 700; padding: 3px 9px;">
+          <i class="bi bi-check-circle-fill"></i> Configured
+        </span>
         {% else %}
-          <span class="metric-badge" style="background: #fffbeb; color: #d97706; border: 1px solid #fde68a; font-size: 0.74rem; font-weight: 700; padding: 3px 9px;">
-            <i class="bi bi-exclamation-circle-fill"></i> Incomplete
-          </span>
+        <span class="metric-badge"
+          style="background: #fffbeb; color: #d97706; border: 1px solid #fde68a; font-size: 0.74rem; font-weight: 700; padding: 3px 9px;">
+          <i class="bi bi-exclamation-circle-fill"></i> Incomplete
+        </span>
         {% endif %}
       </div>
     </div>
 
     <!-- Row 1: POS Code, User, Password -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px;">
+    <div
+      style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px;">
       <div>
-        <label style="font-size: 0.74rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px;">POS Code *</label>
-        <input type="text" name="pos_code" value="{{ company.pos_code or '' }}" placeholder="e.g. 2500016409" class="ref-form-control" style="font-family: monospace; font-size: 0.8rem; padding: 6px 10px; height: 34px;" />
+        <label style="font-size: 0.74rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px;">POS
+          Code *</label>
+        <input type="text" name="pos_code" value="{{ company.pos_code or '' }}" placeholder="e.g. 2500016409"
+          class="ref-form-control"
+          style="font-family: monospace; font-size: 0.8rem; padding: 6px 10px; height: 34px;" />
       </div>
       <div>
-        <label style="font-size: 0.74rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px;">Username *</label>
-        <input type="text" name="api_user_id" value="{{ company.api_user_id or '' }}" placeholder="CVL Username" class="ref-form-control" style="font-family: monospace; font-size: 0.8rem; padding: 6px 10px; height: 34px;" />
+        <label
+          style="font-size: 0.74rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px;">Username
+          *</label>
+        <input type="text" name="api_user_id" value="{{ company.api_user_id or '' }}" placeholder="CVL Username"
+          class="ref-form-control"
+          style="font-family: monospace; font-size: 0.8rem; padding: 6px 10px; height: 34px;" />
       </div>
       <div>
-        <label style="font-size: 0.74rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px;">Password *</label>
-        <input type="text" name="api_password" value="{{ company.api_password or '' }}" placeholder="CVL Password" class="ref-form-control" style="font-family: monospace; font-size: 0.8rem; padding: 6px 10px; height: 34px;" />
+        <label
+          style="font-size: 0.74rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px;">Password
+          *</label>
+        <input type="text" name="api_password" value="{{ company.api_password or '' }}" placeholder="CVL Password"
+          class="ref-form-control"
+          style="font-family: monospace; font-size: 0.8rem; padding: 6px 10px; height: 34px;" />
       </div>
     </div>
 
     <!-- Row 2: AES Key, CVL API Key -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 14px;">
+    <div
+      style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 14px;">
       <div>
-        <label style="font-size: 0.74rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px;">AES-192 Key (PassKey) *</label>
-        <input type="text" name="aes_key" value="{{ company.aes_key or '' }}" placeholder="CVL Base64-URL Key" class="ref-form-control" style="font-family: monospace; font-size: 0.78rem; padding: 6px 10px; height: 34px;" />
+        <label style="font-size: 0.74rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px;">AES-192
+          Key (PassKey) *</label>
+        <input type="text" name="aes_key" value="{{ company.aes_key or '' }}" placeholder="CVL Base64-URL Key"
+          class="ref-form-control"
+          style="font-family: monospace; font-size: 0.78rem; padding: 6px 10px; height: 34px;" />
       </div>
       <div>
-        <label style="font-size: 0.74rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px;">CVL REST API Key</label>
-        <input type="text" name="api_key" value="{{ company.api_key or '' }}" placeholder="Optional REST api_key" class="ref-form-control" style="font-family: monospace; font-size: 0.78rem; padding: 6px 10px; height: 34px;" />
+        <label style="font-size: 0.74rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px;">CVL
+          REST API Key</label>
+        <input type="text" name="api_key" value="{{ company.api_key or '' }}" placeholder="Optional REST api_key"
+          class="ref-form-control"
+          style="font-family: monospace; font-size: 0.78rem; padding: 6px 10px; height: 34px;" />
       </div>
     </div>
 
@@ -317,12 +374,13 @@
 
 <!-- Two Columns: Manual Wallet Adjustment & Team Users -->
 <div class="admin-split-grid">
-  
+
   <!-- Manual Wallet Adjustment Card -->
   <div class="card" style="margin-bottom: 0;">
     <div class="wallet-adj-header">
       <div>
-        <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+        <h3
+          style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
           <i class="bi bi-wallet2" style="color: #059669;"></i> Wallet Balance & Adjustment
         </h3>
         <div style="font-size: 1.25rem; font-weight: 800; color: #059669; margin-top: 4px;">
@@ -331,24 +389,28 @@
       </div>
 
       <!-- Send Low Balance Alert Button -->
-      <form method="POST" action="{{ url_for('admin.send_low_balance_alert', company_id=company.id) }}" onsubmit="return confirm('Send Low Wallet Balance warning email to {{ company.name }} ({{ company.email }})?');">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <button type="submit" class="lang-toggle-pill" style="background: rgba(245, 158, 11, 0.12); color: #b45309; border: 1px solid #fde68a; cursor: pointer; padding: 7px 14px; font-size: 0.8rem; font-weight: 700;">
+      <form method="POST" action="{{ url_for('admin.send_low_balance_alert', company_id=company.id) }}"
+        onsubmit="return confirm('Send Low Wallet Balance warning email to {{ company.name }} ({{ company.email }})?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <button type="submit" class="lang-toggle-pill"
+          style="background: rgba(245, 158, 11, 0.12); color: #b45309; border: 1px solid #fde68a; cursor: pointer; padding: 7px 14px; font-size: 0.8rem; font-weight: 700;">
           <i class="bi bi-bell-fill" style="color: #d97706;"></i> Send Low Balance Alert
         </button>
       </form>
     </div>
 
     <form method="POST" action="{{ url_for('admin.adjust_wallet', company_id=company.id) }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
       <div class="ref-form-group" style="margin-bottom: 14px;">
         <label class="ref-form-label">Adjustment Type</label>
         <div style="display: flex; gap: 20px;">
-          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; cursor: pointer;">
+          <label
+            style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; cursor: pointer;">
             <input type="radio" name="action_type" value="credit" checked accent-color="#059669"> Credit (+)
           </label>
-          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; cursor: pointer;">
+          <label
+            style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; cursor: pointer;">
             <input type="radio" name="action_type" value="debit" accent-color="#dc2626"> Debit (-)
           </label>
         </div>
@@ -356,12 +418,14 @@
 
       <div class="ref-form-group" style="margin-bottom: 14px;">
         <label class="ref-form-label" for="amount">Amount (₹) *</label>
-        <input type="number" step="0.01" name="amount" id="amount" placeholder="e.g. 5000.00" required class="ref-form-control">
+        <input type="number" step="0.01" name="amount" id="amount" placeholder="e.g. 5000.00" required
+          class="ref-form-control">
       </div>
 
       <div class="ref-form-group" style="margin-bottom: 18px;">
         <label class="ref-form-label" for="reason">Reason / Audit Remark *</label>
-        <input type="text" name="reason" id="reason" placeholder="e.g. Test credit / billing adjustment" required class="ref-form-control">
+        <input type="text" name="reason" id="reason" placeholder="e.g. Test credit / billing adjustment" required
+          class="ref-form-control">
       </div>
 
       <button type="submit" class="btn-tiancai-pill" style="font-size: 0.88rem;">
@@ -372,20 +436,24 @@
 
   <!-- Team Users Card -->
   <div class="card" style="margin-bottom: 0;">
-    <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
+    <h3
+      style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
       <i class="bi bi-people" style="color: var(--tiancai-blue);"></i> Registered User Accounts ({{ users | length }})
     </h3>
 
     <div style="display: flex; flex-direction: column; gap: 12px;">
       {% for u in users %}
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: #f8fafc; border: 1px solid var(--border-input); border-radius: var(--radius-md);">
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: #f8fafc; border: 1px solid var(--border-input); border-radius: var(--radius-md);">
         <div>
           <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-dark);">{{ u.name }}</div>
           <div style="font-size: 0.78rem; color: var(--text-muted);">{{ u.email }} &bull; {{ u.phone }}</div>
         </div>
         <div style="text-align: right;">
-          <span class="metric-badge badge-active" style="font-size: 0.7rem; text-transform: uppercase;">{{ u.role }}</span>
-          <div style="font-size: 0.7rem; color: {% if u.email_verified %}#059669{% else %}#d97706{% endif %}; font-weight: 700; margin-top: 4px;">
+          <span class="metric-badge badge-active" style="font-size: 0.7rem; text-transform: uppercase;">{{ u.role
+            }}</span>
+          <div
+            style="font-size: 0.7rem; color: {% if u.email_verified %}#059669{% else %}#d97706{% endif %}; font-weight: 700; margin-top: 4px;">
             {{ 'Verified' if u.email_verified else 'Unverified' }}
           </div>
         </div>
@@ -427,11 +495,13 @@
             </span>
           </td>
           <td>
-            <span class="saas-status-badge {% if txn.type == 'credit' %}badge-active{% else %}badge-suspended{% endif %}">
+            <span
+              class="saas-status-badge {% if txn.type == 'credit' %}badge-active{% else %}badge-suspended{% endif %}">
               {{ txn.type | upper }}
             </span>
           </td>
-          <td style="font-weight: 800; font-size: 0.92rem; color: {% if txn.type == 'credit' %}#059669{% else %}#dc2626{% endif %};">
+          <td
+            style="font-weight: 800; font-size: 0.92rem; color: {% if txn.type == 'credit' %}#059669{% else %}#dc2626{% endif %};">
             {% if txn.type == 'credit' %}+{% else %}-{% endif %} {{ txn.amount | currency }}
           </td>
           <td style="font-weight: 700; color: #1e293b;">{{ txn.balance_after | currency }}</td>
@@ -445,8 +515,10 @@
     </table>
   </div>
   {% else %}
-  <div style="text-align: center; padding: 36px 20px; color: var(--text-muted); background: #f8fafc; border-radius: 12px; border: 1.5px dashed #cbd5e1;">
-    <p style="margin: 0; font-size: 0.88rem;">No transaction ledger entries recorded for this client organisation yet.</p>
+  <div
+    style="text-align: center; padding: 36px 20px; color: var(--text-muted); background: #f8fafc; border-radius: 12px; border: 1.5px dashed #cbd5e1;">
+    <p style="margin: 0; font-size: 0.88rem;">No transaction ledger entries recorded for this client organisation yet.
+    </p>
   </div>
   {% endif %}
 </div>
@@ -454,45 +526,45 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const perKycInput = document.getElementById('perKycInput');
-  const minRechInput = document.getElementById('minRechInput');
+  document.addEventListener('DOMContentLoaded', () => {
+    const perKycInput = document.getElementById('perKycInput');
+    const minRechInput = document.getElementById('minRechInput');
 
-  document.querySelectorAll('.btn-preset-kyc').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (perKycInput) {
-        perKycInput.value = btn.dataset.val;
-        perKycInput.focus();
-      }
+    document.querySelectorAll('.btn-preset-kyc').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (perKycInput) {
+          perKycInput.value = btn.dataset.val;
+          perKycInput.focus();
+        }
+      });
+    });
+
+    document.querySelectorAll('.btn-preset-rech').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (minRechInput) {
+          minRechInput.value = btn.dataset.val;
+          minRechInput.focus();
+        }
+      });
     });
   });
 
-  document.querySelectorAll('.btn-preset-rech').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (minRechInput) {
-        minRechInput.value = btn.dataset.val;
-        minRechInput.focus();
-      }
+  function copyFieldValue(elementId, btn) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    navigator.clipboard.writeText(el.value).then(() => {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
+      btn.style.background = '#059669';
+      btn.style.color = '#ffffff';
+      setTimeout(() => {
+        btn.innerHTML = orig;
+        btn.style.background = '';
+        btn.style.color = '';
+      }, 2000);
+    }).catch(e => {
+      prompt('Copy to clipboard:', el.value);
     });
-  });
-});
-
-function copyFieldValue(elementId, btn) {
-  const el = document.getElementById(elementId);
-  if (!el) return;
-  navigator.clipboard.writeText(el.value).then(() => {
-    const orig = btn.innerHTML;
-    btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
-    btn.style.background = '#059669';
-    btn.style.color = '#ffffff';
-    setTimeout(() => {
-      btn.innerHTML = orig;
-      btn.style.background = '';
-      btn.style.color = '';
-    }, 2000);
-  }).catch(e => {
-    prompt('Copy to clipboard:', el.value);
-  });
-}
+  }
 </script>
 {% endblock %}

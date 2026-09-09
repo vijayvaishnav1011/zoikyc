@@ -300,6 +300,12 @@
             style="height: 44px; padding: 0 28px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; font-size: 0.92rem; border-radius: 6px; box-shadow: 0 4px 14px rgba(126, 34, 206, 0.22); cursor: pointer; border: none;">
             <i class="bi bi-shield-check" style="font-size: 1.05rem;"></i> Verify PAN Details
           </button>
+          {% if result %}
+          <a href="{{ url_for('pan.index') }}"
+            style="height: 44px; padding: 0 18px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; font-size: 0.88rem; border-radius: 6px; background: #ffffff; color: #475569; border: 1px solid #cbd5e1; text-decoration: none; margin-left: 10px; vertical-align: middle;">
+            <i class="bi bi-arrow-counterclockwise"></i> Reset / New Check
+          </a>
+          {% endif %}
         </div>
 
       </div>
@@ -337,7 +343,11 @@
           {% endif %}
         </div>
 
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <a href="{{ url_for('pan.index') }}"
+            style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 7px; padding: 5px 12px; font-size: 0.78rem; font-weight: 700; color: #475569; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease;">
+            <i class="bi bi-plus-circle-fill" style="color: #10b981;"></i> <span>New Check</span>
+          </a>
           <button type="button" onclick="toggleResultJson()" id="btnToggleResultJson"
             style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 7px; padding: 5px 12px; font-size: 0.78rem; font-weight: 700; color: #475569; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease;">
             <i class="bi bi-braces" style="color: #7e22ce;"></i> <span id="toggleJsonText">View JSON</span>
@@ -774,6 +784,11 @@
         btnSubmit.disabled = true;
         btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verifying...';
       });
+    }
+
+    // 4. Ensure browser reload never prompts for form resubmission
+    if (window.history.replaceState) {
+      window.history.replaceState(null, null, window.location.href);
     }
   });
 </script>

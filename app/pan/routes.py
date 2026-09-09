@@ -57,6 +57,22 @@ def index():
     form = PANCheckForm()
     result = None
 
+    # Load result from PRG redirect if check_id is provided
+    check_id = request.args.get('check_id', type=int)
+    if check_id:
+        checked_record = PANVerification.query.filter_by(id=check_id, company_id=company.id).first()
+        if checked_record:
+            result = {
+                "record": checked_record,
+                "data": checked_record.to_dict(),
+                "pan_number": checked_record.pan_number,
+                "dob": checked_record.dob
+            }
+            if not form.pan_number.data:
+                form.pan_number.data = checked_record.pan_number
+            if not form.dob.data and checked_record.dob:
+                form.dob.data = checked_record.dob
+
     # Optional search / filter for recent checks
     search_query = request.args.get('q', '').strip().upper()
     status_filter = request.args.get('status', 'all').strip().lower()
@@ -236,24 +252,24 @@ def index():
                 "duration_ms": duration_ms
             })
 
-        result = {
-            "record": record,
-            "data": verification_data,
-            "pan_number": pan_number,
-            "dob": dob
-        }
-
         if verification_data.get('status') == 'verified':
             flash(f"PAN {pan_number} verified successfully: {verification_data.get('full_name')}", "success")
         else:
             flash(f"PAN verification failed: {verification_data.get('status_message')}", "danger")
 
-        # Refresh recent checks after submit
-        try:
-            recent_checks = query.order_by(PANVerification.created_at.desc()).limit(50).all()
-        except Exception:
-            db.session.rollback()
-            recent_checks = []
+        # Post/Redirect/Get (PRG) pattern:
+        # Redirect immediately to GET /services/pan?check_id=<id>
+        # This completely prevents browser form resubmission and repeat CVL calls when reloading the page!
+        if record and record.id:
+            return redirect(url_for('pan.index', check_id=record.id))
+        return redirect(url_for('pan.index'))
+
+    # If POST was submitted but failed form validation or missing fields, flash errors and redirect cleanly
+    if request.method == 'POST' and not is_json_req:
+        for field, err_list in form.errors.items():
+            for err in err_list:
+                flash(err, "danger")
+        return redirect(url_for('pan.index'))
 
     return render_template(
         'client/pan.html',
@@ -353,7 +369,7 @@ def public_api_pan(api_key=None):
         return jsonify({
             "success": False,
             "status": "unauthorized",
-            "error": "Authentication required. Please use your organisation's dedicated endpoint (e.g. /api/pan/<your_client_id>) or include 'X-API-Key' in the request headers."
+            "error": "Authentication Key required."
         }), 401
 
     if company.status == 'suspended':

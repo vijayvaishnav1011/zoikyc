@@ -101,6 +101,7 @@ class PANVerification(db.Model):
 
         return {
             "id": self.id,
+            "pan": self.pan_number or "",
             "pan_number": self.pan_number or "",
             "dob": self.dob or "-",
             "status": self.status or "unknown",
