@@ -105,6 +105,8 @@ def create_app(config_name=None):
             _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS endpoint VARCHAR(255);")
             _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS user_agent VARCHAR(255);")
             _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS duration_ms INTEGER;")
+            _safe_ddl("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS server_ip VARCHAR(100) DEFAULT '187.127.139.6';")
+            _safe_ddl("UPDATE pan_verifications SET server_ip = '187.127.139.6' WHERE server_ip IS NULL;")
             from app.models.company import Company
             from app.models.user import User
             from app.models.wallet import Wallet

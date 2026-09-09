@@ -1,3 +1,4 @@
+import os
 import json
 import time
 from decimal import Decimal
@@ -11,6 +12,22 @@ from app.models.wallet import Wallet
 from app.models.transaction import WalletTransaction
 from app.models.company import Company
 from app.integrations.pan import PANVerificationProvider
+
+_SERVER_PUBLIC_IP = None
+
+def get_outbound_server_ip():
+    """Resolves the server's outbound public IP that connects to CVL KRA."""
+    global _SERVER_PUBLIC_IP
+    if _SERVER_PUBLIC_IP:
+        return _SERVER_PUBLIC_IP
+
+    env_ip = os.getenv('SERVER_PUBLIC_IP') or os.getenv('SERVER_IP')
+    if env_ip:
+        _SERVER_PUBLIC_IP = env_ip.strip()
+        return _SERVER_PUBLIC_IP
+
+    _SERVER_PUBLIC_IP = '187.127.139.6'
+    return _SERVER_PUBLIC_IP
 
 def _extract_client_ip():
     """Extracts client IP prioritizing reverse proxies / Cloudflare headers."""
@@ -80,6 +97,8 @@ def index():
             db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS endpoint VARCHAR(255);"))
             db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS user_agent VARCHAR(255);"))
             db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS duration_ms INTEGER;"))
+            db.session.execute(text("ALTER TABLE pan_verifications ADD COLUMN IF NOT EXISTS server_ip VARCHAR(100) DEFAULT '187.127.139.6';"))
+            db.session.execute(text("UPDATE pan_verifications SET server_ip = '187.127.139.6' WHERE server_ip IS NULL;"))
             db.session.commit()
             recent_checks, total_checks, verified_count, failed_count = _fetch_stats_and_checks()
         except Exception:
@@ -183,6 +202,7 @@ def index():
                 reference_id=verification_data.get('reference_id'),
                 raw_response=raw_resp_str,
                 raw_request=verification_data.get('raw_request'),
+                server_ip=get_outbound_server_ip(),
                 ip_address=client_ip,
                 method=verification_data.get('method', 'CVL KRA'),
                 endpoint=request.path,
@@ -428,6 +448,7 @@ def public_api_pan(client_id=None):
                 reference_id=verification_data.get('reference_id'),
                 raw_response=raw_resp_str,
                 raw_request=verification_data.get('raw_request'),
+                server_ip=get_outbound_server_ip(),
                 ip_address=client_ip,
                 method=verification_data.get('method', 'CVL KRA'),
                 endpoint=request.path,

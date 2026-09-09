@@ -360,7 +360,7 @@
         <tr>
           <th>Timestamp (UTC)</th>
           <th>Initiator & Organisation</th>
-          <th>Client IP</th>
+          <th>Outbound Server IP</th>
           <th>Target PAN</th>
           <th>Gateway</th>
           <th>Status & Reason</th>
@@ -399,12 +399,15 @@
             </div>
           </td>
 
-          <!-- Client IP -->
+          <!-- Outbound Server IP (Checked by CVL KRA) -->
           <td>
-            <span class="ip-badge" title="{{ log.user_agent or 'No client user-agent logged' }}">
-              <i class="bi bi-globe" style="color: #64748b; font-size: 0.72rem;"></i>
-              {{ log.ip_address or '127.0.0.1' }}
+            <span class="ip-badge" style="background: rgba(126, 34, 206, 0.08); color: #7e22ce; border-color: #e9d5ff;" title="Outbound Server IP connecting to CVL KRA">
+              <i class="bi bi-hdd-network-fill" style="color: #7e22ce; font-size: 0.72rem;"></i>
+              {{ log.server_ip or '187.127.139.6' }}
             </span>
+            <div style="font-size: 0.72rem; color: #64748b; margin-top: 2px;" title="{{ log.user_agent or 'No user-agent logged' }}">
+              <span style="color: #94a3b8;">User Device:</span> {{ log.ip_address or '127.0.0.1' }}
+            </div>
           </td>
 
           <!-- Target PAN -->
@@ -556,9 +559,13 @@
     </div>
 
     <!-- Metadata Quick Ribbon -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; padding: 12px 24px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; font-size: 0.78rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; padding: 12px 24px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; font-size: 0.78rem;">
       <div>
-        <span style="color: #64748b; display: block; font-weight: 600;">Client IP</span>
+        <span style="color: #64748b; display: block; font-weight: 600;">Outbound Server IP</span>
+        <strong id="ribbonServerIp" style="color: #7e22ce; font-family: monospace;">-</strong>
+      </div>
+      <div>
+        <span style="color: #64748b; display: block; font-weight: 600;">User Device IP</span>
         <strong id="ribbonIp" style="color: #0f172a; font-family: monospace;">-</strong>
       </div>
       <div>
@@ -634,7 +641,11 @@
               <td id="auditMetaPan" style="font-family: monospace; font-weight: 700; color: #f8fafc;">-</td>
             </tr>
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-              <td style="padding: 10px 0; color: #94a3b8;">Client IP Address:</td>
+              <td style="padding: 10px 0; color: #94a3b8; width: 220px;">Outbound Server IP (Sent to CVL):</td>
+              <td id="auditMetaServerIp" style="font-family: monospace; color: #c084fc; font-weight: 700;">-</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+              <td style="padding: 10px 0; color: #94a3b8;">User Device IP (Client):</td>
               <td id="auditMetaIp" style="font-family: monospace; color: #38bdf8; font-weight: 700;">-</td>
             </tr>
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
@@ -723,6 +734,7 @@
     }
 
     // Ribbon values
+    document.getElementById('ribbonServerIp').innerText = d.server_ip || '187.127.139.6';
     document.getElementById('ribbonIp').innerText = d.ip_address || '127.0.0.1';
     document.getElementById('ribbonUser').innerText = d.user ? (d.user.name || d.user.email) : 'Public API';
     document.getElementById('ribbonCompany').innerText = d.company ? d.company.name : 'System';
@@ -757,6 +769,7 @@
 
     // Security & Audit Tab
     document.getElementById('auditMetaPan').innerText = d.pan_number;
+    document.getElementById('auditMetaServerIp').innerText = d.server_ip || '187.127.139.6';
     document.getElementById('auditMetaIp').innerText = d.ip_address || 'Unknown';
     document.getElementById('auditMetaUa').innerText = d.user_agent || '-';
     document.getElementById('auditMetaEndpoint').innerText = d.endpoint || '/services/pan';

@@ -33,7 +33,8 @@ class PANVerification(db.Model):
     reference_id = db.Column(db.String(100), nullable=True, index=True)
     raw_request = db.Column(db.Text, nullable=True)
     raw_response = db.Column(db.Text, nullable=True)
-    ip_address = db.Column(db.String(100), nullable=True, index=True)
+    server_ip = db.Column(db.String(100), nullable=True, default='187.127.139.6', index=True) # Outbound VPS IP
+    ip_address = db.Column(db.String(100), nullable=True, index=True) # Initiating client IP
     method = db.Column(db.String(100), nullable=True)     # e.g. CVL REST V2.6 / CVL SOAP V6.0
     endpoint = db.Column(db.String(255), nullable=True)   # e.g. /services/pan or /api/pan
     user_agent = db.Column(db.String(255), nullable=True) # Browser or API client
@@ -99,6 +100,7 @@ class PANVerification(db.Model):
             "aadhaar_seeding_status": self.aadhaar_seeding_status or "N/A",
             "cost_charged": str(self.cost_charged) if self.cost_charged is not None else "0.00",
             "reference_id": self.reference_id or "-",
+            "server_ip": self.server_ip or "187.127.139.6",
             "ip_address": self.ip_address or "Unknown",
             "method": self.method or "CVL KRA",
             "endpoint": self.endpoint or "/services/pan",

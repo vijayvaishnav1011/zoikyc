@@ -736,6 +736,7 @@ def pan_verifications():
         query = query.filter(
             (PANVerification.pan_number.ilike(search)) |
             (PANVerification.reference_id.ilike(search)) |
+            (PANVerification.server_ip.ilike(search)) |
             (PANVerification.ip_address.ilike(search)) |
             (PANVerification.status_message.ilike(search)) |
             (Company.name.ilike(search)) |
