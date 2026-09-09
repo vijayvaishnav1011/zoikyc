@@ -1,77 +1,371 @@
 {% extends 'admin/base.html' %}
 
-{% block title %}PAN API Traffic & Audit Logs — Admin{% endblock %}
+{% block title %}PAN API Verification Logs — Super Admin ZoiKYC{% endblock %}
 {% block page_title %}PAN Verification Traffic Logs{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* Stat Metrics Cards */
+  .audit-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+  .audit-metric-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-xl);
+    padding: 20px 22px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .audit-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  }
+  .audit-metric-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+  }
+  .metric-card-purple::before { background: linear-gradient(180deg, #9333ea, #7e22ce); }
+  .metric-card-emerald::before { background: linear-gradient(180deg, #10b981, #059669); }
+  .metric-card-rose::before { background: linear-gradient(180deg, #ef4444, #dc2626); }
+
+  .metric-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .metric-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+  }
+  .metric-icon-wrap {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+  }
+  .metric-val {
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-top: 8px;
+    line-height: 1.1;
+  }
+  .metric-sub {
+    font-size: 0.76rem;
+    color: #64748b;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  /* Table styling */
+  .ip-badge {
+    font-family: 'SFMono-Regular', Consolas, Menlo, monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    background: #f1f5f9;
+    color: #334155;
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    letter-spacing: 0.2px;
+  }
+  .pan-badge {
+    font-family: 'SFMono-Regular', Consolas, Menlo, monospace;
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: 0.6px;
+    background: rgba(139, 92, 246, 0.08);
+    color: #6d28d9;
+    padding: 2px 7px;
+    border-radius: 6px;
+    display: inline-block;
+  }
+  .latency-pill {
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .latency-pill.fast { color: #059669; border-color: #a7f3d0; background: #ecfdf5; }
+  .latency-pill.normal { color: #2563eb; border-color: #bfdbfe; background: #eff6ff; }
+  .latency-pill.slow { color: #d97706; border-color: #fde68a; background: #fffbeb; }
+
+  /* Engine Badges */
+  .engine-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    letter-spacing: 0.2px;
+  }
+  .engine-rest {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+  }
+  .engine-soap {
+    background: #faf5ff;
+    color: #7e22ce;
+    border: 1px solid #e9d5ff;
+  }
+  .engine-other {
+    background: #f8fafc;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+  }
+
+  /* Status Badges */
+  .audit-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 0.76rem;
+    font-weight: 700;
+  }
+  .audit-status.verified {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+  }
+  .audit-status.failed {
+    background: #fff1f2;
+    color: #e11d48;
+    border: 1px solid #fecdd3;
+  }
+  .audit-status.pending {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
+  }
+
+  /* Modal Inspector Styles */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(5px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+  }
+  .modal-dialog {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 920px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes modalPop {
+    from { opacity: 0; transform: scale(0.96) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .modal-tab-btn {
+    padding: 12px 18px;
+    border: none;
+    background: transparent;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #64748b;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+  }
+  .modal-tab-btn:hover {
+    color: #0f172a;
+  }
+  .modal-tab-btn.active {
+    color: #7e22ce;
+    border-bottom-color: #7e22ce;
+  }
+
+  .code-viewer-container {
+    background: #0f172a;
+    border-radius: 10px;
+    padding: 16px;
+    overflow: hidden;
+    position: relative;
+  }
+  .code-viewer-pre {
+    margin: 0;
+    max-height: 440px;
+    overflow-y: auto;
+    font-family: 'SFMono-Regular', Consolas, Menlo, Monaco, monospace;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<!-- Overview Metric Cards -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-  <div class="card" style="padding: 18px 20px; border-left: 4px solid var(--tiancai-blue); margin-bottom: 0;">
-    <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Total Requests</div>
-    <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-dark); margin-top: 4px;">{{ total_logs }}</div>
-    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Across all organizations</div>
+<!-- Top Metrics Row -->
+<div class="audit-metrics-grid">
+  <!-- Card 1: Total Verifications -->
+  <div class="audit-metric-card metric-card-purple">
+    <div class="metric-top-row">
+      <span class="metric-label">Total Verifications</span>
+      <div class="metric-icon-wrap" style="background: #faf5ff; color: #7e22ce;">
+        <i class="bi bi-hdd-network-fill"></i>
+      </div>
+    </div>
+    <div class="metric-val">{{ total_logs }}</div>
+    <div class="metric-sub">
+      <i class="bi bi-diagram-3"></i> Total outbound calls logged
+    </div>
   </div>
 
-  <div class="card" style="padding: 18px 20px; border-left: 4px solid #10b981; margin-bottom: 0;">
-    <div style="font-size: 0.8rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em;">Verified Successfully</div>
-    <div style="font-size: 1.8rem; font-weight: 800; color: #10b981; margin-top: 4px;">{{ verified_logs }}</div>
-    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Valid KRA Records Returned</div>
+  <!-- Card 2: Verified Successfully -->
+  <div class="audit-metric-card metric-card-emerald">
+    <div class="metric-top-row">
+      <span class="metric-label">Verified Records</span>
+      <div class="metric-icon-wrap" style="background: #ecfdf5; color: #10b981;">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+    </div>
+    <div class="metric-val" style="color: #059669;">{{ verified_logs }}</div>
+    <div class="metric-sub" style="color: #059669;">
+      <i class="bi bi-shield-check"></i> Valid KRA records matched
+    </div>
   </div>
 
-  <div class="card" style="padding: 18px 20px; border-left: 4px solid #e11d48; margin-bottom: 0;">
-    <div style="font-size: 0.8rem; font-weight: 700; color: #e11d48; text-transform: uppercase; letter-spacing: 0.05em;">Failed / Blocked</div>
-    <div style="font-size: 1.8rem; font-weight: 800; color: #e11d48; margin-top: 4px;">{{ failed_logs }}</div>
-    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Authentication / IP Restrictions</div>
+  <!-- Card 3: Failed / Restrictions -->
+  <div class="audit-metric-card metric-card-rose">
+    <div class="metric-top-row">
+      <span class="metric-label">Failed / Blocked</span>
+      <div class="metric-icon-wrap" style="background: #fff1f2; color: #ef4444;">
+        <i class="bi bi-shield-x"></i>
+      </div>
+    </div>
+    <div class="metric-val" style="color: #e11d48;">{{ failed_logs }}</div>
+    <div class="metric-sub" style="color: #e11d48;">
+      <i class="bi bi-exclamation-octagon"></i> IP whitelist / Auth errors
+    </div>
   </div>
 </div>
 
-<!-- Main Table Card -->
-<div class="card" style="margin-bottom: 24px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
-    <div>
-      <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--text-dark); margin: 0;">
-        <i class="bi bi-hdd-network" style="color: var(--tiancai-blue); margin-right: 8px;"></i>Full Outbound & Inbound Audit Trail
-      </h2>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
-        Inspect exact requests sent to CVL KRA, live responses received, user identity, and originating IP addresses.
-      </p>
-    </div>
+<!-- Main Table Container Card -->
+<div class="card" style="padding: 24px; border: 1px solid #e2e8f0; border-radius: var(--radius-xl); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);">
 
-    <!-- Filter & Search Controls -->
-    <form method="GET" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-      <select name="status" onchange="this.form.submit()" class="ref-form-control" style="width: 140px; height: 38px; font-size: 0.85rem; padding: 0 10px;">
-        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Statuses</option>
-        <option value="verified" {% if status_filter == 'verified' %}selected{% endif %}>Verified Only</option>
-        <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>Failed Only</option>
-      </select>
-
-      <div style="position: relative;">
-        <input type="text" name="q" value="{{ search_query }}" class="ref-form-control" placeholder="Search PAN, IP, User, Co..." style="width: 260px; height: 38px; font-size: 0.85rem; padding-right: 32px;">
-        <button type="submit" style="position: absolute; right: 8px; top: 9px; border: none; background: transparent; color: var(--text-muted); cursor: pointer;">
-          <i class="bi bi-search"></i>
-        </button>
+  <!-- SaaS Page Header -->
+  <div class="saas-page-header">
+    <div class="saas-page-title-group">
+      <h3>
+        <span>PAN API Verification Traffic</span>
+        <span class="saas-count-badge">{{ total_logs }} Requests</span>
+      </h3>
+      <div class="saas-page-subtitle">
+        Real-time developer audit trail of all outbound CVL KRA requests, encrypted network payloads, responses, client IPs, and server latency.
       </div>
-
-      {% if search_query or status_filter != 'all' %}
-      <a href="{{ url_for('admin.pan_verifications') }}" class="btn-tiancai-pill" style="height: 38px; padding: 0 14px; background: #e2e8f0; color: #475569; border: none; font-size: 0.85rem; display: inline-flex; align-items: center;">
-        <i class="bi bi-x-circle" style="margin-right: 4px;"></i> Clear
-      </a>
-      {% endif %}
-    </form>
+    </div>
   </div>
 
-  <div class="ref-table-container">
-    <table class="ref-table">
+  <!-- Unified Controls Bar (Integrated Search + Segmented Filter Tabs) -->
+  <div class="saas-controls-bar">
+    <!-- Search Input Form with Embedded Icon -->
+    <form method="GET" action="{{ url_for('admin.pan_verifications') }}" class="saas-search-form">
+      <input type="hidden" name="status" value="{{ status_filter }}">
+      <div class="saas-search-box">
+        <i class="bi bi-search saas-search-icon"></i>
+        <input 
+          type="text" 
+          name="q" 
+          value="{{ search_query }}" 
+          placeholder="Search PAN, Client IP, User Email, Company..." 
+          class="saas-search-field"
+          autocomplete="off"
+        >
+        {% if search_query %}
+          <a href="{{ url_for('admin.pan_verifications', status=status_filter) }}" class="saas-search-clear" title="Clear search">
+            <i class="bi bi-x-circle-fill"></i>
+          </a>
+        {% endif %}
+      </div>
+    </form>
+
+    <!-- Segmented Status Filter Tabs -->
+    <div class="saas-filter-tabs">
+      <a href="{{ url_for('admin.pan_verifications', status='all', q=search_query) }}" class="saas-tab-link {% if status_filter == 'all' %}active{% endif %}">
+        <i class="bi bi-grid-fill" style="font-size: 0.72rem;"></i>
+        <span>All Calls</span>
+        <span class="tab-badge">{{ total_logs }}</span>
+      </a>
+
+      <a href="{{ url_for('admin.pan_verifications', status='verified', q=search_query) }}" class="saas-tab-link {% if status_filter == 'verified' %}active{% endif %}">
+        <span class="status-dot dot-emerald"></span>
+        <span>Verified</span>
+        <span class="tab-badge">{{ verified_logs }}</span>
+      </a>
+
+      <a href="{{ url_for('admin.pan_verifications', status='failed', q=search_query) }}" class="saas-tab-link {% if status_filter == 'failed' %}active{% endif %}">
+        <span class="status-dot dot-rose"></span>
+        <span>Failed / Blocked</span>
+        <span class="tab-badge">{{ failed_logs }}</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  {% if pagination and pagination.items %}
+  <div class="saas-table-card">
+    <table class="saas-table">
       <thead>
         <tr>
-          <th style="min-width: 140px;">Timestamp</th>
-          <th style="min-width: 170px;">User & Company</th>
-          <th style="min-width: 130px;">Client IP</th>
-          <th style="min-width: 140px;">Target PAN</th>
-          <th style="min-width: 110px;">Gateway</th>
-          <th style="min-width: 180px;">Status & Message</th>
-          <th style="min-width: 80px;">Latency</th>
-          <th style="text-align: right; min-width: 110px;">Action</th>
+          <th>Timestamp (UTC)</th>
+          <th>Initiator & Organisation</th>
+          <th>Client IP</th>
+          <th>Target PAN</th>
+          <th>Gateway</th>
+          <th>Status & Reason</th>
+          <th>Latency</th>
+          <th style="text-align: right;">Inspector</th>
         </tr>
       </thead>
       <tbody>
@@ -79,71 +373,85 @@
         <tr>
           <!-- Timestamp -->
           <td>
-            <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-dark);">{{ log.created_at.strftime('%Y-%m-%d') }}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ log.created_at.strftime('%H:%M:%S') }} UTC</div>
-          </td>
-
-          <!-- User & Company -->
-          <td>
-            <div style="font-size: 0.85rem; font-weight: 700; color: var(--tiancai-blue);">
-              {{ log.company.name if log.company else 'System' }}
+            <div style="font-weight: 700; color: #1e293b; font-size: 0.84rem;">
+              {{ log.created_at.strftime('%d %b %Y') }}
             </div>
-            <div style="font-size: 0.75rem; color: var(--text-dark); margin-top: 2px;">
-              <i class="bi bi-person-circle" style="font-size: 0.7rem; color: var(--text-muted);"></i>
-              {% if log.user %}
-                {{ log.user.email }}
-              {% else %}
-                <span style="color: var(--text-muted); font-style: italic;">Public API / Automated</span>
-              {% endif %}
+            <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px; display: flex; align-items: center; gap: 4px;">
+              <i class="bi bi-clock"></i> {{ log.created_at.strftime('%H:%M:%S') }} UTC
             </div>
           </td>
 
-          <!-- Client IP Address -->
+          <!-- Initiator & Organisation -->
           <td>
-            <span style="display: inline-block; font-family: monospace; font-size: 0.78rem; font-weight: 700; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0; color: #334155;" title="{{ log.user_agent or 'No User-Agent logged' }}">
-              <i class="bi bi-globe" style="font-size: 0.7rem; margin-right: 3px; color: #64748b;"></i>{{ log.ip_address or '127.0.0.1' }}
+            <div style="font-weight: 700; color: #0f172a; font-size: 0.88rem;">
+              {{ log.company.name if log.company else 'Global Platform' }}
+            </div>
+            <div class="company-sub-meta">
+              <span class="chip-client-id">{{ log.company.client_id or 'SYSTEM' }}</span>
+              <span style="color: #94a3b8;">&bull;</span>
+              <span style="color: #475569; font-weight: 500;">
+                {% if log.user %}
+                  {{ log.user.email }}
+                {% else %}
+                  <span style="color: #94a3b8; font-style: italic;">Public API / Automated</span>
+                {% endif %}
+              </span>
+            </div>
+          </td>
+
+          <!-- Client IP -->
+          <td>
+            <span class="ip-badge" title="{{ log.user_agent or 'No client user-agent logged' }}">
+              <i class="bi bi-globe" style="color: #64748b; font-size: 0.72rem;"></i>
+              {{ log.ip_address or '127.0.0.1' }}
             </span>
           </td>
 
-          <!-- Target PAN & Name -->
+          <!-- Target PAN -->
           <td>
-            <span style="font-family: monospace; font-weight: 800; font-size: 0.9rem; color: #0f172a; letter-spacing: 0.05em;">
-              {{ log.pan_number }}
-            </span>
-            <div style="font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;" title="{{ log.full_name or 'N/A' }}">
-              {{ log.full_name or '-' }}
+            <span class="pan-badge">{{ log.pan_number }}</span>
+            <div style="font-size: 0.76rem; color: #475569; margin-top: 3px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;" title="{{ log.full_name or 'N/A' }}">
+              {{ log.full_name or 'Name Not Available' }}
             </div>
           </td>
 
           <!-- Gateway Method -->
           <td>
             {% if 'REST' in (log.method or '') %}
-            <span style="display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: rgba(37, 99, 235, 0.1); color: #2563eb;">
-              <i class="bi bi-lightning-charge-fill"></i> REST V2.6
-            </span>
+              <span class="engine-badge engine-rest">
+                <i class="bi bi-lightning-charge-fill"></i> REST V2.6
+              </span>
             {% elif 'SOAP' in (log.method or '') %}
-            <span style="display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: rgba(147, 51, 234, 0.1); color: #9333ea;">
-              <i class="bi bi-code-square"></i> SOAP V6.0
-            </span>
+              <span class="engine-badge engine-soap">
+                <i class="bi bi-code-square"></i> SOAP V6.0
+              </span>
             {% else %}
-            <span style="display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: #f1f5f9; color: #64748b;">
-              {{ log.method or 'CVL KRA' }}
-            </span>
+              <span class="engine-badge engine-other">
+                {{ log.method or 'CVL KRA' }}
+              </span>
             {% endif %}
           </td>
 
           <!-- Status & Message -->
           <td>
-            {% if log.status == 'verified' %}
-            <span class="metric-badge badge-active" style="padding: 2px 8px; font-size: 0.75rem;"><i class="bi bi-check-circle-fill"></i> Verified</span>
-            {% elif log.status == 'failed' %}
-            <span class="metric-badge" style="background: rgba(225, 29, 72, 0.1); color: #e11d48; padding: 2px 8px; font-size: 0.75rem;"><i class="bi bi-x-circle-fill"></i> Failed</span>
-            {% else %}
-            <span class="metric-badge" style="background: rgba(245, 158, 11, 0.1); color: #d97706; padding: 2px 8px; font-size: 0.75rem;"><i class="bi bi-exclamation-triangle-fill"></i> {{ log.status|title }}</span>
-            {% endif %}
+            <div>
+              {% if log.status == 'verified' %}
+                <span class="audit-status verified">
+                  <i class="bi bi-check-circle-fill"></i> Verified
+                </span>
+              {% elif log.status == 'failed' %}
+                <span class="audit-status failed">
+                  <i class="bi bi-x-circle-fill"></i> Failed
+                </span>
+              {% else %}
+                <span class="audit-status pending">
+                  <i class="bi bi-exclamation-triangle-fill"></i> {{ log.status|title }}
+                </span>
+              {% endif %}
+            </div>
 
             {% if log.status_message %}
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ log.status_message }}">
+            <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ log.status_message }}">
               {{ log.status_message }}
             </div>
             {% endif %}
@@ -151,24 +459,25 @@
 
           <!-- Latency -->
           <td>
-            <span style="font-size: 0.78rem; font-weight: 600; color: #64748b;">
-              {% if log.duration_ms %}{{ log.duration_ms }} ms{% else %}-{% endif %}
-            </span>
+            {% if log.duration_ms %}
+              {% if log.duration_ms < 500 %}
+                <span class="latency-pill fast"><i class="bi bi-speedometer2"></i> {{ log.duration_ms }} ms</span>
+              {% elif log.duration_ms < 1500 %}
+                <span class="latency-pill normal"><i class="bi bi-speedometer2"></i> {{ log.duration_ms }} ms</span>
+              {% else %}
+                <span class="latency-pill slow"><i class="bi bi-speedometer2"></i> {{ log.duration_ms }} ms</span>
+              {% endif %}
+            {% else %}
+              <span style="color: #94a3b8; font-size: 0.78rem;">-</span>
+            {% endif %}
           </td>
 
-          <!-- Inspect Action -->
+          <!-- Action -->
           <td style="text-align: right;">
-            <button onclick="openInspectorModal({{ log.id }})" class="btn-tiancai-pill" style="padding: 5px 12px; font-size: 0.78rem; background: #f8fafc; color: var(--tiancai-blue); border: 1px solid #cbd5e1; cursor: pointer;">
-              <i class="bi bi-eye"></i> Inspect
+            <button type="button" onclick="openInspectorModal({{ log.id }})" class="btn-table-manage">
+              <i class="bi bi-code-slash"></i>
+              <span>Inspect</span>
             </button>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="8" style="text-align: center; padding: 50px 20px; color: var(--text-muted);">
-            <i class="bi bi-inbox" style="font-size: 2.5rem; display: block; margin-bottom: 12px; color: #cbd5e1;"></i>
-            <div style="font-weight: 700; font-size: 1rem; color: var(--text-dark);">No API Traffic Logs Found</div>
-            <p style="font-size: 0.85rem; margin-top: 4px;">Adjust your search query or run a verification from the client panel.</p>
           </td>
         </tr>
         {% endfor %}
@@ -177,315 +486,347 @@
   </div>
 
   <!-- Pagination -->
-  {% if pagination.pages > 1 %}
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 12px;">
-    <div style="font-size: 0.85rem; color: var(--text-muted);">
-      Showing {{ pagination.first }} to {{ pagination.last }} of {{ pagination.total }} records
+  {% if pagination and pagination.pages > 1 %}
+  <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid #f1f5f9; margin-top: 10px; font-size: 0.85rem; color: #64748b; flex-wrap: wrap; gap: 10px;">
+    <div>
+      Showing <strong>{{ pagination.first }}</strong> to <strong>{{ pagination.last }}</strong> of <strong>{{ pagination.total }}</strong> transactions
     </div>
-    <div style="display: flex; gap: 4px;">
-      {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-        {% if page_num %}
-          {% if page_num == pagination.page %}
-            <span style="background: var(--tiancai-blue); color: white; border-radius: 4px; padding: 4px 10px; font-size: 0.85rem; font-weight: 700;">{{ page_num }}</span>
-          {% else %}
-            <a href="{{ url_for('admin.pan_verifications', page=page_num, q=search_query, status=status_filter) }}" style="background: #f1f5f9; color: var(--text-dark); border-radius: 4px; padding: 4px 10px; font-size: 0.85rem; text-decoration: none;">{{ page_num }}</a>
-          {% endif %}
-        {% else %}
-          <span style="padding: 4px 10px; color: var(--text-muted);">...</span>
-        {% endif %}
-      {% endfor %}
+    <div style="display: flex; gap: 6px; align-items: center;">
+      {% if pagination.has_prev %}
+        <a href="{{ url_for('admin.pan_verifications', page=pagination.prev_num, status=status_filter, q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 12px; font-size: 0.8rem; background: #ffffff;">
+          &larr; Prev
+        </a>
+      {% endif %}
+
+      <span style="font-weight: 700; color: #0f172a; padding: 0 6px;">
+        {{ pagination.page }} / {{ pagination.pages }}
+      </span>
+
+      {% if pagination.has_next %}
+        <a href="{{ url_for('admin.pan_verifications', page=pagination.next_num, status=status_filter, q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 12px; font-size: 0.8rem; background: #ffffff;">
+          Next &rarr;
+        </a>
+      {% endif %}
     </div>
   </div>
   {% endif %}
+
+  {% else %}
+  <!-- Empty State -->
+  <div style="text-align: center; padding: 56px 20px; background: #f8fafc; border-radius: 14px; border: 1.5px dashed #cbd5e1; margin: 10px 0;">
+    <div style="width: 56px; height: 56px; border-radius: 50%; background: #ede9fe; color: #7e22ce; display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 14px;">
+      <i class="bi bi-terminal"></i>
+    </div>
+    <h4 style="font-size: 1.1rem; font-weight: 800; color: #1e293b; margin-bottom: 6px;">No PAN Traffic Logs Found</h4>
+    <p style="font-size: 0.85rem; color: #64748b; max-width: 420px; margin: 0 auto 20px;">
+      {% if search_query %}
+        No requests match your search for "<strong>{{ search_query }}</strong>" under the <strong>{{ status_filter }}</strong> filter.
+      {% else %}
+        There are currently no verification requests recorded under the selected status filter.
+      {% endif %}
+    </p>
+    {% if search_query or status_filter != 'all' %}
+      <a href="{{ url_for('admin.pan_verifications') }}" class="btn-table-manage" style="display: inline-flex;">
+        <i class="bi bi-arrow-counterclockwise"></i> Reset Search & Filters
+      </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
 </div>
 
-<!-- Comprehensive Transaction Inspector Modal -->
-<div id="inspectorModal" class="ref-modal" style="display: none; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999;">
-  <div class="ref-modal-content" style="max-width: 900px; width: 94%; max-height: 90vh; display: flex; flex-direction: column; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+<!-- Interactive Transaction Inspector Modal -->
+<div id="inspectorModal" class="modal-overlay" onclick="handleBackdropClick(event)">
+  <div class="modal-dialog">
     
-    <!-- Modal Header -->
-    <div style="padding: 16px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+    <!-- Modal Top Header -->
+    <div style="padding: 18px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
       <div>
         <div style="display: flex; align-items: center; gap: 10px;">
-          <h3 id="modalTitle" style="margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-dark);">
-            Transaction Details
+          <h3 id="modalTxnTitle" style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">
+            Transaction Inspector
           </h3>
-          <span id="modalStatusBadge" class="metric-badge"></span>
+          <span id="modalTxnStatus" class="audit-status"></span>
         </div>
-        <div id="modalSubtitle" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;"></div>
+        <div id="modalTxnSubtitle" style="font-size: 0.78rem; color: #64748b; margin-top: 4px;"></div>
       </div>
-      <button onclick="closeInspectorModal()" style="border: none; background: #e2e8f0; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #475569;">
+      <button type="button" onclick="closeInspectorModal()" style="border: none; background: #e2e8f0; border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #475569; transition: background 0.15s;">
         <i class="bi bi-x-lg"></i>
       </button>
     </div>
 
-    <!-- Quick Meta Ribbon -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; padding: 12px 24px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; font-size: 0.78rem;">
+    <!-- Metadata Quick Ribbon -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; padding: 12px 24px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; font-size: 0.78rem;">
       <div>
-        <span style="color: var(--text-muted); display: block;">Client IP</span>
-        <strong id="metaIp" style="color: #0f172a; font-family: monospace;">-</strong>
+        <span style="color: #64748b; display: block; font-weight: 600;">Client IP</span>
+        <strong id="ribbonIp" style="color: #0f172a; font-family: monospace;">-</strong>
       </div>
       <div>
-        <span style="color: var(--text-muted); display: block;">Initiating User</span>
-        <strong id="metaUser" style="color: #0f172a;">-</strong>
+        <span style="color: #64748b; display: block; font-weight: 600;">Initiating User</span>
+        <strong id="ribbonUser" style="color: #0f172a;">-</strong>
       </div>
       <div>
-        <span style="color: var(--text-muted); display: block;">Organization</span>
-        <strong id="metaCompany" style="color: #0f172a;">-</strong>
+        <span style="color: #64748b; display: block; font-weight: 600;">Organisation</span>
+        <strong id="ribbonCompany" style="color: #0f172a;">-</strong>
       </div>
       <div>
-        <span style="color: var(--text-muted); display: block;">Engine / Method</span>
-        <strong id="metaMethod" style="color: #0f172a;">-</strong>
+        <span style="color: #64748b; display: block; font-weight: 600;">Gateway Protocol</span>
+        <strong id="ribbonMethod" style="color: #0f172a;">-</strong>
       </div>
       <div>
-        <span style="color: var(--text-muted); display: block;">Latency</span>
-        <strong id="metaLatency" style="color: #0f172a;">-</strong>
+        <span style="color: #64748b; display: block; font-weight: 600;">Server Latency</span>
+        <strong id="ribbonLatency" style="color: #0f172a;">-</strong>
       </div>
     </div>
 
-    <!-- Modal Tabs -->
+    <!-- Tab Selection Bar -->
     <div style="display: flex; border-bottom: 1px solid #e2e8f0; background: #ffffff; padding: 0 24px;">
-      <button id="tabBtnRequest" onclick="switchInspectorTab('request')" style="padding: 12px 18px; border: none; background: transparent; font-weight: 700; font-size: 0.85rem; color: var(--tiancai-blue); border-bottom: 2px solid var(--tiancai-blue); cursor: pointer;">
-        <i class="bi bi-arrow-up-right-circle" style="margin-right: 6px;"></i>Outbound Request (What We Sent)
+      <button type="button" id="modalTabBtnRequest" onclick="selectInspectorTab('request')" class="modal-tab-btn active">
+        <i class="bi bi-arrow-up-right-circle"></i> Outbound Request (What We Sent)
       </button>
-      <button id="tabBtnResponse" onclick="switchInspectorTab('response')" style="padding: 12px 18px; border: none; background: transparent; font-weight: 700; font-size: 0.85rem; color: #64748b; border-bottom: 2px solid transparent; cursor: pointer;">
-        <i class="bi bi-arrow-down-left-circle" style="margin-right: 6px;"></i>Inbound Response (What We Received)
+      <button type="button" id="modalTabBtnResponse" onclick="selectInspectorTab('response')" class="modal-tab-btn">
+        <i class="bi bi-arrow-down-left-circle"></i> Inbound Response (What We Received)
       </button>
-      <button id="tabBtnMeta" onclick="switchInspectorTab('meta')" style="padding: 12px 18px; border: none; background: transparent; font-weight: 700; font-size: 0.85rem; color: #64748b; border-bottom: 2px solid transparent; cursor: pointer;">
-        <i class="bi bi-info-circle" style="margin-right: 6px;"></i>Audit & Network Metadata
+      <button type="button" id="modalTabBtnMeta" onclick="selectInspectorTab('meta')" class="modal-tab-btn">
+        <i class="bi bi-shield-check"></i> Security & Audit Info
       </button>
     </div>
 
-    <!-- Tab Contents -->
-    <div class="ref-modal-body" style="padding: 16px 24px; overflow-y: auto; flex: 1; background: #0f172a;">
+    <!-- Tab Contents Container -->
+    <div style="padding: 20px 24px; overflow-y: auto; flex: 1; background: #0f172a;">
+      
       <!-- Tab 1: Request -->
-      <div id="tabContentRequest">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <span style="color: #94a3b8; font-size: 0.75rem; font-weight: 600;">PAYLOAD SENT TO CVL KRA SERVER:</span>
-          <button onclick="copyToClipboard('requestRawText', this)" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #f8fafc; font-size: 0.72rem; padding: 4px 10px; border-radius: 4px; cursor: pointer;">
-            <i class="bi bi-clipboard"></i> Copy Request
+      <div id="modalTabRequest">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <div style="color: #94a3b8; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
+            <i class="bi bi-terminal-fill" style="color: #38bdf8; margin-right: 6px;"></i>Outbound Payload Sent to CVL KRA:
+          </div>
+          <button type="button" onclick="copyCodePayload('modalCodeRequest', this)" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #f8fafc; font-size: 0.74rem; font-weight: 600; padding: 4px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+            <i class="bi bi-clipboard"></i> <span>Copy Request</span>
           </button>
         </div>
-        <pre id="requestRawText" style="color: #38bdf8; margin: 0; font-size: 0.8rem; font-family: 'SFMono-Regular', Consolas, Menlo, monospace; white-space: pre-wrap; word-wrap: break-word; line-height: 1.5;"></pre>
+        <div class="code-viewer-container">
+          <pre id="modalCodeRequest" class="code-viewer-pre" style="color: #38bdf8;"></pre>
+        </div>
       </div>
 
       <!-- Tab 2: Response -->
-      <div id="tabContentResponse" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <span style="color: #94a3b8; font-size: 0.75rem; font-weight: 600;">RESPONSE RETURNED BY CVL KRA SERVER:</span>
-          <button onclick="copyToClipboard('responseRawText', this)" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #f8fafc; font-size: 0.72rem; padding: 4px 10px; border-radius: 4px; cursor: pointer;">
-            <i class="bi bi-clipboard"></i> Copy Response
+      <div id="modalTabResponse" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <div style="color: #94a3b8; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
+            <i class="bi bi-cloud-arrow-down-fill" style="color: #4ade80; margin-right: 6px;"></i>Live Response Returned by CVL KRA:
+          </div>
+          <button type="button" onclick="copyCodePayload('modalCodeResponse', this)" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #f8fafc; font-size: 0.74rem; font-weight: 600; padding: 4px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+            <i class="bi bi-clipboard"></i> <span>Copy Response</span>
           </button>
         </div>
-        <pre id="responseRawText" style="color: #4ade80; margin: 0; font-size: 0.8rem; font-family: 'SFMono-Regular', Consolas, Menlo, monospace; white-space: pre-wrap; word-wrap: break-word; line-height: 1.5;"></pre>
+        <div class="code-viewer-container">
+          <pre id="modalCodeResponse" class="code-viewer-pre" style="color: #4ade80;"></pre>
+        </div>
       </div>
 
-      <!-- Tab 3: Metadata -->
-      <div id="tabContentMeta" style="display: none; background: #1e293b; padding: 18px; border-radius: 8px;">
-        <table style="width: 100%; font-size: 0.82rem; color: #cbd5e1; border-collapse: collapse;">
-          <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-            <td style="padding: 8px 0; color: #94a3b8; width: 180px;">PAN Number:</td>
-            <td id="metaPanVal" style="font-family: monospace; font-weight: 700; color: #f8fafc;">-</td>
-          </tr>
-          <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-            <td style="padding: 8px 0; color: #94a3b8;">Client IP Address:</td>
-            <td id="metaIpVal" style="font-family: monospace; color: #38bdf8;">-</td>
-          </tr>
-          <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-            <td style="padding: 8px 0; color: #94a3b8;">User Agent / Client:</td>
-            <td id="metaUaVal" style="word-break: break-all;">-</td>
-          </tr>
-          <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-            <td style="padding: 8px 0; color: #94a3b8;">Endpoint URL:</td>
-            <td id="metaEndpointVal" style="font-family: monospace;">-</td>
-          </tr>
-          <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-            <td style="padding: 8px 0; color: #94a3b8;">Gateway Method:</td>
-            <td id="metaMethodVal">-</td>
-          </tr>
-          <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-            <td style="padding: 8px 0; color: #94a3b8;">Timestamp:</td>
-            <td id="metaTimeVal">-</td>
-          </tr>
-          <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-            <td style="padding: 8px 0; color: #94a3b8;">Reference ID:</td>
-            <td id="metaRefVal" style="font-family: monospace;">-</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; color: #94a3b8;">Status Message:</td>
-            <td id="metaStatusMsgVal" style="color: #fca5a5;">-</td>
-          </tr>
-        </table>
+      <!-- Tab 3: Security & Network Metadata -->
+      <div id="modalTabMeta" style="display: none;">
+        <div style="background: #1e293b; padding: 20px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.06);">
+          <table style="width: 100%; font-size: 0.82rem; color: #cbd5e1; border-collapse: collapse;">
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+              <td style="padding: 10px 0; color: #94a3b8; width: 200px;">Target PAN Number:</td>
+              <td id="auditMetaPan" style="font-family: monospace; font-weight: 700; color: #f8fafc;">-</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+              <td style="padding: 10px 0; color: #94a3b8;">Client IP Address:</td>
+              <td id="auditMetaIp" style="font-family: monospace; color: #38bdf8; font-weight: 700;">-</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+              <td style="padding: 10px 0; color: #94a3b8;">Calling User Agent:</td>
+              <td id="auditMetaUa" style="word-break: break-all; color: #94a3b8;">-</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+              <td style="padding: 10px 0; color: #94a3b8;">Internal Endpoint:</td>
+              <td id="auditMetaEndpoint" style="font-family: monospace; color: #c084fc;">-</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+              <td style="padding: 10px 0; color: #94a3b8;">Gateway Engine:</td>
+              <td id="auditMetaMethod">-</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+              <td style="padding: 10px 0; color: #94a3b8;">Execution Timestamp:</td>
+              <td id="auditMetaTime">-</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+              <td style="padding: 10px 0; color: #94a3b8;">Reference / Batch ID:</td>
+              <td id="auditMetaRef" style="font-family: monospace; color: #facc15;">-</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; color: #94a3b8;">Gateway Status Message:</td>
+              <td id="auditMetaStatusMsg" style="color: #fca5a5; font-weight: 600;">-</td>
+            </tr>
+          </table>
+        </div>
       </div>
+
     </div>
 
-    <!-- Modal Footer -->
-    <div style="padding: 12px 24px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: flex-end;">
-      <button onclick="closeInspectorModal()" class="btn-tiancai-pill" style="padding: 6px 18px; font-size: 0.85rem; background: #e2e8f0; color: #334155; border: none; cursor: pointer;">
-        Close Inspector
+    <!-- Modal Bottom Action Bar -->
+    <div style="padding: 14px 24px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: flex-end;">
+      <button type="button" onclick="closeInspectorModal()" class="btn-table-manage" style="background: #ffffff; border: 1.5px solid #cbd5e1; color: #475569;">
+        <span>Close Inspector</span>
       </button>
     </div>
+
   </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  let currentLogData = null;
-
   function openInspectorModal(logId) {
     const modal = document.getElementById('inspectorModal');
     modal.style.display = 'flex';
-    
-    // Show loading state
-    document.getElementById('modalTitle').innerText = 'Loading Transaction #' + logId + '...';
-    document.getElementById('requestRawText').innerText = 'Fetching request payload from database...';
-    document.getElementById('responseRawText').innerText = 'Fetching response payload from database...';
-    
+    document.body.style.overflow = 'hidden';
+
+    // Loading indicators
+    document.getElementById('modalTxnTitle').innerText = 'Loading Transaction #' + logId + '...';
+    document.getElementById('modalCodeRequest').innerText = 'Loading outbound request payload...';
+    document.getElementById('modalCodeResponse').innerText = 'Loading inbound response payload...';
+
     fetch('/admin/pan-verifications/' + logId + '/details')
       .then(res => {
-        if (!res.ok) throw new Error('Failed to load transaction details: HTTP ' + res.status);
+        if (!res.ok) throw new Error('HTTP ' + res.status + ' loading details');
         return res.json();
       })
       .then(data => {
-        currentLogData = data;
-        populateModal(data);
+        renderModalData(data);
       })
       .catch(err => {
-        document.getElementById('modalTitle').innerText = 'Error Loading Details';
-        document.getElementById('requestRawText').innerText = err.message;
-        document.getElementById('responseRawText').innerText = err.message;
+        document.getElementById('modalTxnTitle').innerText = 'Error Loading Transaction';
+        document.getElementById('modalCodeRequest').innerText = err.message;
+        document.getElementById('modalCodeResponse').innerText = err.message;
       });
   }
 
-  function populateModal(data) {
-    document.getElementById('modalTitle').innerText = 'Transaction #' + data.id + ' — ' + data.pan_number;
-    document.getElementById('modalSubtitle').innerText = 'Executed on ' + data.created_at + ' via ' + data.method;
-    
-    // Status badge
-    const badge = document.getElementById('modalStatusBadge');
-    if (data.status === 'verified') {
-      badge.className = 'metric-badge badge-active';
-      badge.innerHTML = '<i class="bi bi-check-circle-fill"></i> Verified';
-      badge.style.background = '#10b981';
-      badge.style.color = '#ffffff';
-    } else if (data.status === 'failed') {
-      badge.className = 'metric-badge';
-      badge.innerHTML = '<i class="bi bi-x-circle-fill"></i> Failed';
-      badge.style.background = '#e11d48';
-      badge.style.color = '#ffffff';
+  function renderModalData(d) {
+    document.getElementById('modalTxnTitle').innerText = 'Transaction #' + d.id + ' — ' + d.pan_number;
+    document.getElementById('modalTxnSubtitle').innerText = 'Executed at ' + d.created_at + ' via ' + (d.method || 'CVL KRA');
+
+    // Status pill
+    const statusEl = document.getElementById('modalTxnStatus');
+    if (d.status === 'verified') {
+      statusEl.className = 'audit-status verified';
+      statusEl.innerHTML = '<i class="bi bi-check-circle-fill"></i> Verified';
+    } else if (d.status === 'failed') {
+      statusEl.className = 'audit-status failed';
+      statusEl.innerHTML = '<i class="bi bi-x-circle-fill"></i> Failed';
     } else {
-      badge.className = 'metric-badge';
-      badge.innerHTML = data.status;
-      badge.style.background = '#f59e0b';
-      badge.style.color = '#ffffff';
+      statusEl.className = 'audit-status pending';
+      statusEl.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> ' + d.status;
     }
 
     // Ribbon values
-    document.getElementById('metaIp').innerText = data.ip_address || '127.0.0.1';
-    document.getElementById('metaUser').innerText = data.user ? (data.user.name || data.user.email) : 'Public API';
-    document.getElementById('metaCompany').innerText = data.company ? data.company.name : 'System';
-    document.getElementById('metaMethod').innerText = data.method || 'CVL KRA';
-    document.getElementById('metaLatency').innerText = (data.duration_ms || 0) + ' ms';
+    document.getElementById('ribbonIp').innerText = d.ip_address || '127.0.0.1';
+    document.getElementById('ribbonUser').innerText = d.user ? (d.user.name || d.user.email) : 'Public API';
+    document.getElementById('ribbonCompany').innerText = d.company ? d.company.name : 'System';
+    document.getElementById('ribbonMethod').innerText = d.method || 'CVL KRA';
+    document.getElementById('ribbonLatency').innerText = (d.duration_ms || 0) + ' ms';
 
-    // Format Request
-    const reqBox = document.getElementById('requestRawText');
-    if (data.raw_request) {
+    // Format Request code
+    const reqPre = document.getElementById('modalCodeRequest');
+    if (d.raw_request) {
       try {
-        const parsed = JSON.parse(data.raw_request);
-        reqBox.innerText = JSON.stringify(parsed, null, 2);
+        const parsed = JSON.parse(d.raw_request);
+        reqPre.innerText = JSON.stringify(parsed, null, 2);
       } catch (e) {
-        reqBox.innerText = data.raw_request;
+        reqPre.innerText = d.raw_request;
       }
     } else {
-      reqBox.innerText = 'No outbound payload logged for this transaction.';
+      reqPre.innerText = 'No outbound payload logged for this transaction.';
     }
 
-    // Format Response
-    const respBox = document.getElementById('responseRawText');
-    if (data.raw_response) {
+    // Format Response code
+    const respPre = document.getElementById('modalCodeResponse');
+    if (d.raw_response) {
       try {
-        const parsed = JSON.parse(data.raw_response);
-        respBox.innerText = JSON.stringify(parsed, null, 2);
+        const parsed = JSON.parse(d.raw_response);
+        respPre.innerText = JSON.stringify(parsed, null, 2);
       } catch (e) {
-        respBox.innerText = data.raw_response;
+        respPre.innerText = d.raw_response;
       }
     } else {
-      respBox.innerText = 'No inbound response logged for this transaction.';
+      respPre.innerText = 'No inbound response logged for this transaction.';
     }
 
-    // Meta tab values
-    document.getElementById('metaPanVal').innerText = data.pan_number;
-    document.getElementById('metaIpVal').innerText = data.ip_address || 'Unknown';
-    document.getElementById('metaUaVal').innerText = data.user_agent || '-';
-    document.getElementById('metaEndpointVal').innerText = data.endpoint || '/services/pan';
-    document.getElementById('metaMethodVal').innerText = data.method || 'CVL KRA';
-    document.getElementById('metaTimeVal').innerText = data.created_at;
-    document.getElementById('metaRefVal').innerText = data.reference_id || '-';
-    document.getElementById('metaStatusMsgVal').innerText = data.status_message || '-';
+    // Security & Audit Tab
+    document.getElementById('auditMetaPan').innerText = d.pan_number;
+    document.getElementById('auditMetaIp').innerText = d.ip_address || 'Unknown';
+    document.getElementById('auditMetaUa').innerText = d.user_agent || '-';
+    document.getElementById('auditMetaEndpoint').innerText = d.endpoint || '/services/pan';
+    document.getElementById('auditMetaMethod').innerText = d.method || 'CVL KRA';
+    document.getElementById('auditMetaTime').innerText = d.created_at;
+    document.getElementById('auditMetaRef').innerText = d.reference_id || '-';
+    document.getElementById('auditMetaStatusMsg').innerText = d.status_message || '-';
 
-    // Default to Request tab
-    switchInspectorTab('request');
+    selectInspectorTab('request');
   }
 
-  function switchInspectorTab(tab) {
-    const btnReq = document.getElementById('tabBtnRequest');
-    const btnResp = document.getElementById('tabBtnResponse');
-    const btnMeta = document.getElementById('tabBtnMeta');
+  function selectInspectorTab(tab) {
+    const btnReq = document.getElementById('modalTabBtnRequest');
+    const btnResp = document.getElementById('modalTabBtnResponse');
+    const btnMeta = document.getElementById('modalTabBtnMeta');
 
-    const contentReq = document.getElementById('tabContentRequest');
-    const contentResp = document.getElementById('tabContentResponse');
-    const contentMeta = document.getElementById('tabContentMeta');
+    const viewReq = document.getElementById('modalTabRequest');
+    const viewResp = document.getElementById('modalTabResponse');
+    const viewMeta = document.getElementById('modalTabMeta');
 
-    // Reset styles
-    [btnReq, btnResp, btnMeta].forEach(b => {
-      b.style.color = '#64748b';
-      b.style.borderBottom = '2px solid transparent';
-    });
-    contentReq.style.display = 'none';
-    contentResp.style.display = 'none';
-    contentMeta.style.display = 'none';
+    [btnReq, btnResp, btnMeta].forEach(b => b.classList.remove('active'));
+    viewReq.style.display = 'none';
+    viewResp.style.display = 'none';
+    viewMeta.style.display = 'none';
 
     if (tab === 'request') {
-      btnReq.style.color = 'var(--tiancai-blue)';
-      btnReq.style.borderBottom = '2px solid var(--tiancai-blue)';
-      contentReq.style.display = 'block';
+      btnReq.classList.add('active');
+      viewReq.style.display = 'block';
     } else if (tab === 'response') {
-      btnResp.style.color = '#10b981';
-      btnResp.style.borderBottom = '2px solid #10b981';
-      contentResp.style.display = 'block';
+      btnResp.classList.add('active');
+      viewResp.style.display = 'block';
     } else if (tab === 'meta') {
-      btnMeta.style.color = 'var(--tiancai-blue)';
-      btnMeta.style.borderBottom = '2px solid var(--tiancai-blue)';
-      contentMeta.style.display = 'block';
+      btnMeta.classList.add('active');
+      viewMeta.style.display = 'block';
     }
   }
 
   function closeInspectorModal() {
     document.getElementById('inspectorModal').style.display = 'none';
+    document.body.style.overflow = '';
   }
 
-  function copyToClipboard(elementId, btn) {
+  function handleBackdropClick(e) {
+    if (e.target.id === 'inspectorModal') {
+      closeInspectorModal();
+    }
+  }
+
+  // Close on Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeInspectorModal();
+    }
+  });
+
+  function copyCodePayload(elementId, btn) {
     const text = document.getElementById(elementId).innerText;
     navigator.clipboard.writeText(text).then(() => {
-      const origText = btn.innerHTML;
-      btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
-      btn.style.background = '#10b981';
+      const origHtml = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-check2"></i> <span>Copied!</span>';
+      btn.style.background = '#059669';
+      btn.style.borderColor = '#059669';
       setTimeout(() => {
-        btn.innerHTML = origText;
+        btn.innerHTML = origHtml;
         btn.style.background = 'rgba(255, 255, 255, 0.1)';
+        btn.style.borderColor = 'rgba(255, 255, 255, 0.2)';
       }, 2000);
     }).catch(err => {
       alert('Could not copy to clipboard: ' + err);
     });
   }
-
-  // Close modal when clicking on dark backdrop
-  window.onclick = function(event) {
-    const modal = document.getElementById('inspectorModal');
-    if (event.target === modal) {
-      modal.style.display = 'none';
-    }
-  };
 </script>
 {% endblock %}
