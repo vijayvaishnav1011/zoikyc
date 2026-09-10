@@ -203,6 +203,16 @@
               </span>
             {% endif %}
 
+            {% if doc.status == 'signed' and doc.cost_charged and doc.cost_charged > 0 %}
+              <div style="font-size: 0.72rem; color: #059669; margin-top: 3px; font-weight: 700;">
+                <i class="bi bi-check2"></i> ₹{{ doc.cost_charged }} debited
+              </div>
+            {% elif doc.status == 'sent_to_capricorn' %}
+              <div style="font-size: 0.71rem; color: #64748b; margin-top: 3px;">
+                <i class="bi bi-shield-check"></i> Debits on sign
+              </div>
+            {% endif %}
+
             {% if doc.admin_notes %}
             <div style="font-size: 0.72rem; color: #b91c1c; margin-top: 3px;">
               Note: {{ doc.admin_notes }}

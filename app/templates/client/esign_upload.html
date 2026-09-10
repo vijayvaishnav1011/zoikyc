@@ -258,13 +258,19 @@
       </div>
 
       <!-- Form Submission Footer Bar -->
-      <div style="display: flex; justify-content: flex-end; gap: 14px; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 24px; padding-left: 36px;">
-        <a href="{{ url_for('esign.index') }}" class="lang-toggle-pill" style="text-decoration: none; padding: 10px 22px; font-weight: 600; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0;">
-          Cancel
-        </a>
-        <button type="submit" class="btn-purple-pill" style="width: auto; padding: 11px 32px; font-weight: 700; font-size: 0.92rem;">
-          <i class="bi bi-shield-check"></i> Upload & Dispatch for E-Sign
-        </button>
+      <div style="display: flex; justify-content: space-between; gap: 14px; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 24px; padding-left: 36px; flex-wrap: wrap;">
+        <div style="font-size: 0.82rem; color: #059669; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+          <i class="bi bi-shield-check" style="font-size: 1.05rem;"></i>
+          <span><strong>Pay Only on Completion:</strong> Fee of {{ per_sign_fee | currency }} will be debited from your wallet only after customer completes the Aadhaar OTP sign.</span>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <a href="{{ url_for('esign.index') }}" class="lang-toggle-pill" style="text-decoration: none; padding: 10px 22px; font-weight: 600; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0;">
+            Cancel
+          </a>
+          <button type="submit" class="btn-purple-pill" style="width: auto; padding: 11px 32px; font-weight: 700; font-size: 0.92rem;">
+            <i class="bi bi-shield-check"></i> Upload & Dispatch for E-Sign
+          </button>
+        </div>
       </div>
 
     </form>

@@ -156,29 +156,12 @@ def upload():
             esign_doc.signed_pdf_url = result.get('signed_pdf_url')
             esign_doc.dispatched_at = datetime.now(timezone.utc)
 
-            # Deduct wallet fee if applicable
-            if wallet and wallet.balance >= per_sign_fee:
-                balance_before = wallet.balance
-                wallet.balance -= per_sign_fee
-                balance_after = wallet.balance
-
-                txn_ref = f"ESIGN-{esign_doc.id}-{uuid.uuid4().hex[:6].upper()}"
-                wallet_txn = WalletTransaction(
-                    wallet_id=wallet.id,
-                    company_id=company.id,
-                    type='debit',
-                    amount=per_sign_fee,
-                    balance_before=balance_before,
-                    balance_after=balance_after,
-                    reference_id=txn_ref,
-                    status='success',
-                    description=f"Aadhaar E-Sign charge for '{esign_doc.title}' (Txn: {result.get('txn')})"
-                )
-                db.session.add(wallet_txn)
-
+            # Wallet balance check was already performed, but we ONLY debit once e-sign is completed/signed
+            esign_doc.cost_charged = Decimal('0.00')
             db.session.commit()
             flash(
-                f"Document '{esign_doc.title}' uploaded and dispatched for Aadhaar E-Sign! Click 'Sign Now' to proceed.",
+                f"Document '{esign_doc.title}' uploaded and dispatched for Aadhaar E-Sign! "
+                f"Sign link is ready. Note: Your wallet will be charged (₹{per_sign_fee:.2f}) only once the customer completes the e-signature.",
                 "success"
             )
         else:
@@ -255,17 +238,79 @@ def sign(doc_id):
     return redirect(url_for('esign.index'))
 
 
+def charge_wallet_for_signed_doc(doc: ESignDocument) -> bool:
+    """
+    Debits the company's wallet ONLY ONCE when an e-sign document is successfully completed/signed.
+    Guarantees idempotency so the company is never double-charged.
+    """
+    try:
+        # Check if already charged on this document
+        if doc.cost_charged and doc.cost_charged > Decimal('0.00'):
+            return False
+
+        company = doc.company or Company.query.get(doc.company_id)
+        if not company:
+            return False
+
+        # Idempotency check: verify if a WalletTransaction already exists for this document
+        existing_txn = WalletTransaction.query.filter(
+            WalletTransaction.company_id == company.id,
+            WalletTransaction.reference_id.like(f"ESIGN-{doc.id}-%")
+        ).first()
+        if existing_txn:
+            doc.cost_charged = existing_txn.amount
+            db.session.commit()
+            return False
+
+        wallet = Wallet.query.filter_by(company_id=company.id).first()
+        per_sign_fee = company.per_kyc_price or Decimal('20.00')
+
+        if not wallet:
+            current_app.logger.error(f"[ESIGN BILLING] No wallet found for company {company.id}")
+            return False
+
+        balance_before = wallet.balance
+        wallet.balance -= per_sign_fee
+        balance_after = wallet.balance
+
+        txn_ref = f"ESIGN-{doc.id}-{uuid.uuid4().hex[:6].upper()}"
+        wallet_txn = WalletTransaction(
+            wallet_id=wallet.id,
+            company_id=company.id,
+            type='debit',
+            amount=per_sign_fee,
+            balance_before=balance_before,
+            balance_after=balance_after,
+            reference_id=txn_ref,
+            status='success',
+            description=f"Aadhaar E-Sign completed for '{doc.title}' (Txn: {doc.capricorn_txn or doc.id})"
+        )
+        doc.cost_charged = per_sign_fee
+        db.session.add(wallet_txn)
+        db.session.commit()
+        current_app.logger.info(
+            f"[ESIGN BILLING] Successfully debited {per_sign_fee} from company {company.id} "
+            f"for signed doc {doc.id}. New balance: {balance_after}"
+        )
+        return True
+    except Exception as e:
+        current_app.logger.error(f"[ESIGN BILLING ERROR] Failed to debit wallet for signed doc {doc.id}: {e}")
+        return False
+
+
 @esign_bp.route('/esign/callback', methods=['GET', 'POST'])
 @csrf.exempt
 def callback():
     """
     Public Callback endpoint invoked by Capricorn upon signer OTP completion.
     Accepts GET redirect query params or POST webhook JSON payload.
+    Debits the client wallet ONLY upon successful execution.
     """
-    txn = request.args.get('txn') or request.form.get('txn')
-    reference = request.args.get('reference') or request.form.get('reference')
-    signed_pdf_url = request.args.get('signedpdfurl') or request.form.get('signedpdfurl')
-    status_param = request.args.get('status') or request.form.get('status')
+    json_data = request.get_json(silent=True) or {}
+    txn = request.args.get('txn') or request.form.get('txn') or json_data.get('txn') or json_data.get('transaction_id')
+    reference = request.args.get('reference') or request.form.get('reference') or json_data.get('reference')
+    signed_pdf_url = request.args.get('signedpdfurl') or request.form.get('signedpdfurl') or json_data.get('signedpdfurl') or json_data.get('signed_pdf_url')
+    status_param = request.args.get('status') or request.form.get('status') or json_data.get('status')
 
     current_app.logger.info(f"Capricorn E-Sign callback received: txn={txn}, ref={reference}, status={status_param}")
 
@@ -283,12 +328,13 @@ def callback():
             return redirect(url_for('esign.index'))
         return jsonify({"status": "not_found", "message": "Document reference not found"}), 404
 
-    # If already signed, nothing to do
+    # If already signed, ensure charge was applied and return
     if doc.status == 'signed':
+        charge_wallet_for_signed_doc(doc)
         if request.method == 'GET':
             flash("Document is already signed and archived.", "info")
             return redirect(url_for('esign.index'))
-        return jsonify({"status": "success", "message": "Already signed"}), 200
+        return jsonify({"status": "success", "message": "Already signed", "cost_charged": float(doc.cost_charged or 0)}), 200
 
     # Retrieve signed PDF URL if passed or fallback
     download_url = signed_pdf_url or doc.signed_pdf_url
@@ -301,25 +347,26 @@ def callback():
         success = capricorn.download_signed_pdf(download_url, target_path)
         if success:
             doc.signed_file_path = f"uploads/esign/{doc.company_id}/{signed_name}"
-            doc.status = 'signed'
-            doc.signed_at = datetime.now(timezone.utc)
-            db.session.commit()
             current_app.logger.info(f"Successfully downloaded signed PDF for doc {doc.id}")
         else:
             current_app.logger.error(f"Failed to fetch signed PDF from {download_url} for doc {doc.id}")
-            doc.status = 'signed'  # Mark signed even if background download needs retry
-            doc.signed_at = datetime.now(timezone.utc)
-            db.session.commit()
-    else:
-        doc.status = 'signed'
-        doc.signed_at = datetime.now(timezone.utc)
-        db.session.commit()
+
+    doc.status = 'signed'
+    doc.signed_at = datetime.now(timezone.utc)
+    db.session.commit()
+
+    # DEDUCT MONEY ONLY ONCE THE ESIGN IS DONE
+    charge_wallet_for_signed_doc(doc)
 
     if request.method == 'GET':
         flash(f"Aadhaar OTP verification completed! Document '{doc.title}' has been digitally signed.", "success")
         return redirect(url_for('esign.index'))
 
-    return jsonify({"status": "success", "doc_id": doc.id}), 200
+    return jsonify({
+        "status": "success",
+        "doc_id": doc.id,
+        "cost_charged": float(doc.cost_charged or 0.0)
+    }), 200
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -515,18 +562,21 @@ def public_api_esign(api_key=None):
     # Read Signatory & Document parameters
     signatory_name = (
         payload_data.get('signatory_name') or 
+        payload_data.get('signer_name') or
         payload_data.get('name') or 
+        payload_data.get('customer_name') or
         ""
     ).strip()
     if not signatory_name:
         return jsonify({
             "success": False,
             "status": "invalid_payload",
-            "error": "Missing required field: 'signatory_name'. Full name of the signer is required."
+            "error": "Missing required field: 'signatory_name' (or 'signer_name'). Full name of the signer is required."
         }), 400
 
     signatory_mobile = (
         payload_data.get('signatory_mobile') or 
+        payload_data.get('signer_mobile') or
         payload_data.get('mobile') or 
         payload_data.get('phone') or 
         "9999999999"
@@ -534,6 +584,7 @@ def public_api_esign(api_key=None):
 
     signatory_email = (
         payload_data.get('signatory_email') or 
+        payload_data.get('signer_email') or
         payload_data.get('email') or 
         ""
     ).strip() or None
@@ -600,30 +651,14 @@ def public_api_esign(api_key=None):
         esign_doc.signed_pdf_url = result.get('signed_pdf_url')
         esign_doc.dispatched_at = datetime.now(timezone.utc)
 
-        # Debit wallet float
-        balance_before = wallet.balance
-        wallet.balance -= per_sign_fee
-        balance_after = wallet.balance
-
-        txn_ref = f"ESIGN-{esign_doc.id}-{uuid.uuid4().hex[:6].upper()}"
-        wallet_txn = WalletTransaction(
-            wallet_id=wallet.id,
-            company_id=company.id,
-            type='debit',
-            amount=per_sign_fee,
-            balance_before=balance_before,
-            balance_after=balance_after,
-            reference_id=txn_ref,
-            status='success',
-            description=f"Aadhaar E-Sign charge for '{esign_doc.title}' (Txn: {result.get('txn')})"
-        )
-        db.session.add(wallet_txn)
+        # Dispatched successfully! Wallet will ONLY be debited once signed
+        esign_doc.cost_charged = Decimal('0.00')
         db.session.commit()
 
         return jsonify({
             "success": True,
             "status": "ready_for_signing",
-            "message": "Document successfully created and dispatched for Aadhaar E-Sign.",
+            "message": "Document successfully created and dispatched for Aadhaar E-Sign. Wallet will be charged once signing is completed.",
             "document_id": esign_doc.id,
             "reference_id": esign_doc.capricorn_reference,
             "txn_id": esign_doc.capricorn_txn,
@@ -631,7 +666,9 @@ def public_api_esign(api_key=None):
             "signatory_name": esign_doc.signatory_name,
             "signatory_mobile": esign_doc.signatory_mobile,
             "title": esign_doc.title,
-            "cost_charged": float(per_sign_fee),
+            "billing_status": "charges_on_completion",
+            "per_sign_fee": float(per_sign_fee),
+            "cost_charged": 0.0,
             "wallet_balance": float(wallet.balance),
             "created_at": esign_doc.created_at.isoformat()
         }), 200
@@ -663,6 +700,11 @@ def public_api_esign_status(api_key, doc_id):
     ).first_or_404()
 
     doc = ESignDocument.query.filter_by(id=doc_id, company_id=company.id).first_or_404()
+
+    # If document has been marked as signed, ensure wallet was debited
+    if doc.status == 'signed' and (not doc.cost_charged or doc.cost_charged == Decimal('0.00')):
+        charge_wallet_for_signed_doc(doc)
+
     return jsonify({
         "success": True,
         "document": doc.to_dict()

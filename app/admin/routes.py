@@ -743,32 +743,14 @@ def dispatch_esign(doc_id):
         flash(f"Capricorn API dispatch failed: {error_msg}", "danger")
         return redirect(url_for('admin.esign_requests'))
 
-    # API call succeeded! Deduct fee from client's wallet
-    balance_before = wallet.balance
-    wallet.balance -= per_sign_fee
-    balance_after = wallet.balance
-
-    txn_ref = f"ESIGN-{doc.id}-{uuid.uuid4().hex[:6].upper()}"
-    wallet_txn = WalletTransaction(
-        wallet_id=wallet.id,
-        company_id=company.id,
-        type='debit',
-        amount=per_sign_fee,
-        balance_before=balance_before,
-        balance_after=balance_after,
-        reference_id=txn_ref,
-        status='success',
-        description=f"Aadhaar E-Sign charge for '{doc.title}' (Txn: {result.get('txn')})"
-    )
-    db.session.add(wallet_txn)
-
-    # Update document state
+    # API call succeeded! Update document state without debiting yet
+    # (Wallet will be debited ONLY once customer completes signing)
     doc.status = 'sent_to_capricorn'
     doc.capricorn_txn = result.get('txn')
     doc.capricorn_reference = result.get('reference')
     doc.redirect_url = result.get('redirect_url')
     doc.signed_pdf_url = result.get('signed_pdf_url')
-    doc.cost_charged = per_sign_fee
+    doc.cost_charged = Decimal('0.00')
     doc.coordinates = custom_cood
     doc.page_num = custom_page
     doc.dispatched_at = datetime.now(timezone.utc)
@@ -777,10 +759,24 @@ def dispatch_esign(doc_id):
     db.session.commit()
 
     flash(
-        f"Document '{doc.title}' successfully converted to Base64 and dispatched to Capricorn! "
-        f"Txn: {doc.capricorn_txn}. Debited ₹{per_sign_fee:.2f} from {company.name}.",
+        f"Document '{doc.title}' successfully dispatched to Capricorn! Txn: {doc.capricorn_txn}. "
+        f"Note: Wallet will be debited (₹{per_sign_fee:.2f}) only once signing is completed.",
         "success"
     )
+    return redirect(url_for('admin.esign_requests'))
+
+@admin_bp.route('/esign/<int:doc_id>/mark-signed', methods=['POST'])
+@admin_required
+def mark_signed_esign(doc_id):
+    """Admin action to mark a document as signed (triggers wallet debit upon completion)."""
+    from app.esign.routes import charge_wallet_for_signed_doc
+    doc = ESignDocument.query.get_or_404(doc_id)
+    doc.status = 'signed'
+    doc.signed_at = datetime.now(timezone.utc)
+    db.session.commit()
+
+    charge_wallet_for_signed_doc(doc)
+    flash(f"Document '{doc.title}' marked as Signed & Sealed. Wallet debited ₹{doc.cost_charged:.2f}.", "success")
     return redirect(url_for('admin.esign_requests'))
 
 @admin_bp.route('/esign/<int:doc_id>/reject', methods=['POST'])
