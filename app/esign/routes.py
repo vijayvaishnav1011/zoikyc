@@ -729,7 +729,9 @@ def public_api_esign(api_key=None):
         esign_doc.cost_charged = Decimal('0.00')
         db.session.commit()
 
+        active_key = company.api_key or target_key
         signed_doc_url = esign_doc.signed_pdf_url or f"https://demo.esign.network/apij/getdoc/v1.0/{esign_doc.capricorn_txn}/{esign_doc.capricorn_reference}"
+        download_api_url = f"https://zoikyc.com/api/esign/{active_key}/{esign_doc.id}/download"
         return jsonify({
             "success": True,
             "status": "ready_for_signing",
@@ -740,6 +742,7 @@ def public_api_esign(api_key=None):
             "sign_url": esign_doc.redirect_url,
             "signed_url": signed_doc_url,
             "signed_pdf_url": signed_doc_url,
+            "download_url": download_api_url,
             "signatory_name": esign_doc.signatory_name,
             "signatory_mobile": esign_doc.signatory_mobile,
             "title": esign_doc.title,
@@ -782,9 +785,13 @@ def public_api_esign_status(api_key, doc_id):
     if doc.status == 'signed' and (not doc.cost_charged or doc.cost_charged == Decimal('0.00')):
         charge_wallet_for_signed_doc(doc)
 
+    doc_data = doc.to_dict()
+    active_key = company.api_key or target_key
+    doc_data["download_url"] = f"https://zoikyc.com/api/esign/{active_key}/{doc.id}/download"
+
     return jsonify({
         "success": True,
-        "document": doc.to_dict()
+        "document": doc_data
     })
 
 
