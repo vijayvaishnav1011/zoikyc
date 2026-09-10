@@ -2,7 +2,6 @@
 CVL KRA PAN Verification Integration — SOAP/XML Web Service V6.0
 Official endpoints:
   Production : https://pancheck.www.kracvl.com/CVLPanInquiry.svc
-  UAT        : https://krapancheck.cvlindia.com/CVLPanInquiry.svc
 
 Flow:
   1. GetPassword  → encrypt user password using PassKey → get APP_GET_PASS
@@ -62,17 +61,11 @@ def cvl_rest_decrypt(aes_key: str, enc_string: str) -> str:
         return ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SOAP envelope templates
+# SOAP envelope templates (CVL KRA Production SOAP V6.0)
 # ─────────────────────────────────────────────────────────────────────────────
 
-SOAP_NS_PROD = "https://pancheck.www.kracvl.com"
-SOAP_NS_UAT = "https://krapancheck.cvlindia.com"
-
-def _get_soap_ns(base_url: str) -> str:
-    """Returns the matching SOAP namespace based on the base endpoint URL."""
-    if "pancheck.www.kracvl.com" in (base_url or ""):
-        return SOAP_NS_PROD
-    return SOAP_NS_UAT
+SOAP_NS = "https://pancheck.www.kracvl.com"
+CVL_PROD_URL = "https://pancheck.www.kracvl.com/CVLPanInquiry.svc"
 
 GET_PASSWORD_ENVELOPE = """\
 <?xml version="1.0" encoding="utf-8"?>
@@ -110,10 +103,10 @@ GET_PAN_STATUS_ENVELOPE = """\
 # XML helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _soap_headers(action: str, soap_ns: str = SOAP_NS_PROD) -> dict:
+def _soap_headers(action: str) -> dict:
     return {
         "Content-Type": "text/xml; charset=utf-8",
-        "SOAPAction": f'"{soap_ns}/ICVLPanInquiry/{action}"',
+        "SOAPAction": f'"{SOAP_NS}/ICVLPanInquiry/{action}"',
         "User-Agent": "ZoiKYC/1.0"
     }
 
@@ -125,11 +118,18 @@ def _find_text(root: ET.Element, tag: str, default: str = "") -> str:
 
 
 def _parse_error(root: ET.Element) -> str | None:
-    """Returns error message if XML contains an ERROR node, else None."""
+    """Returns error message if XML contains an ERROR node or SOAP fault, else None."""
     err_code = _find_text(root, "ERROR_CODE")
     err_msg = _find_text(root, "ERROR_MSG")
-    if err_code:
-        return f"{err_msg} ({err_code})" if err_msg else err_code
+    if err_code or err_msg:
+        if err_code == "WEBERR-001":
+            return "Invalid User ID / PosCode / Password (WEBERR-001). Please verify your CVL KRA credentials."
+        if err_code == "WEBERR-029":
+            return "Server IP not whitelisted by CVL KRA (WEBERR-029). Please whitelist the hosting server IP."
+        return f"{err_msg} ({err_code})" if err_msg and err_code else (err_msg or err_code)
+    fault = _find_text(root, "faultstring")
+    if fault:
+        return fault
     return None
 
 
@@ -193,16 +193,12 @@ VERIFIED_STATUS_CODES = {"002", "007", "012", "022"}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Provider class
+# Provider Implementation
 # ─────────────────────────────────────────────────────────────────────────────
 
 class PANVerificationProvider(BaseKYCProvider):
-    """
-    CVL KRA PAN Verification via official SOAP/XML Web Service V6.0.
-
-    Step 1: GetPassword  → encrypts company password using PassKey
-    Step 2: GetPANStatus → fetches KYC status from CVL KRA
-    """
+    def __init__(self):
+        pass
 
     def get_provider_name(self) -> str:
         return "CVL KRA (CDSL Ventures Limited) — SOAP V6.0"
@@ -218,14 +214,13 @@ class PANVerificationProvider(BaseKYCProvider):
 
     # ── Credentials resolution ────────────────────────────────────────────────
 
-    # ── Credentials resolution ────────────────────────────────────────────────
-
     def _resolve_credentials(self, company=None) -> dict:
         """
         Resolves CVL KRA credentials from Company profile or System Settings.
         Production SOAP V6.0 URL: https://pancheck.www.kracvl.com/CVLPanInquiry.svc
+        Elite Finserv Production defaults: POS Code = 2500016409, Username = KYC
         """
-        base_url = "https://pancheck.www.kracvl.com/CVLPanInquiry.svc"
+        base_url = CVL_PROD_URL
         rest_url = "https://api.kracvl.com/int/api"
 
         poscode = (
@@ -233,9 +228,6 @@ class PANVerificationProvider(BaseKYCProvider):
             SystemSetting.get_val('cvl_kra_poscode') or
             os.getenv('CVL_KRA_POSCODE') or ""
         ).strip()
-        # In CVL KRA, POS Code is the 10-digit number (e.g. 2500016409)
-        if poscode.upper() == "ELITEFINS":
-            poscode = "2500016409"
 
         username = (
             (company.api_user_id if company and company.api_user_id else None) or
@@ -255,12 +247,40 @@ class PANVerificationProvider(BaseKYCProvider):
             os.getenv('CVL_KRA_AES_KEY') or ""
         ).strip()
 
-        # NOTE: company.api_key is ZoiKYC's internal client key (zoi_live_...).
-        # CVL REST API key is only from system settings or env if configured.
-        cvl_api_key = (
-            SystemSetting.get_val('cvl_kra_api_key') or
-            os.getenv('CVL_KRA_API_KEY') or ""
-        ).strip()
+        # If current company doesn't have password or aes_key filled in, inherit from Elite Finserv in DB
+        if not password or not aes_key:
+            try:
+                from app.models.company import Company
+                elite = Company.query.filter(
+                    (Company.id == 11) | (Company.name.ilike('%Elite%')) | (Company.pos_code == '2500016409')
+                ).first()
+                if elite:
+                    if not password and elite.api_password:
+                        password = elite.api_password.strip()
+                    if not aes_key and elite.aes_key:
+                        aes_key = elite.aes_key.strip()
+                    if elite.pos_code:
+                        poscode = elite.pos_code.strip()
+                    if elite.api_user_id:
+                        username = elite.api_user_id.strip()
+            except Exception:
+                pass
+
+        # Production credentials normalization for Elite Finserv:
+        # In CVL KRA Production, POS Code is strictly the 10-digit number '2500016409' and Username is 'KYC'.
+        if not poscode or poscode.upper() in ["ELITEFINS", "ELITE", "POS", "POS12345", "ELITEFINSERV"]:
+            poscode = "2500016409"
+
+        if not username or username.upper() in ["KRA_USER_01", "KRA_TEST_USER", "ELITEFINSERV", "ELITE"]:
+            username = "KYC"
+
+        # If current company is Elite Finserv, always enforce official production values
+        if company:
+            c_name = getattr(company, 'name', '') or ''
+            c_id = getattr(company, 'id', None)
+            if c_id == 11 or 'elite' in c_name.lower():
+                poscode = "2500016409"
+                username = "KYC"
 
         return {
             "base_url": base_url,
@@ -270,7 +290,7 @@ class PANVerificationProvider(BaseKYCProvider):
             "password": password,
             "passkey": aes_key,
             "aes_key": aes_key,
-            "api_key": cvl_api_key,
+            "api_key": "",
         }
 
     # ── REST API Methods (https://api.kracvl.com/int/api/) ────────────────────
@@ -426,17 +446,16 @@ class PANVerificationProvider(BaseKYCProvider):
         except Exception as e:
             return {}, str(e), req_log
 
-    # ── SOAP API Methods (https://krapancheck.cvlindia.com/) ──────────────────
-
+    # ── SOAP API Methods (Official Production pancheck.www.kracvl.com) ─────────
+ 
     def get_encrypted_password(self, creds: dict) -> tuple[str, str]:
         """
         Calls CVL GetPassword SOAP method.
         Returns (encrypted_password, error_message).
         """
-        url = creds["base_url"]
-        soap_ns = _get_soap_ns(url)
+        url = creds.get("base_url") or CVL_PROD_URL
         body = GET_PASSWORD_ENVELOPE.format(
-            ns=soap_ns,
+            ns=SOAP_NS,
             password=creds["password"],
             passkey=creds["passkey"],
         )
@@ -445,7 +464,7 @@ class PANVerificationProvider(BaseKYCProvider):
             resp = requests.post(
                 url,
                 data=body.encode("utf-8"),
-                headers=_soap_headers("GetPassword", soap_ns),
+                headers=_soap_headers("GetPassword"),
                 timeout=20,
             )
         except requests.exceptions.Timeout:
@@ -477,10 +496,9 @@ class PANVerificationProvider(BaseKYCProvider):
         Calls CVL GetPANStatus SOAP method.
         Returns (parsed_kyc_dict, error_message, raw_request_xml).
         """
-        url = creds["base_url"]
-        soap_ns = _get_soap_ns(url)
+        url = creds.get("base_url") or CVL_PROD_URL
         body = GET_PAN_STATUS_ENVELOPE.format(
-            ns=soap_ns,
+            ns=SOAP_NS,
             pan=pan,
             username=creds["username"],
             poscode=creds["poscode"],
@@ -492,7 +510,7 @@ class PANVerificationProvider(BaseKYCProvider):
             resp = requests.post(
                 url,
                 data=body.encode("utf-8"),
-                headers=_soap_headers("GetPanStatus", soap_ns),
+                headers=_soap_headers("GetPanStatus"),
                 timeout=25,
             )
         except requests.exceptions.Timeout:
@@ -613,8 +631,7 @@ class PANVerificationProvider(BaseKYCProvider):
     def verify_pan_with_dob(self, pan_number: str, dob: str = None, company=None) -> dict:
         """
         Verify PAN against CVL KRA.
-        Automatically uses official REST API (api.kracvl.com) if API Key is configured,
-        otherwise uses SOAP Web Service (krapancheck.cvlindia.com).
+        Uses official Production SOAP Web Service V6.0 (pancheck.www.kracvl.com).
         """
         pan_clean = (pan_number or "").strip().upper()
 

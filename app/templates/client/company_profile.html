@@ -184,14 +184,14 @@
         <div class="ref-form-grid" style="margin-bottom: 14px;">
           <div class="ref-form-group">
             <label class="ref-form-label" for="pos_code">POS Code</label>
-            {{ form.pos_code(class="ref-form-control", placeholder="e.g. POS10293") }}
+            {{ form.pos_code(class="ref-form-control", id="pos_code", placeholder="e.g. 2500016409") }}
             {% if form.pos_code.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
               form.pos_code.errors[0] }}</span>{% endif %}
           </div>
 
           <div class="ref-form-group">
-            <label class="ref-form-label" for="api_user_id">API User ID</label>
-            {{ form.api_user_id(class="ref-form-control", placeholder="e.g. KRA_USER_01") }}
+            <label class="ref-form-label" for="api_user_id">API User ID / Username</label>
+            {{ form.api_user_id(class="ref-form-control", id="api_user_id", placeholder="e.g. KYC") }}
             {% if form.api_user_id.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{
               form.api_user_id.errors[0] }}</span>{% endif %}
           </div>
@@ -331,14 +331,7 @@
     const password = document.getElementById('apiPasswordInput')?.value?.trim() || '';
     const passKey  = document.getElementById('aesKeyInput')?.value?.trim() || '';
 
-    if (!posCode || !username || !password || !passKey) {
-      resultBox.style.display = 'block';
-      resultBox.style.background = '#fef2f2';
-      resultBox.style.borderColor = '#fecaca';
-      resultBox.style.color = '#991b1b';
-      resultBox.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right: 6px;"></i> Please fill in POS Code, Username, Password, and PassKey first.';
-      return;
-    }
+
 
     const origHtml = btn.innerHTML;
     btn.disabled = true;

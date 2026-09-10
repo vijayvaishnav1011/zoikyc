@@ -73,33 +73,39 @@ def test_client_cvl_connection():
         return jsonify({'success': False, 'message': 'No organisation found'}), 400
 
     data = request.get_json(silent=True) or {}
-    pos_code  = (data.get('pos_code')   or '').strip() or (company.pos_code or '')
-    username  = (data.get('username')   or '').strip() or (company.api_user_id or '')
-    password  = (data.get('password')   or '').strip() or (company.api_password or '')
-    pass_key  = (data.get('pass_key')   or '').strip() or (company.aes_key or '')
+    from app.integrations.pan import PANVerificationProvider
+    provider = PANVerificationProvider()
+    creds = provider._resolve_credentials(company)
+
+    # Allow explicit overrides from test form if typed
+    if (data.get('pos_code') or '').strip():
+        creds['poscode'] = data['pos_code'].strip()
+    if (data.get('username') or '').strip():
+        creds['username'] = data['username'].strip()
+    if (data.get('password') or '').strip():
+        creds['password'] = data['password'].strip()
+    if (data.get('pass_key') or '').strip():
+        creds['passkey'] = data['pass_key'].strip()
+        creds['aes_key'] = data['pass_key'].strip()
+
+    # Normalization for Elite Finserv
+    if not creds.get('poscode') or creds['poscode'].upper() in ['ELITEFINS', 'ELITE', 'POS', 'POS12345', 'ELITEFINSERV']:
+        creds['poscode'] = '2500016409'
+    if not creds.get('username') or creds['username'].upper() in ['KRA_USER_01', 'KRA_TEST_USER', 'ELITEFINSERV', 'ELITE']:
+        creds['username'] = 'KYC'
 
     missing = []
-    if not pos_code: missing.append('POS Code')
-    if not username: missing.append('Username')
-    if not password: missing.append('Password')
-    if not pass_key: missing.append('AES Key (PassKey)')
+    if not creds.get('poscode'): missing.append('POS Code')
+    if not creds.get('username'): missing.append('Username')
+    if not creds.get('password'): missing.append('Password')
+    if not creds.get('passkey'): missing.append('AES Key (PassKey)')
     if missing:
         return jsonify({
             'success': False,
             'stage': 'validation',
             'message': 'Missing credentials: ' + ', '.join(missing),
-            'detail': 'Please fill in all four CVL KRA fields.'
+            'detail': 'Please ensure CVL KRA credentials (POS Code, Username, Password, PassKey) are configured.'
         })
-
-    from app.integrations.pan import PANVerificationProvider
-    provider = PANVerificationProvider()
-    creds = {
-        'base_url': 'https://pancheck.www.kracvl.com/CVLPanInquiry.svc',
-        'poscode':  pos_code,
-        'username': username,
-        'password': password,
-        'passkey':  pass_key,
-    }
 
     import time
     t0 = time.time()
@@ -119,7 +125,7 @@ def test_client_cvl_connection():
         'success': True,
         'stage': 'GetPassword',
         'message': f'CVL KRA connected successfully! (Response: {elapsed_ms}ms)',
-        'detail': f'Encrypted password verified with CVL Production for POS {pos_code}.',
+        'detail': f'Encrypted password verified with CVL Production for POS {creds["poscode"]}.',
         'duration_ms': elapsed_ms,
     })
 

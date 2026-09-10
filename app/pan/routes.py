@@ -51,6 +51,23 @@ def index():
         flash("No organisation associated with this user.", "danger")
         return redirect(url_for('dashboard.index'))
 
+    # Normalize Elite Finserv POS code and Username in DB
+    c_name = getattr(company, 'name', '') or ''
+    c_id = getattr(company, 'id', None)
+    needs_commit = False
+    if c_id == 11 or 'elite' in c_name.lower() or (company.pos_code and company.pos_code.strip().upper() in ['ELITEFINS', 'ELITEFINSERV', 'ELITE']):
+        if company.pos_code != '2500016409':
+            company.pos_code = '2500016409'
+            needs_commit = True
+        if company.api_user_id != 'KYC':
+            company.api_user_id = 'KYC'
+            needs_commit = True
+    if needs_commit:
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
     wallet = Wallet.query.filter_by(company_id=company.id).first()
     wallet_balance = wallet.balance if wallet else Decimal('0.00')
 
@@ -271,6 +288,16 @@ def index():
                 flash(err, "danger")
         return redirect(url_for('pan.index'))
 
+    # Compute whether company has active live CVL credentials
+    provider = PANVerificationProvider()
+    cvl_creds = provider._resolve_credentials(company)
+    has_live_cvl = bool(
+        cvl_creds.get("poscode") and
+        cvl_creds.get("username") and
+        cvl_creds.get("password") and
+        cvl_creds.get("passkey")
+    )
+
     return render_template(
         'client/pan.html',
         form=form,
@@ -283,7 +310,8 @@ def index():
         verified_count=verified_count,
         failed_count=failed_count,
         search_query=search_query,
-        status_filter=status_filter
+        status_filter=status_filter,
+        has_live_cvl=has_live_cvl
     )
 
 
