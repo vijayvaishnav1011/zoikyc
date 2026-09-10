@@ -72,10 +72,34 @@ class ESignDocument(db.Model):
     @property
     def status_label(self):
         labels = {
-            'pending_admin': 'Pending Admin Dispatch',
-            'rejected_by_admin': 'Rejected by Admin',
+            'pending_admin': 'Pending Dispatch',
+            'rejected_by_admin': 'Rejected',
             'sent_to_capricorn': 'Awaiting Aadhaar OTP',
             'signed': 'Signed & Verified',
             'failed': 'Signing Failed'
         }
         return labels.get(self.status, self.status.replace('_', ' ').title())
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "status": self.status,
+            "status_label": self.status_label,
+            "signatory_name": self.signatory_name,
+            "signatory_mobile": self.signatory_mobile,
+            "signatory_email": self.signatory_email,
+            "capricorn_txn": self.capricorn_txn,
+            "capricorn_reference": self.capricorn_reference,
+            "sign_url": self.redirect_url,
+            "signed_pdf_url": self.signed_pdf_url,
+            "cost_charged": float(self.cost_charged or Decimal('0.00')),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "dispatched_at": self.dispatched_at.isoformat() if self.dispatched_at else None,
+            "signed_at": self.signed_at.isoformat() if self.signed_at else None,
+            "company": {
+                "id": self.company.id if self.company else None,
+                "name": self.company.name if self.company else None,
+                "client_id": self.company.client_id if self.company else None,
+            }
+        }

@@ -31,6 +31,31 @@
     </div>
   </div>
 
+  <!-- Dedicated REST API Endpoint Card -->
+  <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 280px;">
+      <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0; box-shadow: 0 4px 10px rgba(124, 58, 237, 0.25);">
+        <i class="bi bi-code-slash"></i>
+      </div>
+      <div>
+        <div style="font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b;">
+          Dedicated E-Sign REST API Endpoint ({{ company.name }})
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: 3px; flex-wrap: wrap;">
+          <span style="font-size: 0.72rem; font-weight: 800; background: #ede9fe; color: #7c3aed; padding: 2px 8px; border-radius: 4px;">POST</span>
+          <code id="esignApiEndpointText" style="font-size: 0.84rem; font-family: monospace; color: #1e293b; background: #ffffff; padding: 3px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 700;">https://zoikyc.com/api/esign/{{ company.api_key or company.client_id }}</code>
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <button type="button" onclick="copyEsignEndpoint()" id="btnCopyEsignEndpoint" class="btn btn-sm" style="background: #ffffff; color: #334155; border: 1px solid #cbd5e1; font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+        <i class="bi bi-clipboard"></i> Copy Endpoint
+      </button>
+      <a href="/api/esign/{{ company.api_key or company.client_id }}" target="_blank" class="btn btn-sm" style="background: #7c3aed; color: #ffffff; font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25);">
+        <i class="bi bi-box-arrow-up-right"></i> View API Docs
+      </a>
+    </div>
+  </div>
 
   <!-- Unified Controls Bar (Integrated Search + Segmented Filter Tabs) -->
   <div class="saas-controls-bar">
@@ -64,12 +89,6 @@
         <span class="tab-badge">{{ counts.all }}</span>
       </a>
       
-      <a href="{{ url_for('esign.index', status='pending_admin', q=search_query) }}" class="saas-tab-link {% if current_status == 'pending_admin' %}active{% endif %}">
-        <span class="status-dot dot-amber"></span>
-        <span>Pending Dispatch</span>
-        <span class="tab-badge">{{ counts.pending_admin }}</span>
-      </a>
-      
       <a href="{{ url_for('esign.index', status='sent_to_capricorn', q=search_query) }}" class="saas-tab-link {% if current_status == 'sent_to_capricorn' %}active{% endif %}">
         <span class="status-dot dot-cyan"></span>
         <span>Awaiting OTP</span>
@@ -82,11 +101,21 @@
         <span class="tab-badge">{{ counts.signed }}</span>
       </a>
 
+      {% if counts.pending_admin > 0 %}
+      <a href="{{ url_for('esign.index', status='pending_admin', q=search_query) }}" class="saas-tab-link {% if current_status == 'pending_admin' %}active{% endif %}">
+        <span class="status-dot dot-amber"></span>
+        <span>Draft / Queued</span>
+        <span class="tab-badge">{{ counts.pending_admin }}</span>
+      </a>
+      {% endif %}
+
+      {% if counts.rejected_by_admin > 0 %}
       <a href="{{ url_for('esign.index', status='rejected_by_admin', q=search_query) }}" class="saas-tab-link {% if current_status == 'rejected_by_admin' %}active{% endif %}">
         <span class="status-dot dot-rose"></span>
         <span>Rejected</span>
         <span class="tab-badge">{{ counts.rejected_by_admin }}</span>
       </a>
+      {% endif %}
     </div>
 
   </div>
@@ -198,6 +227,9 @@
                 <a href="{{ doc.redirect_url }}" target="_blank" class="btn btn-sm" style="background: #0284c7; color: #ffffff; font-weight: 700; padding: 6px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);" title="Open Capricorn Aadhaar OTP Signing Screen directly">
                   <i class="bi bi-shield-check"></i> Sign Now (OTP)
                 </a>
+                <button type="button" class="btn btn-sm" onclick="copySignLink('{{ doc.redirect_url }}', this)" style="background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; font-weight: 700; padding: 6px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;" title="Copy OTP Signing Link for Customer">
+                  <i class="bi bi-link-45deg"></i> Copy Link
+                </button>
               {% endif %}
 
               <a href="{{ url_for('esign.download', doc_id=doc.id, type='original') }}" class="lang-toggle-pill" style="text-decoration: none; padding: 5px 10px; font-size: 0.75rem; border-radius: 6px; font-weight: 600;" title="Download Original PDF">
@@ -233,4 +265,48 @@
   {% endif %}
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyEsignEndpoint() {
+  const codeEl = document.getElementById('esignApiEndpointText');
+  if (!codeEl) return;
+  const text = codeEl.innerText.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('btnCopyEsignEndpoint');
+    if (!btn) return;
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
+    btn.style.borderColor = '#10b981';
+    btn.style.color = '#059669';
+    setTimeout(() => {
+      btn.innerHTML = originalHTML;
+      btn.style.borderColor = '#cbd5e1';
+      btn.style.color = '#334155';
+    }, 2000);
+  }).catch(() => {
+    prompt('Copy API Endpoint:', text);
+  });
+}
+
+function copySignLink(url, btn) {
+  if (!url) return;
+  navigator.clipboard.writeText(url).then(() => {
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
+    btn.style.background = '#dcfce7';
+    btn.style.borderColor = '#86efac';
+    btn.style.color = '#15803d';
+    setTimeout(() => {
+      btn.innerHTML = originalHTML;
+      btn.style.background = '#f0f9ff';
+      btn.style.borderColor = '#bae6fd';
+      btn.style.color = '#0369a1';
+    }, 2000);
+  }).catch(() => {
+    prompt('Copy Aadhaar OTP Signing Link:', url);
+  });
+}
+</script>
 {% endblock %}

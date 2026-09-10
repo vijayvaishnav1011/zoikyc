@@ -50,7 +50,7 @@
   <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 14px 18px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
     <div style="display: flex; align-items: center; gap: 10px; color: #991b1b; font-size: 0.85rem;">
       <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.15rem; color: #dc2626; flex-shrink: 0;"></i>
-      <span><strong>Low Wallet Balance:</strong> Your current wallet balance ({{ wallet_balance | currency }}) is below the required {{ per_sign_fee | currency }} per sign fee. Recharge now to ensure uninterrupted admin dispatch.</span>
+      <span><strong>Low Wallet Balance:</strong> Your current wallet balance ({{ wallet_balance | currency }}) is below the required {{ per_sign_fee | currency }} per sign fee. Recharge now to ensure uninterrupted e-signing.</span>
     </div>
     <a href="{{ url_for('wallet.recharge') }}" class="btn btn-sm btn-danger" style="font-weight: 700; padding: 6px 14px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
       <i class="bi bi-wallet2"></i> Recharge Wallet Now
@@ -263,7 +263,7 @@
           Cancel
         </a>
         <button type="submit" class="btn-purple-pill" style="width: auto; padding: 11px 32px; font-weight: 700; font-size: 0.92rem;">
-          <i class="bi bi-cloud-arrow-up-fill"></i> Upload & Create Request
+          <i class="bi bi-shield-check"></i> Upload & Dispatch for E-Sign
         </button>
       </div>
 
