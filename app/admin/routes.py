@@ -807,8 +807,8 @@ def dispatch_esign(doc_id):
     callback_url = url_for('esign.callback', _external=True)
 
     # Optional override coordinates from admin form
-    custom_cood = request.form.get('coordinates', '').strip() or doc.coordinates or "200,250,400,500"
-    custom_page = request.form.get('page_num', '').strip() or doc.page_num or "1"
+    custom_cood = request.form.get('coordinates', '').strip() or doc.coordinates or "400,700,550,750"
+    custom_page = request.form.get('page_num', '').strip() or doc.page_num or "all"
 
     capricorn = CapricornESignProvider()
     result = capricorn.send_document_for_esign(

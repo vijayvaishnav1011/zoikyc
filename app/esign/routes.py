@@ -125,8 +125,8 @@ def upload():
             signatory_mobile=form.signatory_mobile.data.strip() if form.signatory_mobile.data else '9999999999',
             signatory_email=form.signatory_email.data.strip() if form.signatory_email.data else None,
             client_remarks=form.client_remarks.data.strip() if form.client_remarks.data else None,
-            page_num=form.page_num.data or '1',
-            coordinates=form.coordinates.data.strip() if form.coordinates.data else '200,250,400,500',
+            page_num=form.page_num.data or 'all',
+            coordinates=form.coordinates.data.strip() if form.coordinates.data else '400,700,550,750',
             status='pending_admin',
             cost_charged=per_sign_fee
         )
@@ -645,7 +645,7 @@ def public_api_esign(api_key=None):
     ).strip()[:200]
 
     page_num = str(payload_data.get('pagenum') or payload_data.get('page_num') or payload_data.get('page') or 'all').strip()
-    coordinates = (payload_data.get('cood') or payload_data.get('coordinates') or '100,250,200,500').strip()
+    coordinates = (payload_data.get('cood') or payload_data.get('coordinates') or '400,700,550,750').strip()
     reason = (payload_data.get('reason') or 'Agreement sign').strip()
     location = (payload_data.get('location') or 'Delhi').strip()
     client_remarks = (payload_data.get('client_remarks') or payload_data.get('remarks') or '').strip() or None

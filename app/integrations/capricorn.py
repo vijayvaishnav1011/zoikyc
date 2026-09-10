@@ -1,4 +1,5 @@
 import os
+import re
 import base64
 import json
 import logging
@@ -70,7 +71,7 @@ class CapricornESignProvider(BaseESignProvider):
         signatory_email: Optional[str] = None,
         callback_url: str = "",
         page_num: str = "all",
-        coordinates: str = "100,250,200,500",
+        coordinates: str = "400,700,550,750",
         sign_mode: str = "online-aadhaar-otp",
         reason: str = "Agreement sign",
         location: str = "Delhi"
@@ -78,6 +79,7 @@ class CapricornESignProvider(BaseESignProvider):
         """
         Encodes the PDF to Base64 (pdf64) and dispatches the E-Sign request to Capricorn API.
         Supports 'pagenum': 'all' for single signature box on all pages, or specific page number.
+        Default signature placement coordinates: 400,700,550,750.
         Returns parsed dictionary containing redirecturl, reference, signedpdfurl, and txn.
         """
         pdf64_str = self.convert_pdf_to_base64(pdf_file_path)
@@ -93,7 +95,14 @@ class CapricornESignProvider(BaseESignProvider):
             except (ValueError, TypeError):
                 final_pagenum = "all" if cleaned_page == "all" else str(page_num).strip()
 
-        final_cood = (coordinates or "100,250,200,500").strip()
+        # Sanitize coordinates: strip whitespace/parentheses like "400, 700, 550, 750)" -> "400,700,550,750"
+        raw_cood = str(coordinates or "").strip()
+        cleaned_cood = re.sub(r'[^\d,]', '', raw_cood) if raw_cood else ""
+        if cleaned_cood.count(',') == 3 and all(part.strip().isdigit() for part in cleaned_cood.split(',')):
+            final_cood = cleaned_cood
+        else:
+            final_cood = "400,700,550,750"
+
         sig_email = (signatory_email or "").strip()
         sig_mobile = (signatory_mobile or "").strip()
 

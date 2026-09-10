@@ -40,8 +40,8 @@ class ESignUploadForm(FlaskForm):
         ('custom', 'Custom Page')
     ], default='all')
 
-    coordinates = StringField('Signature Box Coordinates', default='100,250,200,500', validators=[
+    coordinates = StringField('Signature Box Coordinates', default='400,700,550,750', validators=[
         Optional()
-    ], render_kw={"placeholder": "100,250,200,500"})
+    ], render_kw={"placeholder": "400,700,550,750"})
 
     submit = SubmitField('Upload & Create Execution Request')

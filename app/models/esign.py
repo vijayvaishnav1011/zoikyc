@@ -40,8 +40,8 @@ class ESignDocument(db.Model):
     signed_pdf_url = db.Column(db.Text, nullable=True)
 
     # Signing configuration
-    page_num = db.Column(db.String(20), nullable=False, default='1')
-    coordinates = db.Column(db.String(100), nullable=False, default='200,250,400,500')
+    page_num = db.Column(db.String(20), nullable=False, default='all')
+    coordinates = db.Column(db.String(100), nullable=False, default='400,700,550,750')
 
     # Financial tracking
     cost_charged = db.Column(db.Numeric(10, 2), nullable=True, default=Decimal('0.00'))
