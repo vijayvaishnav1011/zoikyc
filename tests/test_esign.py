@@ -139,8 +139,29 @@ class ESignIntegrationTestCase(unittest.TestCase):
         self.assertEqual(signatory['mobile'], "9999999999")
         self.assertEqual(signatory['sms'], "n")
 
-    def test_client_document_upload(self):
-        """Test client portal document upload creating a pending_admin document."""
+    @patch('app.integrations.capricorn.requests.post')
+    def test_client_document_upload_and_dispatch(self, mock_post):
+        """Test client portal document upload directly dispatches to Capricorn without debiting yet."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "response": {
+                "command": "esign",
+                "success": "OK",
+                "responsedata": {
+                    "items": {
+                        "item": {
+                            "redirecturl": "https://demo.esign.network/api/esign/v1.0/11112222/REF111/signatory1",
+                            "reference": "REF111",
+                            "signedpdfurl": "https://demo.esign.network/apij/getdoc/v1.0/11112222/REF111",
+                            "txn": "11112222"
+                        }
+                    }
+                }
+            }
+        }
+        mock_post.return_value = mock_response
+
         with self.client:
             # Login as client user
             self.client.post('/login', data={
@@ -159,18 +180,19 @@ class ESignIntegrationTestCase(unittest.TestCase):
 
             self.assertEqual(resp.status_code, 200)
 
-            # Assert document exists in DB
+            # Assert document exists in DB and is dispatched to Capricorn
             doc = ESignDocument.query.filter_by(title='Consulting Agreement 2026').first()
             self.assertIsNotNone(doc)
-            self.assertEqual(doc.status, 'pending_admin')
+            self.assertEqual(doc.status, 'sent_to_capricorn')
             self.assertEqual(doc.company_id, self.company.id)
             self.assertEqual(doc.signatory_name, 'Amit Kumar')
             self.assertEqual(doc.signatory_mobile, '9999999999')
-            self.assertIsNone(doc.signatory_email)
+            # Wallet float should NOT be debited on upload/dispatch
+            self.assertEqual(self.wallet.balance, Decimal("500.00"))
 
     @patch('app.integrations.capricorn.requests.post')
-    def test_admin_dispatch_and_wallet_deduction(self, mock_post):
-        """Test Super Admin dispatching to Capricorn: converts to Base64, debits wallet float."""
+    def test_admin_dispatch_and_delayed_debit(self, mock_post):
+        """Test Super Admin dispatching to Capricorn: converts to Base64 without immediate debit."""
         # Mock Capricorn response
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -207,7 +229,6 @@ class ESignIntegrationTestCase(unittest.TestCase):
         db.session.commit()
 
         initial_balance = self.wallet.balance  # 500.00
-        per_sign_fee = self.company.per_kyc_price  # 25.00
 
         with self.client:
             # Login as Super Admin
@@ -227,15 +248,9 @@ class ESignIntegrationTestCase(unittest.TestCase):
             self.assertEqual(updated_doc.capricorn_reference, 'REF888')
             self.assertEqual(updated_doc.redirect_url, 'https://demo.esign.network/api/esign/v1.0/88889999/REF888/signatory1')
 
-            # Verify client wallet was debited by per_kyc_price (25.00)
+            # Verify client wallet was NOT debited yet (delayed until customer completes sign)
             updated_wallet = Wallet.query.get(self.wallet.id)
-            self.assertEqual(updated_wallet.balance, initial_balance - per_sign_fee)
-
-            # Verify WalletTransaction entry was created
-            txn = WalletTransaction.query.filter_by(company_id=self.company.id, type='debit').first()
-            self.assertIsNotNone(txn)
-            self.assertEqual(txn.amount, per_sign_fee)
-            self.assertIn("Aadhaar E-Sign charge", txn.description)
+            self.assertEqual(updated_wallet.balance, initial_balance)
 
     def test_admin_dispatch_blocked_on_insufficient_balance(self):
         """Verify Super Admin cannot dispatch if client has insufficient float."""
@@ -269,9 +284,8 @@ class ESignIntegrationTestCase(unittest.TestCase):
             self.assertEqual(updated_doc.status, 'pending_admin')
 
     @patch('app.integrations.capricorn.requests.get')
-    def test_capricorn_callback_and_signed_download(self, mock_get):
-        """Verify callback marks document as signed and downloads finalized PDF."""
-        # Mock Capricorn GET request for signed PDF
+    def test_capricorn_callback_and_wallet_deduction(self, mock_get):
+        """Verify callback marks document as signed, downloads PDF, and dynamically debits company per_kyc_price."""
         mock_pdf_resp = MagicMock()
         mock_pdf_resp.status_code = 200
         mock_pdf_resp.iter_content.return_value = [b"%PDF-1.4 SIGNED DOCUMENT BY CAPRICORN DSC %EOF"]
@@ -292,6 +306,9 @@ class ESignIntegrationTestCase(unittest.TestCase):
         db.session.add(doc)
         db.session.commit()
 
+        initial_balance = self.wallet.balance  # 500.00
+        expected_fee = self.company.per_kyc_price  # 25.00
+
         # Simulate Capricorn redirect callback
         resp = self.client.get(
             f'/esign/callback?txn=99991111&reference=REF9999&status=SUCCESS',
@@ -304,6 +321,82 @@ class ESignIntegrationTestCase(unittest.TestCase):
         self.assertEqual(updated_doc.status, 'signed')
         self.assertIsNotNone(updated_doc.signed_at)
         self.assertIsNotNone(updated_doc.signed_file_path)
+        self.assertEqual(updated_doc.cost_charged, expected_fee)
+
+        # Verify wallet debited by exact company.per_kyc_price
+        updated_wallet = Wallet.query.get(self.wallet.id)
+        self.assertEqual(updated_wallet.balance, initial_balance - expected_fee)
+
+        # Verify WalletTransaction entry
+        txn = WalletTransaction.query.filter_by(company_id=self.company.id, type='debit').first()
+        self.assertIsNotNone(txn)
+        self.assertEqual(txn.amount, expected_fee)
+
+    def test_dynamic_per_company_pricing_deduction(self):
+        """Verify that two different companies with distinct per_kyc_price are debited dynamically."""
+        from app.esign.routes import charge_wallet_for_signed_doc
+
+        # Company 1: Alpha Corp has per_kyc_price = 25.00
+        doc1 = ESignDocument(
+            company_id=self.company.id,
+            title="Agreement Corp 1",
+            original_filename="sample1.pdf",
+            file_path="uploads/test_sample.pdf",
+            signatory_name="Client One",
+            status="sent_to_capricorn",
+            capricorn_txn="TXN-COMP-1"
+        )
+        db.session.add(doc1)
+
+        # Company 2: Custom per_kyc_price = 45.50
+        comp2 = Company(
+            name="Zeta Logistics",
+            authorised_signatory_name="Zeta Officer",
+            email="finance@zetalogistics.in",
+            phone="9988776655",
+            country="India",
+            state="Karnataka",
+            city="Bengaluru",
+            zip_code="560001",
+            address="Koramangala, Bengaluru",
+            status="active",
+            per_kyc_price=Decimal("45.50"),
+            min_recharge_amount=Decimal("1000.00")
+        )
+        db.session.add(comp2)
+        db.session.flush()
+
+        wallet2 = Wallet(company_id=comp2.id, balance=Decimal("100.00"))
+        db.session.add(wallet2)
+
+        doc2 = ESignDocument(
+            company_id=comp2.id,
+            title="Agreement Zeta Logistics",
+            original_filename="sample2.pdf",
+            file_path="uploads/test_sample.pdf",
+            signatory_name="Client Two",
+            status="sent_to_capricorn",
+            capricorn_txn="TXN-COMP-2"
+        )
+        db.session.add(doc2)
+        db.session.commit()
+
+        # Execute charge for doc 1
+        charged1 = charge_wallet_for_signed_doc(doc1)
+        self.assertTrue(charged1)
+        self.assertEqual(doc1.cost_charged, Decimal("25.00"))
+        self.assertEqual(Wallet.query.get(self.wallet.id).balance, Decimal("500.00") - Decimal("25.00"))
+
+        # Execute charge for doc 2
+        charged2 = charge_wallet_for_signed_doc(doc2)
+        self.assertTrue(charged2)
+        self.assertEqual(doc2.cost_charged, Decimal("45.50"))
+        self.assertEqual(Wallet.query.get(wallet2.id).balance, Decimal("100.00") - Decimal("45.50"))
+
+        # Verify idempotency: charging doc 1 again returns False and balance remains unchanged
+        charged1_again = charge_wallet_for_signed_doc(doc1)
+        self.assertFalse(charged1_again)
+        self.assertEqual(Wallet.query.get(self.wallet.id).balance, Decimal("475.00"))
 
     def test_admin_esign_requests_company_grouped(self):
         """Verify that /admin/esign organizes document execution requests grouped company-wise."""
@@ -352,8 +445,8 @@ class ESignIntegrationTestCase(unittest.TestCase):
         with self.client.session_transaction() as sess:
             sess['_user_id'] = str(super_admin.id)
 
-        # GET /admin/esign
-        resp = self.client.get('/admin/esign')
+        # GET /admin/esign-requests
+        resp = self.client.get('/admin/esign-requests')
         self.assertEqual(resp.status_code, 200)
         html = resp.data.decode('utf-8')
 
@@ -364,7 +457,7 @@ class ESignIntegrationTestCase(unittest.TestCase):
         self.assertIn("Beta Vendor Contract", html)
 
         # Test filtering by Alpha Corp only
-        filter_resp = self.client.get(f'/admin/esign?company_id={self.company.id}')
+        filter_resp = self.client.get(f'/admin/esign-requests?company_id={self.company.id}')
         self.assertEqual(filter_resp.status_code, 200)
         filter_html = filter_resp.data.decode('utf-8')
         self.assertIn("Alpha Partnership Agreement", filter_html)

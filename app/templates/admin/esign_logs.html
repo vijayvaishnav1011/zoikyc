@@ -363,7 +363,7 @@
     </div>
     <div class="metric-val" style="color: #059669;">{{ signed_logs }}</div>
     <div class="metric-sub" style="color: #059669;">
-      <i class="bi bi-wallet2"></i> Legally executed & debited (₹20/sign)
+      <i class="bi bi-wallet2"></i> Legally executed & debited (dynamic KYC rate)
     </div>
   </div>
 
@@ -571,7 +571,7 @@
                 <i class="bi bi-check-circle-fill"></i> Signed & Sealed
               </span>
               <div style="font-size: 0.72rem; color: #059669; font-weight: 700; margin-top: 3px;">
-                <i class="bi bi-check2"></i> ₹{{ doc.cost_charged or '20.00' }} debited
+                <i class="bi bi-check2"></i> ₹{{ "%.2f"|format(doc.cost_charged) if doc.cost_charged is not none else ("%.2f"|format(doc.company.per_kyc_price) if doc.company and doc.company.per_kyc_price is not none else "20.00") }} debited
               </div>
             {% elif doc.status == 'sent_to_capricorn' %}
               <span class="audit-status awaiting">

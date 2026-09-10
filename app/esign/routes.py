@@ -59,7 +59,7 @@ def index():
     documents = query.order_by(ESignDocument.created_at.desc()).all()
 
     wallet = Wallet.query.filter_by(company_id=company.id).first()
-    per_sign_fee = company.per_kyc_price or Decimal('20.00')
+    per_sign_fee = Decimal(str(company.per_kyc_price)) if (company and company.per_kyc_price is not None) else Decimal('20.00')
     has_sufficient_balance = wallet and wallet.balance >= per_sign_fee
     is_kyc_active = (company.status == 'active')
 
@@ -86,7 +86,7 @@ def upload():
         return redirect(url_for('dashboard.index'))
 
     wallet = Wallet.query.filter_by(company_id=company.id).first()
-    per_sign_fee = company.per_kyc_price or Decimal('20.00')
+    per_sign_fee = Decimal(str(company.per_kyc_price)) if (company and company.per_kyc_price is not None) else Decimal('20.00')
     wallet_balance = wallet.balance if wallet else Decimal('0.00')
     is_kyc_active = (company.status == 'active')
 
@@ -286,7 +286,7 @@ def charge_wallet_for_signed_doc(doc: ESignDocument) -> bool:
             return False
 
         wallet = Wallet.query.filter_by(company_id=company.id).first()
-        per_sign_fee = company.per_kyc_price or Decimal('20.00')
+        per_sign_fee = Decimal(str(company.per_kyc_price)) if (company and company.per_kyc_price is not None) else Decimal('20.00')
 
         if not wallet:
             current_app.logger.error(f"[ESIGN BILLING] No wallet found for company {company.id}")
@@ -306,17 +306,18 @@ def charge_wallet_for_signed_doc(doc: ESignDocument) -> bool:
             balance_after=balance_after,
             reference_id=txn_ref,
             status='success',
-            description=f"Aadhaar E-Sign completed for '{doc.title}' (Txn: {doc.capricorn_txn or doc.id})"
+            description=f"Aadhaar E-Sign completed for '{doc.title}' (Rate: ₹{per_sign_fee:.2f} | Txn: {doc.capricorn_txn or doc.id})"
         )
         doc.cost_charged = per_sign_fee
         db.session.add(wallet_txn)
         db.session.commit()
         current_app.logger.info(
-            f"[ESIGN BILLING] Successfully debited {per_sign_fee} from company {company.id} "
-            f"for signed doc {doc.id}. New balance: {balance_after}"
+            f"[ESIGN BILLING] Successfully debited ₹{per_sign_fee} from company {company.id} ({company.name}) "
+            f"for signed doc {doc.id}. New balance: ₹{balance_after}"
         )
         return True
     except Exception as e:
+        db.session.rollback()
         current_app.logger.error(f"[ESIGN BILLING ERROR] Failed to debit wallet for signed doc {doc.id}: {e}")
         return False
 
@@ -501,7 +502,7 @@ def public_api_esign(api_key=None):
     # 3. GET Request: Return clean API documentation
     if request.method == 'GET':
         resolved_key = target_key or company.api_key or company.client_id
-        per_sign_fee = float(company.per_kyc_price or Decimal('20.00'))
+        per_sign_fee = float(company.per_kyc_price) if (company and company.per_kyc_price is not None) else 20.00
         return jsonify({
             "service": "ZoiKYC Aadhaar E-Sign API",
             "status": "online",
@@ -530,7 +531,7 @@ def public_api_esign(api_key=None):
         db.session.add(wallet)
         db.session.commit()
 
-    per_sign_fee = company.per_kyc_price or Decimal('20.00')
+    per_sign_fee = Decimal(str(company.per_kyc_price)) if (company and company.per_kyc_price is not None) else Decimal('20.00')
     if wallet.balance < per_sign_fee:
         if company.id in [22, 24] or 'zoikyc.com' in (company.email or ''):
             wallet.balance += Decimal('1000.00')

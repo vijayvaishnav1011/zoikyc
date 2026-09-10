@@ -603,7 +603,6 @@ def update_company_pricing(company_id):
 # =========================================================================
 
 @admin_bp.route('/esign-logs')
-@admin_bp.route('/esign')
 @admin_required
 def esign_logs():
     """Admin view for all E-Sign API and portal document logs including raw payloads and inspection."""
@@ -687,6 +686,7 @@ def esign_log_details(doc_id):
 
 
 @admin_bp.route('/esign-requests')
+@admin_bp.route('/esign')
 @admin_required
 def esign_requests():
     """Super Admin screen to review uploaded client documents grouped company-wise and dispatch to Capricorn."""
@@ -774,7 +774,7 @@ def dispatch_esign(doc_id):
     company = doc.company
     wallet = Wallet.query.filter_by(company_id=company.id).first()
 
-    per_sign_fee = company.per_kyc_price or Decimal('20.00')
+    per_sign_fee = Decimal(str(company.per_kyc_price)) if (company and company.per_kyc_price is not None) else Decimal('20.00')
 
     # Float balance verification
     if not wallet:

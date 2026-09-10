@@ -203,13 +203,13 @@
               </span>
             {% endif %}
 
-            {% if doc.status == 'signed' and doc.cost_charged and doc.cost_charged > 0 %}
+            {% if doc.status == 'signed' and doc.cost_charged is not none %}
               <div style="font-size: 0.72rem; color: #059669; margin-top: 3px; font-weight: 700;">
-                <i class="bi bi-check2"></i> ₹{{ doc.cost_charged }} debited
+                <i class="bi bi-check2"></i> ₹{{ "%.2f"|format(doc.cost_charged) }} debited
               </div>
             {% elif doc.status == 'sent_to_capricorn' %}
               <div style="font-size: 0.71rem; color: #64748b; margin-top: 3px;">
-                <i class="bi bi-shield-check"></i> Debits on sign
+                <i class="bi bi-shield-check"></i> Debits {{ per_sign_fee | currency }} on sign
               </div>
             {% endif %}
 

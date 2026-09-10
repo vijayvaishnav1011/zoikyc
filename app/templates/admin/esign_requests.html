@@ -98,7 +98,7 @@
   {% if grouped_documents %}
     {% for comp, docs in grouped_documents.items() %}
     {% set wallet = comp.wallet %}
-    {% set price = comp.per_kyc_price or 20.00 %}
+    {% set price = comp.per_kyc_price if comp.per_kyc_price is not none else 20.00 %}
     {% set has_balance = wallet and wallet.balance >= price %}
 
     <div class="company-esign-group" style="margin-bottom: 28px; border: 1px solid #e2e8f0; border-radius: 14px; background: #ffffff; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03); overflow: hidden;">
@@ -261,7 +261,7 @@
                   
                   {% if doc.status in ['pending_admin', 'failed'] %}
                     <!-- Dispatch Form -->
-                    <form action="{{ url_for('admin.dispatch_esign', doc_id=doc.id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Convert PDF to Base64 and dispatch to Capricorn API? This will debit ₹{{ price }} from {{ comp.name }}.');">
+                    <form action="{{ url_for('admin.dispatch_esign', doc_id=doc.id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Convert PDF to Base64 and dispatch to Capricorn API? Once signed by customer, ₹{{ '%.2f'|format(price) }} will be debited from {{ comp.name }}\'s wallet.');">
                       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                       <button type="submit" class="btn btn-sm" style="background: #7c3aed; color: #ffffff; font-weight: 700; padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; border: none; box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25);" title="Dispatch to Capricorn API for Aadhaar OTP Signing">
                         <i class="bi bi-send-fill"></i> Send to Capricorn
