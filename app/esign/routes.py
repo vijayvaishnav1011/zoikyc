@@ -418,15 +418,20 @@ def callback():
 def public_api_esign(api_key=None):
     """
     Dedicated REST API endpoint for Aadhaar E-Sign document dispatch.
-    - Simplest URL: https://zoikyc.com/api/esign/<api_key>
-    - The API key in the URL path serves as both the endpoint and authentication.
-    - GET: Returns API metadata, company details, parameters, and sample cURL.
+    - GET: Returns simple online status message.
     - POST: Uploads PDF (Base64 string or multipart file) and dispatches to Capricorn for Aadhaar OTP signing.
-    - Returns direct signing link (redirect_url) for immediate customer completion.
     """
-    company = None
+    # 1. GET Request: Return simple online service indicator
+    if request.method == 'GET':
+        return jsonify({
+            "message": "Send a POST request with 'pdf'.",
+            "method": "POST",
+            "service": "ZoiKYC E-Sign  API",
+            "status": "online"
+        }), 200
 
-    # 1. Resolve company if api_key or client_id is passed directly in the URL path
+    # 2. POST Request: Resolve Company Authentication
+    company = None
     target_key = (api_key or '').strip()
     if target_key:
         clean_no_hyphen = target_key.replace('-', '').upper()
@@ -445,7 +450,7 @@ def public_api_esign(api_key=None):
                 "error": f"Invalid API Key: '{target_key}'. No active organisation found with this key."
             }), 404
 
-    # 2. If company wasn't resolved via URL path, resolve from Headers or Body
+    # If company wasn't resolved via URL path, resolve from Headers or Body
     if not company:
         header_key = (
             request.headers.get('X-API-Key') or 
@@ -498,31 +503,6 @@ def public_api_esign(api_key=None):
             "status": "forbidden",
             "error": f"Organisation '{company.name}' is currently suspended. Please contact support."
         }), 403
-
-    # 3. GET Request: Return clean API documentation
-    if request.method == 'GET':
-        resolved_key = target_key or company.api_key or company.client_id
-        per_sign_fee = float(company.per_kyc_price) if (company and company.per_kyc_price is not None) else 20.00
-        return jsonify({
-            "service": "ZoiKYC Aadhaar E-Sign API",
-            "status": "online",
-            "method": "POST",
-            "organisation": company.name,
-            "client_id": company.client_id,
-            "endpoint": f"/api/esign/{resolved_key}",
-            "pricing": f"₹{per_sign_fee:.2f} per signature",
-            "body_params": {
-                "pdf_base64": "Base64 encoded string of PDF (or send multipart file with field name 'file')",
-                "signatory_name": "Full name of the signer as per Aadhaar (Required)",
-                "signatory_mobile": "10-digit mobile number for Aadhaar OTP (Optional, default: '9999999999')",
-                "signatory_email": "Signer email address (Optional)",
-                "title": "Document title / agreement name (Optional, default: 'Customer Agreement')",
-                "page_num": "Page number for signature box (Default: '1')",
-                "coordinates": "Signature rectangle coordinates 'x1,y1,x2,y2' (Default: '200,250,400,500')",
-                "client_remarks": "Internal reference / remarks (Optional)"
-            },
-            "sample_curl": f"curl -X POST https://zoikyc.com/api/esign/{resolved_key} -H 'Content-Type: application/json' -d '{{\"pdf_base64\": \"<BASE64_PDF>\", \"signatory_name\": \"Vijay Vaishnav\", \"signatory_mobile\": \"9876543210\", \"title\": \"Customer Agreement\"}}'"
-        }), 200
 
     # 4. POST Request: Execute E-Sign Dispatch
     wallet = Wallet.query.filter_by(company_id=company.id).first()
