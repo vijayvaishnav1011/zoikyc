@@ -131,13 +131,15 @@ class ESignIntegrationTestCase(unittest.TestCase):
         uploadpdf = sent_json['request']['parameter']['uploadpdf']
         self.assertTrue(len(uploadpdf['pdf64']) > 0)
         self.assertEqual(uploadpdf['title'], "Service Agreement")
-        signatory = uploadpdf['signatories']['signatory'][0]
+        signatory = uploadpdf['signatories']['signatory']
         self.assertEqual(signatory['name'], "Rahul Sharma")
         self.assertEqual(signatory['mode'], "online-aadhaar-otp")
-        self.assertEqual(signatory['email'], "na@zoikyc.com")
-        self.assertEqual(signatory['mail'], "n")
-        self.assertEqual(signatory['mobile'], "9999999999")
-        self.assertEqual(signatory['sms'], "n")
+        self.assertEqual(signatory['email'], "rahul@example.com")
+        self.assertEqual(signatory['mail'], "y")
+        self.assertEqual(signatory['mobile'], "9876543210")
+        self.assertEqual(signatory['sms'], "y")
+        self.assertEqual(signatory['option']['pagenum'], "all")
+        self.assertEqual(signatory['option']['cood'], "100,250,200,500")
 
     @patch('app.integrations.capricorn.requests.post')
     def test_client_document_upload_and_dispatch(self, mock_post):

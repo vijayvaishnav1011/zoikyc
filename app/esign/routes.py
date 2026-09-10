@@ -613,8 +613,10 @@ def public_api_esign(api_key=None):
         "Customer Agreement"
     ).strip()[:200]
 
-    page_num = str(payload_data.get('page_num') or payload_data.get('page') or '1').strip()
-    coordinates = (payload_data.get('coordinates') or payload_data.get('cood') or '200,250,400,500').strip()
+    page_num = str(payload_data.get('pagenum') or payload_data.get('page_num') or payload_data.get('page') or 'all').strip()
+    coordinates = (payload_data.get('cood') or payload_data.get('coordinates') or '100,250,200,500').strip()
+    reason = (payload_data.get('reason') or 'Agreement sign').strip()
+    location = (payload_data.get('location') or 'Delhi').strip()
     client_remarks = (payload_data.get('client_remarks') or payload_data.get('remarks') or '').strip() or None
 
     # Save to disk
@@ -659,7 +661,9 @@ def public_api_esign(api_key=None):
         callback_url=callback_url,
         page_num=esign_doc.page_num,
         coordinates=esign_doc.coordinates,
-        sign_mode=esign_doc.sign_mode
+        sign_mode=esign_doc.sign_mode,
+        reason=reason,
+        location=location
     )
     duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
 

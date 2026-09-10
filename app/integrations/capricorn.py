@@ -66,25 +66,36 @@ class CapricornESignProvider(BaseESignProvider):
         doc_title: str,
         pdf_file_path: str,
         signatory_name: str,
-        signatory_mobile: str,
-        signatory_email: Optional[str],
-        callback_url: str,
-        page_num: str = "1",
-        coordinates: str = "200,250,400,500",
-        sign_mode: str = "online-aadhaar-otp"
+        signatory_mobile: Optional[str] = None,
+        signatory_email: Optional[str] = None,
+        callback_url: str = "",
+        page_num: str = "all",
+        coordinates: str = "100,250,200,500",
+        sign_mode: str = "online-aadhaar-otp",
+        reason: str = "Agreement sign",
+        location: str = "Delhi"
     ) -> Dict[str, Any]:
         """
         Encodes the PDF to Base64 (pdf64) and dispatches the E-Sign request to Capricorn API.
+        Supports 'pagenum': 'all' for single signature box on all pages, or specific page number.
         Returns parsed dictionary containing redirecturl, reference, signedpdfurl, and txn.
         """
         pdf64_str = self.convert_pdf_to_base64(pdf_file_path)
         txn_id = self.generate_unique_txn()
 
-        # Handle page_num formatting: if integer-like convert to int
-        try:
-            parsed_pagenum = int(page_num)
-        except (ValueError, TypeError):
-            parsed_pagenum = page_num if page_num in ['all', 'custom'] else 1
+        # Handle page_num formatting: 'all' applies single signature box across all pages
+        cleaned_page = str(page_num).strip().lower() if page_num else "all"
+        if cleaned_page in ["all", "all pages", "allpages", "every"]:
+            final_pagenum = "all"
+        else:
+            try:
+                final_pagenum = str(int(page_num))
+            except (ValueError, TypeError):
+                final_pagenum = "all" if cleaned_page == "all" else str(page_num).strip()
+
+        final_cood = (coordinates or "100,250,200,500").strip()
+        sig_email = (signatory_email or "").strip()
+        sig_mobile = (signatory_mobile or "").strip()
 
         payload = {
             "request": {
@@ -101,39 +112,35 @@ class CapricornESignProvider(BaseESignProvider):
                         "txn": txn_id,
                         "callbackurl": callback_url,
                         "signatories": {
-                            "signatory": [
-                                {
-                                    "id": "signatory1",
-                                    "sn": "1",
-                                    "name": signatory_name,
-                                    # Privacy Protection: Do not send client's real email/phone to Capricorn
-                                    "email": "na@zoikyc.com",
-                                    "mail": "n",
-                                    "mobile": "9999999999",
-                                    "sms": "n",
-                                    "mode": sign_mode or "online-aadhaar-otp",
-                                    "ekycid": "esignnetwork",
-                                    "dsc": {
-                                        "email": "",
-                                        "serial": "",
-                                        "organization": "",
-                                        "orgunit": ""
-                                    },
-                                    "option": {
-                                        "cood": coordinates,
-                                        "pagenum": parsed_pagenum,
-                                        "reason": "Agreement Execution & Verification",
-                                        "location": "India",
-                                        "customtext": f"Digitally Signed by {signatory_name}",
-                                        "enableltv": "no",
-                                        "disablegreentick": "no",
-                                        "lockpdf": "no",
-                                        "enablets": "no",
-                                        "includesubject": "no",
-                                        "includecn": "no"
-                                    }
+                            "signatory": {
+                                "id": "signatory1",
+                                "sn": "",
+                                "name": signatory_name,
+                                "email": sig_email,
+                                "mail": "y" if sig_email else "n",
+                                "mobile": sig_mobile,
+                                "sms": "y" if sig_mobile else "n",
+                                "mode": sign_mode or "online-aadhaar-otp",
+                                "ekycid": "esignnetwork",
+                                "dsc": {
+                                    "email": "",
+                                    "serial": "",
+                                    "organization": "",
+                                    "orgunit": ""
+                                },
+                                "option": {
+                                    "cood": final_cood,
+                                    "pagenum": final_pagenum,
+                                    "reason": reason or "Agreement sign",
+                                    "location": location or "Delhi",
+                                    "customtext": f"Signed by {signatory_name}",
+                                    "enableltv": "",
+                                    "lockpdf": "",
+                                    "enablets": "",
+                                    "includesubject": "",
+                                    "includecn": ""
                                 }
-                            ]
+                            }
                         }
                     }
                 }
@@ -169,8 +176,12 @@ class CapricornESignProvider(BaseESignProvider):
                 }
 
             # Extract item details
-            items = response_obj.get("responsedata", {}).get("items", {})
-            item = items.get("item", {})
+            items = response_obj.get("responsedata", {}).get("items", {}) if response_obj.get("responsedata") else {}
+            item = items.get("item", {}) if isinstance(items, dict) else {}
+            if isinstance(item, list) and len(item) > 0:
+                item = item[0]
+            elif not isinstance(item, dict):
+                item = {}
 
             esign_url = item.get("esignurl")
             redirect_url = item.get("redirecturl")

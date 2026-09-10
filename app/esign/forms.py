@@ -35,13 +35,13 @@ class ESignUploadForm(FlaskForm):
     ], render_kw={"placeholder": "e.g. Customer ID #1042, Employee onboarding KYC, Loan agreement verification", "rows": 3})
 
     page_num = SelectField('Signature Page Placement', choices=[
+        ('all', 'All Pages (Single signature box on every page)'),
         ('1', 'Page 1 (First Page)'),
-        ('all', 'All Pages'),
         ('custom', 'Custom Page')
-    ], default='1')
+    ], default='all')
 
-    coordinates = StringField('Signature Box Coordinates', default='200,250,400,500', validators=[
+    coordinates = StringField('Signature Box Coordinates', default='100,250,200,500', validators=[
         Optional()
-    ], render_kw={"placeholder": "200,250,400,500"})
+    ], render_kw={"placeholder": "100,250,200,500"})
 
     submit = SubmitField('Upload & Create Execution Request')
