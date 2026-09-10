@@ -121,8 +121,6 @@ class ESignDocument(db.Model):
             "capricorn_txn": self.capricorn_txn,
             "capricorn_reference": self.capricorn_reference,
             "sign_url": self.redirect_url,
-            "signed_url": self.signed_pdf_url or (f"https://demo.esign.network/apij/getdoc/v1.0/{self.capricorn_txn}/{self.capricorn_reference}" if self.capricorn_txn and self.capricorn_reference else None),
-            "signed_pdf_url": self.signed_pdf_url or (f"https://demo.esign.network/apij/getdoc/v1.0/{self.capricorn_txn}/{self.capricorn_reference}" if self.capricorn_txn and self.capricorn_reference else None),
             "download_url": f"https://zoikyc.com/api/esign/{self.company.api_key}/{self.id}/download" if (self.company and self.company.api_key) else f"https://zoikyc.com/esign/{self.id}/download?type=signed",
             "cost_charged": float(self.cost_charged or Decimal('0.00')),
             "ip_address": self.ip_address,

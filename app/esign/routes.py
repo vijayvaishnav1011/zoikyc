@@ -387,12 +387,15 @@ def callback():
     if doc.status == 'signed':
         charge_wallet_for_signed_doc(doc)
         if request.method == 'GET':
+            active_key = doc.company.api_key if (doc.company and doc.company.api_key) else None
+            if active_key:
+                return redirect(url_for('esign.public_api_esign_download', api_key=active_key, doc_id=doc.id, _external=True))
             flash("Document is already signed and archived.", "info")
             return redirect(url_for('esign.index'))
         return jsonify({"status": "success", "message": "Already signed", "cost_charged": float(doc.cost_charged or 0)}), 200
 
     # Retrieve signed PDF URL if passed or fallback
-    download_url = signed_pdf_url or doc.signed_pdf_url
+    download_url = signed_pdf_url or doc.signed_pdf_url or (f"https://demo.esign.network/apij/getdoc/v1.0/{doc.capricorn_txn}/{doc.capricorn_reference}" if doc.capricorn_txn and doc.capricorn_reference else None)
     if download_url:
         capricorn = CapricornESignProvider()
         signed_name = f"signed_{os.path.basename(doc.file_path)}"
@@ -429,6 +432,9 @@ def callback():
     charge_wallet_for_signed_doc(doc)
 
     if request.method == 'GET':
+        active_key = doc.company.api_key if (doc.company and doc.company.api_key) else None
+        if active_key:
+            return redirect(url_for('esign.public_api_esign_download', api_key=active_key, doc_id=doc.id, _external=True))
         flash(f"Aadhaar OTP verification completed! Document '{doc.title}' has been digitally signed.", "success")
         return redirect(url_for('esign.index'))
 
@@ -730,7 +736,6 @@ def public_api_esign(api_key=None):
         db.session.commit()
 
         active_key = company.api_key or target_key
-        signed_doc_url = esign_doc.signed_pdf_url or f"https://demo.esign.network/apij/getdoc/v1.0/{esign_doc.capricorn_txn}/{esign_doc.capricorn_reference}"
         download_api_url = f"https://zoikyc.com/api/esign/{active_key}/{esign_doc.id}/download"
         return jsonify({
             "success": True,
@@ -740,8 +745,6 @@ def public_api_esign(api_key=None):
             "reference_id": esign_doc.capricorn_reference,
             "txn_id": esign_doc.capricorn_txn,
             "sign_url": esign_doc.redirect_url,
-            "signed_url": signed_doc_url,
-            "signed_pdf_url": signed_doc_url,
             "download_url": download_api_url,
             "signatory_name": esign_doc.signatory_name,
             "signatory_mobile": esign_doc.signatory_mobile,
