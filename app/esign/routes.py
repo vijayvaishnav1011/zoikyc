@@ -438,7 +438,6 @@ def public_api_esign(api_key=None):
         company = Company.query.filter(
             (Company.api_key == target_key) |
             (Company.api_key == f"zoi_live_{target_key}") |
-            (Company.api_key.ilike(f"%{target_key}%")) |
             (db.func.upper(Company.client_id) == target_key.upper()) |
             (db.func.upper(db.func.replace(Company.client_id, '-', '')) == clean_no_hyphen)
         ).first()
@@ -475,7 +474,6 @@ def public_api_esign(api_key=None):
             company = Company.query.filter(
                 (Company.api_key == header_key) | 
                 (Company.api_key == f"zoi_live_{header_key}") |
-                (Company.api_key.ilike(f"%{header_key}%")) |
                 (Company.client_id == header_key) |
                 (db.func.upper(db.func.replace(Company.client_id, '-', '')) == clean_api_no_hyphen)
             ).first()

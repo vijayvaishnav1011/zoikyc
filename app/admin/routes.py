@@ -531,6 +531,7 @@ def test_company_cvl_connection(company_id):
 
 
 @admin_bp.route('/companies/<int:company_id>/regenerate-api-key', methods=['POST'])
+@admin_bp.route('/company/<int:company_id>/regenerate-api-key', methods=['POST'])
 @admin_required
 def regenerate_company_api_key(company_id):
     company = Company.query.get_or_404(company_id)

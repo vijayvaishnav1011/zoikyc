@@ -42,7 +42,10 @@ def profile():
         company.api_user_id = form.api_user_id.data.strip() if form.api_user_id.data else None
         company.api_password = form.api_password.data.strip() if form.api_password.data else None
         company.aes_key = form.aes_key.data.strip() if form.aes_key.data else None
-        company.api_key = form.api_key.data.strip() if form.api_key.data else None
+        if form.api_key.data and form.api_key.data.strip():
+            company.api_key = form.api_key.data.strip()
+        elif not company.api_key:
+            company.generate_api_key()
 
         db.session.commit()
         if is_verified:
@@ -57,8 +60,22 @@ def profile():
         'client/company_profile.html',
         form=form,
         company=company,
-        team_users=team_users
+        team_users=team_users,
+        is_verified=is_verified
     )
+
+
+@company_bp.route('/company/regenerate-api-key', methods=['POST'])
+@login_required
+def regenerate_api_key():
+    company = current_user.company
+    if not company:
+        flash("No organisation associated with this user.", "danger")
+        return redirect(url_for('dashboard.index'))
+    new_key = company.generate_api_key()
+    db.session.commit()
+    flash(f"New API key generated: {new_key}", "success")
+    return redirect(url_for('company.profile'))
 
 
 @company_bp.route('/company/test-cvl-connection', methods=['POST'])

@@ -252,37 +252,82 @@
   </form>
 </div>
 
-<!-- 1. ZoiKYC Client API -->
-<div class="card" style="margin-bottom: 16px; padding: 18px 22px; border: 1px solid #e2e8f0;">
-  <div
-    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <i class="bi bi-link-45deg" style="color: #2563eb; font-size: 1.2rem;"></i>
-      <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--text-dark); margin: 0;">ZoiKYC Client API Endpoint
-      </h3>
-      <span class="metric-badge"
-        style="background: rgba(37, 99, 235, 0.1); color: #2563eb; font-size: 0.7rem; padding: 2px 8px;">Direct
-        POST</span>
+<!-- 1. ZoiKYC Client API Credentials & Endpoints -->
+<div class="card" style="margin-bottom: 20px; padding: 22px 24px; border: 1px solid #e2e8f0; border-radius: 14px; background: #ffffff; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
+  
+  <!-- Header with Regenerate Action -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 14px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; box-shadow: 0 3px 8px rgba(124, 58, 237, 0.25);">
+        <i class="bi bi-key-fill"></i>
+      </div>
+      <div>
+        <h3 style="font-size: 1.02rem; font-weight: 800; color: #0f172a; margin: 0;">API Credentials & KYC Endpoints</h3>
+        <p style="font-size: 0.78rem; color: #64748b; margin: 2px 0 0 0;">Dedicated integration keys and endpoints generated individually for {{ company.name }}.</p>
+      </div>
     </div>
-    <form method="POST" action="{{ url_for('admin.regenerate_company_api_key', company_id=company.id) }}"
-      style="margin: 0;" onsubmit="return confirm('Regenerate API Key for this client?');">
+    <form method="POST" action="{{ url_for('admin.regenerate_company_api_key', company_id=company.id) }}" style="margin: 0;" onsubmit="return confirm('Regenerate API Key for {{ company.name }}?\n\n⚠️ IMPORTANT: The old key will immediately stop working and cannot be restored. Any active integrations using the old key will need to be updated with the new key.');">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <button type="submit" class="btn-table-manage" style="padding: 5px 12px; font-size: 0.76rem; height: 32px;">
-        <i class="bi bi-arrow-repeat"></i> Regenerate Key
+      <button type="submit" class="btn-table-manage" style="padding: 6px 14px; font-size: 0.78rem; height: 34px; border-color: #cbd5e1;">
+        <i class="bi bi-arrow-repeat" style="color: #7c3aed;"></i> Regenerate Key
       </button>
     </form>
   </div>
 
-  <div>
-    <div style="display: flex; gap: 6px;">
-      <input type="text" readonly value="https://zoikyc.com/api/pan/{{ company.api_key or company.client_id }}"
-        id="clientApiEndpointInput" class="ref-form-control"
-        style="font-family: monospace; font-size: 0.84rem; font-weight: 700; color: #2563eb; background: #f8fafc; height: 36px;" />
-      <button type="button" onclick="copyFieldValue('clientApiEndpointInput', this)" class="btn-purple-pill"
-        style="padding: 6px 14px; font-size: 0.8rem; height: 36px; white-space: nowrap;">
-        <i class="bi bi-clipboard"></i> Copy Endpoint
-      </button>
+  <div style="display: flex; flex-direction: column; gap: 16px;">
+    
+    <!-- Row 1: Company API Key -->
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <label style="font-size: 0.8rem; font-weight: 700; color: #334155; margin: 0; display: flex; align-items: center; gap: 6px;">
+          <i class="bi bi-shield-lock-fill" style="color: #7c3aed;"></i>
+          <span>Secret API Key</span>
+          <span style="font-size: 0.68rem; font-weight: 600; padding: 2px 8px; border-radius: 12px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">Active</span>
+        </label>
+        <span style="font-size: 0.72rem; color: #64748b;">Used in header <code style="font-family: monospace; background: #f1f5f9; padding: 1px 5px; border-radius: 4px;">X-API-Key</code> or URL path</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <input type="text" readonly value="{{ company.api_key }}" id="adminCompanyApiKeyInput" class="ref-form-control" style="font-family: monospace; font-size: 0.86rem; font-weight: 700; color: #0f172a; background: #f8fafc; height: 38px;" />
+        <button type="button" onclick="copyFieldValue('adminCompanyApiKeyInput', this)" class="btn-purple-pill" style="padding: 6px 16px; font-size: 0.8rem; height: 38px; white-space: nowrap;">
+          <i class="bi bi-clipboard"></i> Copy Key
+        </button>
+      </div>
     </div>
+
+    <!-- Row 2: Aadhaar E-Sign / KYC Endpoint -->
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <label style="font-size: 0.8rem; font-weight: 700; color: #334155; margin: 0; display: flex; align-items: center; gap: 6px;">
+          <span style="font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: #e0e7ff; color: #4338ca;">POST</span>
+          <span>Aadhaar E-Sign & e-KYC Endpoint</span>
+        </label>
+        <span style="font-size: 0.72rem; color: #059669; font-weight: 700;">₹{{ '%.2f'|format(company.per_kyc_price) }} / sign (debited on completion)</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <input type="text" readonly value="https://zoikyc.com/api/esign/{{ company.api_key }}" id="adminEsignEndpointInput" class="ref-form-control" style="font-family: monospace; font-size: 0.84rem; font-weight: 700; color: #4338ca; background: #f8fafc; height: 38px;" />
+        <button type="button" onclick="copyFieldValue('adminEsignEndpointInput', this)" class="btn-purple-pill" style="padding: 6px 16px; font-size: 0.8rem; height: 38px; white-space: nowrap;">
+          <i class="bi bi-clipboard"></i> Copy Endpoint
+        </button>
+      </div>
+    </div>
+
+    <!-- Row 3: PAN KYC & Verification Endpoint -->
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <label style="font-size: 0.8rem; font-weight: 700; color: #334155; margin: 0; display: flex; align-items: center; gap: 6px;">
+          <span style="font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: #e0f2fe; color: #0369a1;">POST</span>
+          <span>PAN Verification & KYC Endpoint</span>
+        </label>
+        <span style="font-size: 0.72rem; color: #64748b;">Uses {{ company.name }}'s CVL credentials</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <input type="text" readonly value="https://zoikyc.com/api/pan/{{ company.api_key }}" id="adminPanEndpointInput" class="ref-form-control" style="font-family: monospace; font-size: 0.84rem; font-weight: 700; color: #0284c7; background: #f8fafc; height: 38px;" />
+        <button type="button" onclick="copyFieldValue('adminPanEndpointInput', this)" class="btn-purple-pill" style="padding: 6px 16px; font-size: 0.8rem; height: 38px; white-space: nowrap;">
+          <i class="bi bi-clipboard"></i> Copy Endpoint
+        </button>
+      </div>
+    </div>
+
   </div>
 </div>
 

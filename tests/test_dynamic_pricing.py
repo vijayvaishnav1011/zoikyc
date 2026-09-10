@@ -120,5 +120,62 @@ class DynamicPricingTestCase(unittest.TestCase):
         self.assertFalse(res_a_repeat)
         self.assertEqual(Wallet.query.get(wallet_a.id).balance, Decimal("187.50"))
 
+    def test_api_key_regeneration_invalidation(self):
+        """Verify that regenerating an API key invalidates the old key immediately and allows the new key."""
+        company = Company(
+            name="CloudSecure India",
+            authorised_signatory_name="Ananya Roy",
+            email="ananya@cloudsecure.test",
+            phone="9876501234",
+            country="India",
+            state="Delhi",
+            city="New Delhi",
+            zip_code="110001",
+            address="Nehru Place, New Delhi",
+            status="active",
+            per_kyc_price=Decimal("15.00"),
+            min_recharge_amount=Decimal("1000.00")
+        )
+        old_key = company.generate_api_key()
+        db.session.add(company)
+        db.session.flush()
+
+        wallet = Wallet(company_id=company.id, balance=Decimal("1000.00"))
+        db.session.add(wallet)
+        db.session.commit()
+
+        client = self.app.test_client()
+
+        pdf_b64 = "JVBERi0xLjQKMSAwIG9iajw8L1R5cGUvQ2F0YWxvZy9QYWdlcyAyIDAgUj4+ZW5kb2JqCg2IDAgb2JqPDwvVHlwZS9QYWdlcy9LaWRzWzMgMCBSXS9Db3VudCAxPj5lbmRvYmoKMyAwIG9iajw8L1R5cGUvUGFnZS9NZWRpYUJveFswIDAgNjEyIDc5Ml0vUGFyZW50IDIgMCBSL1Jlc291cmNlczw8Pj4+PmVuZG9iagp4cmVmCjAgNAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1MiAwMDAwMCBuIAowMDAwMDAwMTAxIDAwMDAwIG4gCnRyYWlsZXI8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNzgKJSVFT0Y="
+        
+        # Test with old key (before regeneration)
+        res_old = client.post(f'/api/esign/{old_key}', json={
+            "pdf_base64": pdf_b64,
+            "signatory_name": "Test Signer"
+        })
+        self.assertNotIn(res_old.status_code, [401, 404])
+
+        # Regenerate the API key
+        new_key = company.generate_api_key()
+        db.session.commit()
+        self.assertNotEqual(old_key, new_key)
+
+        # Test with old key again -> Must be 404 not_found
+        res_old_after = client.post(f'/api/esign/{old_key}', json={
+            "pdf_base64": pdf_b64,
+            "signatory_name": "Test Signer"
+        })
+        self.assertEqual(res_old_after.status_code, 404)
+        data_old = res_old_after.get_json()
+        self.assertFalse(data_old.get('success'))
+        self.assertEqual(data_old.get('status'), 'not_found')
+
+        # Test with new key -> Must succeed / pass auth
+        res_new = client.post(f'/api/esign/{new_key}', json={
+            "pdf_base64": pdf_b64,
+            "signatory_name": "Test Signer"
+        })
+        self.assertNotIn(res_new.status_code, [401, 404])
+
 if __name__ == '__main__':
     unittest.main()

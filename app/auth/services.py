@@ -106,6 +106,7 @@ def register_organisation(form_data):
             address=form_data['address'].strip(),
             status='pending_verification'
         )
+        company.generate_api_key()
         db.session.add(company)
         db.session.flush()
 
