@@ -290,6 +290,7 @@ class ESignIntegrationTestCase(unittest.TestCase):
         """Verify callback marks document as signed, downloads PDF, and dynamically debits company per_kyc_price."""
         mock_pdf_resp = MagicMock()
         mock_pdf_resp.status_code = 200
+        mock_pdf_resp.content = b"%PDF-1.4 SIGNED DOCUMENT BY CAPRICORN DSC %EOF"
         mock_pdf_resp.iter_content.return_value = [b"%PDF-1.4 SIGNED DOCUMENT BY CAPRICORN DSC %EOF"]
         mock_get.return_value = mock_pdf_resp
 

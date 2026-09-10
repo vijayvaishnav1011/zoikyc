@@ -223,17 +223,72 @@ class CapricornESignProvider(BaseESignProvider):
             }
 
     def download_signed_pdf(self, signed_pdf_url: str, target_file_path: str) -> bool:
-        """Downloads the finalized digitally signed PDF from Capricorn URL and stores it."""
+        """
+        Downloads the finalized digitally signed PDF from Capricorn URL and stores it.
+        Supports both direct binary PDF streams and Capricorn's /apij/getdoc Base64 JSON responses.
+        """
         try:
-            resp = requests.get(signed_pdf_url, timeout=30, stream=True)
-            if resp.status_code == 200:
+            resp = requests.get(signed_pdf_url, timeout=30)
+            if resp.status_code != 200:
+                logger.error(f"Failed to download signed PDF from {signed_pdf_url}, status code: {resp.status_code}")
+                return False
+
+            raw_bytes = getattr(resp, 'content', None)
+            if not isinstance(raw_bytes, (bytes, bytearray)) and hasattr(resp, 'iter_content'):
+                try:
+                    raw_bytes = b''.join([c for c in resp.iter_content(chunk_size=8192) if isinstance(c, (bytes, bytearray))])
+                except Exception:
+                    raw_bytes = b''
+
+            # Case 1: Direct binary PDF stream
+            if isinstance(raw_bytes, (bytes, bytearray)) and raw_bytes.startswith(b'%PDF'):
                 os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
                 with open(target_file_path, "wb") as f:
-                    for chunk in resp.iter_content(chunk_size=8192):
-                        f.write(chunk)
+                    f.write(raw_bytes)
+                logger.info(f"Saved binary PDF stream ({len(raw_bytes)} bytes) to {target_file_path}")
                 return True
-            logger.error(f"Failed to download signed PDF from {signed_pdf_url}, status code: {resp.status_code}")
-            return False
+
+            # Case 2: Capricorn JSON response containing Base64 encoded signedpdf
+            try:
+                data = resp.json()
+                resp_obj = data.get("response", {})
+                resp_data = resp_obj.get("responsedata", {})
+                inner_resp = resp_data.get("response", {}) if isinstance(resp_data, dict) else {}
+
+                # Check if signer has completed signing
+                summary = inner_resp.get("summary", {}) if isinstance(inner_resp, dict) else {}
+                sig_info = summary.get("signatory", {}) if isinstance(summary, dict) else {}
+                if isinstance(sig_info, dict) and sig_info.get("status") == "pending":
+                    logger.info(f"Capricorn document at {signed_pdf_url} is still pending signature.")
+                    return False
+
+                signed_b64 = (
+                    inner_resp.get("signedpdf") or 
+                    resp_obj.get("signedpdf") or 
+                    data.get("signedpdf")
+                )
+
+                if signed_b64 and isinstance(signed_b64, str):
+                    clean_b64 = signed_b64.strip()
+                    if ',' in clean_b64 and 'base64' in clean_b64[:50]:
+                        clean_b64 = clean_b64.split(',', 1)[1].strip()
+                    pdf_decoded = base64.b64decode(clean_b64)
+                    if pdf_decoded.startswith(b'%PDF'):
+                        os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
+                        with open(target_file_path, "wb") as f:
+                            f.write(pdf_decoded)
+                        logger.info(f"Successfully decoded Base64 signed PDF ({len(pdf_decoded)} bytes) to {target_file_path}")
+                        return True
+                    else:
+                        logger.error(f"Decoded Base64 does not contain valid PDF header: {pdf_decoded[:30]}")
+                        return False
+                else:
+                    logger.warning(f"No signedpdf found in JSON from {signed_pdf_url}: {data}")
+                    return False
+            except (json.JSONDecodeError, ValueError) as json_err:
+                logger.error(f"Non-PDF, non-JSON response received from {signed_pdf_url}: {json_err}")
+                return False
+
         except Exception as e:
             logger.exception(f"Exception downloading signed PDF from {signed_pdf_url}: {e}")
             return False

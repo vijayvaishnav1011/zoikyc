@@ -223,18 +223,49 @@ def download(doc_id):
         abort(403)
 
     req_type = request.args.get('type', 'original')
-    if req_type == 'signed' and doc.signed_file_path:
-        full_path = os.path.join(current_app.root_path, doc.signed_file_path)
+    full_path = None
+
+    if req_type == 'signed':
+        need_download = True
+        if doc.signed_file_path:
+            existing_path = os.path.join(current_app.root_path, doc.signed_file_path)
+            if os.path.exists(existing_path):
+                try:
+                    with open(existing_path, 'rb') as f_chk:
+                        head = f_chk.read(10)
+                    if head.startswith(b'%PDF'):
+                        need_download = False
+                        full_path = existing_path
+                except Exception:
+                    need_download = True
+
+        if need_download:
+            capricorn = CapricornESignProvider()
+            download_url = doc.signed_pdf_url or f"https://demo.esign.network/apij/getdoc/v1.0/{doc.capricorn_txn}/{doc.capricorn_reference}"
+            signed_name = f"signed_{os.path.basename(doc.file_path)}"
+            target_dir = os.path.join(current_app.root_path, 'uploads', 'esign', str(doc.company_id))
+            target_path = os.path.join(target_dir, signed_name)
+            success = capricorn.download_signed_pdf(download_url, target_path)
+            if success:
+                doc.signed_file_path = f"uploads/esign/{doc.company_id}/{signed_name}"
+                doc.status = 'signed'
+                db.session.commit()
+                full_path = target_path
+                charge_wallet_for_signed_doc(doc)
+            else:
+                flash("Signed PDF is not ready yet or signatory has not completed OTP verification.", "warning")
+                return redirect(url_for('esign.index'))
+
         download_name = f"Signed_{doc.original_filename}"
     else:
         full_path = os.path.join(current_app.root_path, doc.file_path)
         download_name = doc.original_filename
 
-    if not os.path.exists(full_path):
+    if not full_path or not os.path.exists(full_path):
         flash("Requested document file could not be found on server storage.", "danger")
         return redirect(url_for('esign.index'))
 
-    return send_file(full_path, as_attachment=True, download_name=download_name)
+    return send_file(full_path, as_attachment=True, download_name=download_name, mimetype='application/pdf')
 
 @esign_bp.route('/esign/portal')
 @login_required
@@ -698,6 +729,7 @@ def public_api_esign(api_key=None):
         esign_doc.cost_charged = Decimal('0.00')
         db.session.commit()
 
+        signed_doc_url = esign_doc.signed_pdf_url or f"https://demo.esign.network/apij/getdoc/v1.0/{esign_doc.capricorn_txn}/{esign_doc.capricorn_reference}"
         return jsonify({
             "success": True,
             "status": "ready_for_signing",
@@ -706,6 +738,8 @@ def public_api_esign(api_key=None):
             "reference_id": esign_doc.capricorn_reference,
             "txn_id": esign_doc.capricorn_txn,
             "sign_url": esign_doc.redirect_url,
+            "signed_url": signed_doc_url,
+            "signed_pdf_url": signed_doc_url,
             "signatory_name": esign_doc.signatory_name,
             "signatory_mobile": esign_doc.signatory_mobile,
             "title": esign_doc.title,
@@ -752,3 +786,57 @@ def public_api_esign_status(api_key, doc_id):
         "success": True,
         "document": doc.to_dict()
     })
+
+
+@esign_bp.route('/api/esign/<path:api_key>/<int:doc_id>/download', methods=['GET'])
+@csrf.exempt
+def public_api_esign_download(api_key, doc_id):
+    """Directly downloads the signed PDF for a document using company API key."""
+    target_key = (api_key or '').strip()
+    clean_no_hyphen = target_key.replace('-', '').upper()
+    company = Company.query.filter(
+        (Company.api_key == target_key) |
+        (Company.api_key == f"zoi_live_{target_key}") |
+        (Company.api_key.ilike(f"%{target_key}%")) |
+        (db.func.upper(Company.client_id) == target_key.upper()) |
+        (db.func.upper(db.func.replace(Company.client_id, '-', '')) == clean_no_hyphen)
+    ).first_or_404()
+
+    doc = ESignDocument.query.filter_by(id=doc_id, company_id=company.id).first_or_404()
+
+    need_download = True
+    full_path = None
+    if doc.signed_file_path:
+        existing_path = os.path.join(current_app.root_path, doc.signed_file_path)
+        if os.path.exists(existing_path):
+            try:
+                with open(existing_path, 'rb') as f_chk:
+                    head = f_chk.read(10)
+                if head.startswith(b'%PDF'):
+                    need_download = False
+                    full_path = existing_path
+            except Exception:
+                need_download = True
+
+    if need_download:
+        capricorn = CapricornESignProvider()
+        download_url = doc.signed_pdf_url or f"https://demo.esign.network/apij/getdoc/v1.0/{doc.capricorn_txn}/{doc.capricorn_reference}"
+        signed_name = f"signed_{os.path.basename(doc.file_path)}"
+        target_dir = os.path.join(current_app.root_path, 'uploads', 'esign', str(doc.company_id))
+        target_path = os.path.join(target_dir, signed_name)
+        success = capricorn.download_signed_pdf(download_url, target_path)
+        if success:
+            doc.signed_file_path = f"uploads/esign/{doc.company_id}/{signed_name}"
+            doc.status = 'signed'
+            db.session.commit()
+            full_path = target_path
+            charge_wallet_for_signed_doc(doc)
+        else:
+            return jsonify({
+                "success": False,
+                "status": "pending_or_not_found",
+                "error": "Signed PDF is not available yet. Signatory may not have completed Aadhaar OTP."
+            }), 404
+
+    download_name = f"Signed_{doc.original_filename}"
+    return send_file(full_path, as_attachment=True, download_name=download_name, mimetype='application/pdf')
