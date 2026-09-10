@@ -1,4 +1,5 @@
 import os
+import json
 import uuid
 import base64
 from decimal import Decimal
@@ -136,6 +137,8 @@ def upload():
         # Directly dispatch to Capricorn E-Sign Gateway (No manual admin dispatch needed!)
         capricorn = CapricornESignProvider()
         callback_url = url_for('esign.callback', _external=True)
+
+        start_time = datetime.now(timezone.utc)
         result = capricorn.send_document_for_esign(
             doc_title=esign_doc.title,
             pdf_file_path=full_path,
@@ -147,6 +150,26 @@ def upload():
             coordinates=esign_doc.coordinates,
             sign_mode=esign_doc.sign_mode
         )
+        duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+
+        # Audit Logging
+        esign_doc.ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+        esign_doc.server_ip = '187.127.139.6'
+        esign_doc.method = 'Web Portal Upload'
+        esign_doc.endpoint = '/esign/upload'
+        esign_doc.user_agent = request.user_agent.string if request.user_agent else 'Browser'
+        esign_doc.duration_ms = duration_ms
+        esign_doc.raw_request = json.dumps({
+            "title": esign_doc.title,
+            "signatory_name": esign_doc.signatory_name,
+            "signatory_mobile": esign_doc.signatory_mobile,
+            "signatory_email": esign_doc.signatory_email,
+            "page_num": esign_doc.page_num,
+            "coordinates": esign_doc.coordinates,
+            "sign_mode": esign_doc.sign_mode,
+            "original_filename": esign_doc.original_filename
+        })
+        esign_doc.raw_response = json.dumps(result.get('raw') or result)
 
         if result.get('success'):
             esign_doc.status = 'sent_to_capricorn'
@@ -350,6 +373,21 @@ def callback():
             current_app.logger.info(f"Successfully downloaded signed PDF for doc {doc.id}")
         else:
             current_app.logger.error(f"Failed to fetch signed PDF from {download_url} for doc {doc.id}")
+
+    # Append callback event to audit log raw_response
+    try:
+        current_resp = doc.response_dict
+        current_resp['callback_payload'] = {
+            "txn": txn,
+            "reference": reference,
+            "signedpdfurl": signed_pdf_url,
+            "status": status_param,
+            "received_at": datetime.now(timezone.utc).isoformat(),
+            "client_ip": request.headers.get('X-Forwarded-For', request.remote_addr)
+        }
+        doc.raw_response = json.dumps(current_resp)
+    except Exception as log_ex:
+        current_app.logger.warning(f"Could not append callback to raw_response: {log_ex}")
 
     doc.status = 'signed'
     doc.signed_at = datetime.now(timezone.utc)
@@ -631,6 +669,8 @@ def public_api_esign(api_key=None):
     # Dispatch to Capricorn E-Sign Gateway
     capricorn = CapricornESignProvider()
     callback_url = url_for('esign.callback', _external=True)
+
+    start_time = datetime.now(timezone.utc)
     result = capricorn.send_document_for_esign(
         doc_title=esign_doc.title,
         pdf_file_path=full_path,
@@ -642,6 +682,26 @@ def public_api_esign(api_key=None):
         coordinates=esign_doc.coordinates,
         sign_mode=esign_doc.sign_mode
     )
+    duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+
+    # Audit Logging for REST API Call
+    esign_doc.ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+    esign_doc.server_ip = '187.127.139.6'
+    esign_doc.method = f"REST API ({request.method})"
+    esign_doc.endpoint = request.path
+    esign_doc.user_agent = request.user_agent.string if request.user_agent else 'API Client'
+    esign_doc.duration_ms = duration_ms
+    esign_doc.raw_request = json.dumps({
+        "title": esign_doc.title,
+        "signatory_name": esign_doc.signatory_name,
+        "signatory_mobile": esign_doc.signatory_mobile,
+        "signatory_email": esign_doc.signatory_email,
+        "page_num": esign_doc.page_num,
+        "coordinates": esign_doc.coordinates,
+        "sign_mode": esign_doc.sign_mode,
+        "original_filename": esign_doc.original_filename
+    })
+    esign_doc.raw_response = json.dumps(result.get('raw') or result)
 
     if result.get('success'):
         esign_doc.status = 'sent_to_capricorn'

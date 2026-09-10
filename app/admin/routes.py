@@ -602,7 +602,91 @@ def update_company_pricing(company_id):
 # E-SIGN CAPRICORN DISPATCH & MANAGEMENT
 # =========================================================================
 
+@admin_bp.route('/esign-logs')
 @admin_bp.route('/esign')
+@admin_required
+def esign_logs():
+    """Admin view for all E-Sign API and portal document logs including raw payloads and inspection."""
+    page = request.args.get('page', 1, type=int)
+    search_query = request.args.get('q', '').strip()
+    status_filter = request.args.get('status', 'all').strip().lower()
+
+    query = ESignDocument.query.outerjoin(Company).outerjoin(User, ESignDocument.created_by_user_id == User.id)
+    if search_query:
+        search = f"%{search_query}%"
+        query = query.filter(
+            (ESignDocument.title.ilike(search)) |
+            (ESignDocument.signatory_name.ilike(search)) |
+            (ESignDocument.signatory_mobile.ilike(search)) |
+            (ESignDocument.capricorn_txn.ilike(search)) |
+            (ESignDocument.capricorn_reference.ilike(search)) |
+            (ESignDocument.server_ip.ilike(search)) |
+            (ESignDocument.ip_address.ilike(search)) |
+            (Company.name.ilike(search)) |
+            (Company.client_id.ilike(search)) |
+            (User.email.ilike(search))
+        )
+
+    if status_filter in ['signed', 'sent_to_capricorn', 'failed', 'rejected_by_admin', 'pending_admin']:
+        query = query.filter(ESignDocument.status == status_filter)
+
+    pagination = query.order_by(ESignDocument.created_at.desc()).paginate(page=page, per_page=25, error_out=False)
+
+    # Quick overview metrics
+    total_logs = ESignDocument.query.count()
+    signed_logs = ESignDocument.query.filter_by(status='signed').count()
+    pending_logs = ESignDocument.query.filter_by(status='sent_to_capricorn').count()
+    failed_logs = ESignDocument.query.filter(ESignDocument.status.in_(['failed', 'rejected_by_admin'])).count()
+
+    return render_template(
+        'admin/esign_logs.html',
+        pagination=pagination,
+        search_query=search_query,
+        status_filter=status_filter,
+        total_logs=total_logs,
+        signed_logs=signed_logs,
+        pending_logs=pending_logs,
+        failed_logs=failed_logs
+    )
+
+
+@admin_bp.route('/esign-logs/<int:doc_id>/details')
+@admin_required
+def esign_log_details(doc_id):
+    """Returns complete JSON inspection payload for an E-Sign document log."""
+    doc = ESignDocument.query.get_or_404(doc_id)
+    try:
+        return jsonify(doc.to_dict())
+    except Exception as e:
+        import traceback
+        current_app.logger.error(f"Error serializing E-Sign document {doc_id}: {traceback.format_exc()}")
+        return jsonify({
+            "id": doc.id,
+            "title": doc.title,
+            "status": doc.status,
+            "status_label": doc.status_label,
+            "signatory_name": doc.signatory_name,
+            "signatory_mobile": doc.signatory_mobile,
+            "signatory_email": doc.signatory_email,
+            "capricorn_txn": doc.capricorn_txn,
+            "capricorn_reference": doc.capricorn_reference,
+            "sign_url": doc.redirect_url,
+            "signed_pdf_url": doc.signed_pdf_url,
+            "cost_charged": float(doc.cost_charged or 0.0),
+            "server_ip": doc.server_ip or '187.127.139.6',
+            "ip_address": doc.ip_address or '127.0.0.1',
+            "method": doc.method or 'E-Sign Gateway',
+            "endpoint": doc.endpoint or '/api/esign',
+            "duration_ms": doc.duration_ms or 0,
+            "created_at": doc.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") if doc.created_at else "-",
+            "raw_request": doc.request_dict,
+            "raw_response": doc.response_dict,
+            "user": {"email": doc.created_by.email if doc.created_by else "Public API"},
+            "company": {"name": doc.company.name if doc.company else "System", "client_id": doc.company.client_id if doc.company else ""}
+        })
+
+
+@admin_bp.route('/esign-requests')
 @admin_required
 def esign_requests():
     """Super Admin screen to review uploaded client documents grouped company-wise and dispatch to Capricorn."""

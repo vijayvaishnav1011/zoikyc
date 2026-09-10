@@ -1,0 +1,939 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}E-Sign API Traffic Logs — Super Admin ZoiKYC{% endblock %}
+{% block page_title %}E-Sign API Traffic Logs{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Stat Metrics Cards */
+  .audit-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+  .audit-metric-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-xl);
+    padding: 20px 22px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .audit-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  }
+  .audit-metric-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+  }
+  .metric-card-purple::before { background: linear-gradient(180deg, #9333ea, #7e22ce); }
+  .metric-card-emerald::before { background: linear-gradient(180deg, #10b981, #059669); }
+  .metric-card-amber::before { background: linear-gradient(180deg, #f59e0b, #d97706); }
+  .metric-card-rose::before { background: linear-gradient(180deg, #ef4444, #dc2626); }
+
+  .metric-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .metric-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+  }
+  .metric-icon-wrap {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+  }
+  .metric-val {
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-top: 8px;
+    line-height: 1.1;
+  }
+  .metric-sub {
+    font-size: 0.76rem;
+    color: #64748b;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  /* Badges & Tables */
+  .ip-badge {
+    font-family: 'SFMono-Regular', Consolas, Menlo, monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    background: #f1f5f9;
+    color: #334155;
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    letter-spacing: 0.2px;
+  }
+  .doc-badge {
+    font-family: 'SFMono-Regular', Consolas, Menlo, monospace;
+    font-size: 0.84rem;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    background: rgba(124, 58, 237, 0.08);
+    color: #7c3aed;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .engine-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .engine-api {
+    background: #ede9fe;
+    color: #6d28d9;
+    border: 1px solid #ddd6fe;
+  }
+  .engine-web {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+  }
+
+  /* Status Badges */
+  .audit-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    letter-spacing: 0.3px;
+  }
+  .audit-status.signed {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+  }
+  .audit-status.awaiting {
+    background: #e0f2fe;
+    color: #0284c7;
+    border: 1px solid #bae6fd;
+  }
+  .audit-status.failed {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+  }
+  .audit-status.pending {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+  }
+
+  .latency-pill {
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+  .latency-fast { background: #dcfce7; color: #15803d; }
+  .latency-med { background: #fef3c7; color: #b45309; }
+  .latency-slow { background: #fee2e2; color: #b91c1c; }
+
+  /* Modal Inspector Styles */
+  .inspector-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 1050;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .inspector-modal-dialog {
+    background: #0f172a;
+    color: #f8fafc;
+    width: 100%;
+    max-width: 900px;
+    max-height: 90vh;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #334155;
+    animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes modalPop {
+    from { opacity: 0; transform: scale(0.96) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .inspector-modal-header {
+    background: #1e293b;
+    padding: 16px 22px;
+    border-bottom: 1px solid #334155;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .inspector-modal-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #f8fafc;
+  }
+  .inspector-ribbon {
+    background: #1e293b;
+    padding: 10px 22px;
+    border-bottom: 1px solid #334155;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    color: #94a3b8;
+  }
+  .inspector-ribbon strong {
+    color: #f1f5f9;
+  }
+  .inspector-nav-tabs {
+    display: flex;
+    background: #0f172a;
+    border-bottom: 1px solid #334155;
+    padding: 0 16px;
+  }
+  .inspector-nav-tab {
+    padding: 12px 18px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #94a3b8;
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .inspector-nav-tab:hover {
+    color: #f8fafc;
+  }
+  .inspector-nav-tab.active {
+    color: #a855f7;
+    border-bottom-color: #a855f7;
+  }
+  .inspector-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px 22px;
+    background: #020617;
+  }
+  .code-viewer-wrap {
+    position: relative;
+    border-radius: 10px;
+    background: #090d16;
+    border: 1px solid #1e293b;
+    overflow: hidden;
+  }
+  .code-viewer-bar {
+    background: #0f172a;
+    padding: 8px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #1e293b;
+    font-size: 0.74rem;
+    font-family: monospace;
+    color: #94a3b8;
+  }
+  .code-viewer-content {
+    margin: 0;
+    padding: 16px;
+    font-family: 'SFMono-Regular', Consolas, Menlo, monospace;
+    font-size: 0.82rem;
+    color: #e2e8f0;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 380px;
+    overflow-y: auto;
+  }
+  .btn-copy-code {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 0.15s;
+  }
+  .btn-copy-code:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+  .meta-grid-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.84rem;
+  }
+  .meta-grid-table tr {
+    border-bottom: 1px solid #1e293b;
+  }
+  .meta-grid-table td {
+    padding: 10px 12px;
+  }
+  .meta-grid-table td:first-child {
+    color: #94a3b8;
+    width: 32%;
+    font-weight: 600;
+  }
+  .meta-grid-table td:last-child {
+    color: #f8fafc;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Overview Metrics Grid -->
+<div class="audit-metrics-grid">
+  <!-- 1. Total Requests -->
+  <div class="audit-metric-card metric-card-purple">
+    <div class="metric-top-row">
+      <div class="metric-label">Total E-Sign Requests</div>
+      <div class="metric-icon-wrap" style="background: #faf5ff; color: #9333ea;">
+        <i class="bi bi-pen-fill"></i>
+      </div>
+    </div>
+    <div class="metric-val">{{ total_logs }}</div>
+    <div class="metric-sub">
+      <i class="bi bi-diagram-3-fill"></i> Across all registered client organisations
+    </div>
+  </div>
+
+  <!-- 2. Signed & Verified -->
+  <div class="audit-metric-card metric-card-emerald">
+    <div class="metric-top-row">
+      <div class="metric-label">Signed & Verified</div>
+      <div class="metric-icon-wrap" style="background: #ecfdf5; color: #059669;">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+    </div>
+    <div class="metric-val" style="color: #059669;">{{ signed_logs }}</div>
+    <div class="metric-sub" style="color: #059669;">
+      <i class="bi bi-wallet2"></i> Legally executed & debited (₹20/sign)
+    </div>
+  </div>
+
+  <!-- 3. Awaiting Signer OTP -->
+  <div class="audit-metric-card metric-card-amber">
+    <div class="metric-top-row">
+      <div class="metric-label">Awaiting Signer OTP</div>
+      <div class="metric-icon-wrap" style="background: #fffbeb; color: #d97706;">
+        <i class="bi bi-hourglass-split"></i>
+      </div>
+    </div>
+    <div class="metric-val" style="color: #d97706;">{{ pending_logs }}</div>
+    <div class="metric-sub" style="color: #d97706;">
+      <i class="bi bi-link-45deg"></i> Signing session active (No charge yet)
+    </div>
+  </div>
+
+  <!-- 4. Failed / Errors -->
+  <div class="audit-metric-card metric-card-rose">
+    <div class="metric-top-row">
+      <div class="metric-label">Failed / Gateway Errors</div>
+      <div class="metric-icon-wrap" style="background: #fef2f2; color: #dc2626;">
+        <i class="bi bi-x-circle-fill"></i>
+      </div>
+    </div>
+    <div class="metric-val" style="color: #dc2626;">{{ failed_logs }}</div>
+    <div class="metric-sub" style="color: #dc2626;">
+      <i class="bi bi-shield-x"></i> Rejected or gateway failure
+    </div>
+  </div>
+</div>
+
+<!-- Main Table Container Card -->
+<div class="card" style="padding: 24px; border: 1px solid #e2e8f0; border-radius: var(--radius-xl); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);">
+
+  <!-- SaaS Page Header -->
+  <div class="saas-page-header">
+    <div class="saas-page-title-group">
+      <h3>
+        <span>E-Sign Document & API Traffic Logs</span>
+        <span class="saas-count-badge">{{ total_logs }} Total</span>
+      </h3>
+      <div class="saas-page-subtitle">
+        Real-time developer audit trail of all Aadhaar E-Sign sessions, Capricorn network payloads, customer signing links, wallet billing status, and client IPs.
+      </div>
+    </div>
+
+    <div>
+      <a href="{{ url_for('admin.esign_requests') }}" class="lang-toggle-pill" style="text-decoration: none; padding: 8px 16px; font-weight: 700; color: #4338ca; background: #e0e7ff; border: 1px solid #c7d2fe;">
+        <i class="bi bi-folder2-open"></i> Company Grouped View
+      </a>
+    </div>
+  </div>
+
+  <!-- Unified Controls Bar (Integrated Search + Segmented Filter Tabs) -->
+  <div class="saas-controls-bar">
+    <!-- Search Input Form with Embedded Icon -->
+    <form method="GET" action="{{ url_for('admin.esign_logs') }}" class="saas-search-form">
+      <input type="hidden" name="status" value="{{ status_filter }}">
+      <div class="saas-search-box">
+        <i class="bi bi-search saas-search-icon"></i>
+        <input 
+          type="text" 
+          name="q" 
+          value="{{ search_query }}" 
+          placeholder="Search Document, Customer, Mobile, Txn, Ref ID, Company, IP..." 
+          class="saas-search-field"
+          autocomplete="off"
+        >
+        {% if search_query %}
+          <a href="{{ url_for('admin.esign_logs', status=status_filter) }}" class="saas-search-clear" title="Clear search">
+            <i class="bi bi-x-circle-fill"></i>
+          </a>
+        {% endif %}
+      </div>
+    </form>
+
+    <!-- Segmented Status Filter Tabs -->
+    <div class="saas-filter-tabs">
+      <a href="{{ url_for('admin.esign_logs', status='all', q=search_query) }}" class="saas-tab-link {% if status_filter == 'all' %}active{% endif %}">
+        <i class="bi bi-grid-fill" style="font-size: 0.72rem;"></i>
+        <span>All Requests</span>
+        <span class="tab-badge">{{ total_logs }}</span>
+      </a>
+
+      <a href="{{ url_for('admin.esign_logs', status='signed', q=search_query) }}" class="saas-tab-link {% if status_filter == 'signed' %}active{% endif %}">
+        <span class="status-dot dot-emerald"></span>
+        <span>Signed</span>
+        <span class="tab-badge">{{ signed_logs }}</span>
+      </a>
+
+      <a href="{{ url_for('admin.esign_logs', status='sent_to_capricorn', q=search_query) }}" class="saas-tab-link {% if status_filter == 'sent_to_capricorn' %}active{% endif %}">
+        <span class="status-dot dot-cyan"></span>
+        <span>Awaiting OTP</span>
+        <span class="tab-badge">{{ pending_logs }}</span>
+      </a>
+
+      <a href="{{ url_for('admin.esign_logs', status='failed', q=search_query) }}" class="saas-tab-link {% if status_filter == 'failed' %}active{% endif %}">
+        <span class="status-dot dot-rose"></span>
+        <span>Failed</span>
+        <span class="tab-badge">{{ failed_logs }}</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  {% if pagination and pagination.items %}
+  <div class="saas-table-card">
+    <table class="saas-table">
+      <thead>
+        <tr>
+          <th>Timestamp (UTC)</th>
+          <th>Initiator & Organisation</th>
+          <th>Document & Signatory</th>
+          <th>Gateway & Transaction</th>
+          <th>Outbound & Client IP</th>
+          <th>Status & Billing</th>
+          <th>Latency</th>
+          <th style="text-align: right;">Inspector</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in pagination.items %}
+        <tr>
+          <!-- Timestamp -->
+          <td>
+            <div style="font-weight: 700; color: #1e293b; font-size: 0.84rem;">
+              {{ doc.created_at.strftime('%d %b %Y') }}
+            </div>
+            <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px; display: flex; align-items: center; gap: 4px;">
+              <i class="bi bi-clock"></i> {{ doc.created_at.strftime('%H:%M:%S') }} UTC
+            </div>
+          </td>
+
+          <!-- Initiator & Organisation -->
+          <td>
+            <div style="font-weight: 700; color: #0f172a; font-size: 0.88rem;">
+              {{ doc.company.name if doc.company else 'Global Platform' }}
+            </div>
+            <div class="company-sub-meta">
+              <span class="chip-client-id">{{ doc.company.client_id or 'SYSTEM' }}</span>
+              <span style="color: #94a3b8;">&bull;</span>
+              <span style="color: #475569; font-weight: 500;">
+                {% if doc.created_by %}
+                  {{ doc.created_by.email }}
+                {% else %}
+                  <span style="color: #94a3b8; font-style: italic;">Public REST API</span>
+                {% endif %}
+              </span>
+            </div>
+          </td>
+
+          <!-- Document & Signatory -->
+          <td>
+            <div style="font-weight: 700; color: #0f172a; font-size: 0.84rem; display: flex; align-items: center; gap: 6px;">
+              <i class="bi bi-file-earmark-pdf-fill" style="color: #ef4444;"></i>
+              <span>{{ doc.title }}</span>
+            </div>
+            <div style="font-size: 0.76rem; color: #475569; margin-top: 2px;">
+              Signer: <strong>{{ doc.signatory_name }}</strong>
+              {% if doc.signatory_mobile and doc.signatory_mobile != '9999999999' %}
+                ({{ doc.signatory_mobile }})
+              {% endif %}
+            </div>
+            <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 1px;">
+              Page {{ doc.page_num }} &bull; ({{ doc.coordinates }})
+            </div>
+          </td>
+
+          <!-- Gateway & Txn ID -->
+          <td>
+            <div class="doc-badge" title="Capricorn Reference ID">
+              <i class="bi bi-shield-check"></i> {{ doc.capricorn_reference or 'Pending Ref' }}
+            </div>
+            <div style="font-size: 0.74rem; font-family: monospace; color: #64748b; margin-top: 2px;">
+              Txn: {{ doc.capricorn_txn or '-' }}
+            </div>
+            {% if doc.redirect_url %}
+              <div style="margin-top: 3px;">
+                <a href="{{ doc.redirect_url }}" target="_blank" style="font-size: 0.72rem; color: #0284c7; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;">
+                  <i class="bi bi-box-arrow-up-right"></i> Sign Link
+                </a>
+              </div>
+            {% endif %}
+          </td>
+
+          <!-- Outbound Server IP & Client IP -->
+          <td>
+            <span class="ip-badge" style="background: rgba(126, 34, 206, 0.08); color: #7e22ce; border-color: #e9d5ff;" title="Outbound Server IP communicating with Capricorn">
+              <i class="bi bi-hdd-network-fill" style="color: #7e22ce; font-size: 0.72rem;"></i>
+              {{ doc.server_ip or '187.127.139.6' }}
+            </span>
+            <div style="font-size: 0.72rem; color: #64748b; margin-top: 2px;">
+              <span style="color: #94a3b8;">Client IP:</span> {{ doc.ip_address or '127.0.0.1' }}
+            </div>
+            <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 1px;">
+              {{ doc.method or 'E-Sign Gateway' }}
+            </div>
+          </td>
+
+          <!-- Status & Billing -->
+          <td>
+            {% if doc.status == 'signed' %}
+              <span class="audit-status signed">
+                <i class="bi bi-check-circle-fill"></i> Signed & Sealed
+              </span>
+              <div style="font-size: 0.72rem; color: #059669; font-weight: 700; margin-top: 3px;">
+                <i class="bi bi-check2"></i> ₹{{ doc.cost_charged or '20.00' }} debited
+              </div>
+            {% elif doc.status == 'sent_to_capricorn' %}
+              <span class="audit-status awaiting">
+                <i class="bi bi-send-check-fill"></i> Awaiting OTP
+              </span>
+              <div style="font-size: 0.72rem; color: #0369a1; margin-top: 3px;">
+                <i class="bi bi-shield-check"></i> Debits on sign
+              </div>
+            {% elif doc.status == 'failed' or doc.status == 'rejected_by_admin' %}
+              <span class="audit-status failed">
+                <i class="bi bi-x-circle-fill"></i> {{ doc.status_label }}
+              </span>
+              <div style="font-size: 0.7rem; color: #dc2626; margin-top: 2px;">
+                No charge
+              </div>
+            {% else %}
+              <span class="audit-status pending">
+                {{ doc.status_label }}
+              </span>
+            {% endif %}
+          </td>
+
+          <!-- Latency -->
+          <td>
+            {% set lat = doc.duration_ms or 0 %}
+            <span class="latency-pill {% if lat < 1200 %}latency-fast{% elif lat < 3000 %}latency-med{% else %}latency-slow{% endif %}">
+              {{ lat }} ms
+            </span>
+          </td>
+
+          <!-- Inspector Action -->
+          <td style="text-align: right;">
+            <button 
+              type="button" 
+              class="btn-table-manage" 
+              onclick="openEsignInspector({{ doc.id }})" 
+              title="Inspect Raw JSON Payloads & Network Audit"
+              style="padding: 6px 12px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;"
+            >
+              <i class="bi bi-code-square"></i> Inspect
+            </button>
+          </td>
+
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination Controls -->
+  {% if pagination.pages > 1 %}
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 12px 16px; background: #f8fafc; border-radius: var(--radius-lg); border: 1px solid #e2e8f0; flex-wrap: wrap; gap: 12px;">
+    <div style="font-size: 0.82rem; color: #64748b;">
+      Showing page <strong>{{ pagination.page }}</strong> of <strong>{{ pagination.pages }}</strong> ({{ pagination.total }} records)
+    </div>
+    <div style="display: flex; gap: 6px;">
+      {% if pagination.has_prev %}
+        <a href="{{ url_for('admin.esign_logs', page=pagination.prev_num, status=status_filter, q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 12px; font-size: 0.8rem; background: #ffffff;">
+          &laquo; Previous
+        </a>
+      {% endif %}
+
+      {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if p %}
+          <a href="{{ url_for('admin.esign_logs', page=p, status=status_filter, q=search_query) }}" class="lang-toggle-pill {% if p == pagination.page %}active{% endif %}" style="text-decoration: none; padding: 6px 12px; font-size: 0.8rem; {% if p == pagination.page %}background: #7c3aed; color: #ffffff; border-color: #7c3aed;{% else %}background: #ffffff;{% endif %}">
+            {{ p }}
+          </a>
+        {% else %}
+          <span style="padding: 6px 8px; color: #94a3b8;">&hellip;</span>
+        {% endif %}
+      {% endfor %}
+
+      {% if pagination.has_next %}
+        <a href="{{ url_for('admin.esign_logs', page=pagination.next_num, status=status_filter, q=search_query) }}" class="lang-toggle-pill" style="text-decoration: none; padding: 6px 12px; font-size: 0.8rem; background: #ffffff;">
+          Next &raquo;
+        </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <!-- Empty State -->
+  <div style="text-align: center; padding: 64px 20px;">
+    <div style="width: 64px; height: 64px; border-radius: 50%; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 16px auto;">
+      <i class="bi bi-journal-x"></i>
+    </div>
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">No E-Sign Logs Found</h3>
+    <p style="font-size: 0.85rem; color: #64748b; max-width: 420px; margin: 0 auto 18px auto;">
+      {% if search_query %}
+        No requests match "<strong>{{ search_query }}</strong>" in the selected status filter.
+      {% else %}
+        E-Sign requests made via the client portal or REST API will be logged here with complete network payload inspection.
+      {% endif %}
+    </p>
+    {% if search_query or status_filter != 'all' %}
+      <a href="{{ url_for('admin.esign_logs') }}" class="btn-table-manage" style="display: inline-flex;">
+        Clear All Filters
+      </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- JSON / Audit Payload Inspector Modal -->
+<div id="esignInspectorModal" class="inspector-modal-backdrop" onclick="handleEsignBackdropClick(event)">
+  <div class="inspector-modal-dialog">
+    
+    <!-- Modal Header -->
+    <div class="inspector-modal-header">
+      <div class="inspector-modal-title">
+        <i class="bi bi-braces-asterisk" style="color: #a855f7;"></i>
+        <span>E-Sign Document & API Payload Inspector</span>
+        <span id="esignModalDocIdBadge" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; background: rgba(168, 85, 247, 0.2); color: #d8b4fe; font-family: monospace;">#0</span>
+      </div>
+      <button type="button" onclick="closeEsignInspectorModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer; line-height: 1;" title="Close Inspector">&times;</button>
+    </div>
+
+    <!-- Summary Ribbon -->
+    <div class="inspector-ribbon">
+      <div>Outbound Server: <strong id="esignRibbonServerIp">187.127.139.6</strong></div>
+      <div>&bull;</div>
+      <div>Client Device: <strong id="esignRibbonIp">127.0.0.1</strong></div>
+      <div>&bull;</div>
+      <div>Organisation: <strong id="esignRibbonCompany">-</strong></div>
+      <div>&bull;</div>
+      <div>Method: <strong id="esignRibbonMethod">Capricorn E-Sign</strong></div>
+      <div>&bull;</div>
+      <div>Latency: <strong id="esignRibbonLatency">0 ms</strong></div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="inspector-nav-tabs">
+      <button type="button" class="inspector-nav-tab active" id="esignTabBtnReq" onclick="selectEsignInspectorTab('request')">
+        <i class="bi bi-box-arrow-up-right"></i> Capricorn Request
+      </button>
+      <button type="button" class="inspector-nav-tab" id="esignTabBtnResp" onclick="selectEsignInspectorTab('response')">
+        <i class="bi bi-box-arrow-in-down-left"></i> Gateway Response & Webhook
+      </button>
+      <button type="button" class="inspector-nav-tab" id="esignTabBtnMeta" onclick="selectEsignInspectorTab('meta')">
+        <i class="bi bi-file-earmark-person"></i> Signer & Document Details
+      </button>
+      <button type="button" class="inspector-nav-tab" id="esignTabBtnAudit" onclick="selectEsignInspectorTab('audit')">
+        <i class="bi bi-shield-check"></i> Network & Audit Trail
+      </button>
+    </div>
+
+    <!-- Modal Content Body -->
+    <div class="inspector-modal-body">
+      
+      <!-- Tab 1: Request JSON -->
+      <div id="esignTabViewReq" class="code-viewer-wrap">
+        <div class="code-viewer-bar">
+          <span>OUTBOUND CAPRICORN DISPATCH PAYLOAD</span>
+          <button type="button" class="btn-copy-code" onclick="copyEsignCodePayload('esignModalCodeReq', this)">
+            <i class="bi bi-clipboard"></i> <span>Copy JSON</span>
+          </button>
+        </div>
+        <pre class="code-viewer-content" id="esignModalCodeReq"></pre>
+      </div>
+
+      <!-- Tab 2: Response JSON -->
+      <div id="esignTabViewResp" class="code-viewer-wrap" style="display: none;">
+        <div class="code-viewer-bar">
+          <span>GATEWAY RESPONSE & SIGNED WEBHOOK PAYLOAD</span>
+          <button type="button" class="btn-copy-code" onclick="copyEsignCodePayload('esignModalCodeResp', this)">
+            <i class="bi bi-clipboard"></i> <span>Copy JSON</span>
+          </button>
+        </div>
+        <pre class="code-viewer-content" id="esignModalCodeResp"></pre>
+      </div>
+
+      <!-- Tab 3: Signer & Document Meta -->
+      <div id="esignTabViewMeta" style="display: none;">
+        <table class="meta-grid-table">
+          <tbody>
+            <tr><td>Document Title</td><td id="esignMetaTitle">-</td></tr>
+            <tr><td>Signatory Name</td><td id="esignMetaSignerName">-</td></tr>
+            <tr><td>Signatory Mobile</td><td id="esignMetaSignerMobile">-</td></tr>
+            <tr><td>Signatory Email</td><td id="esignMetaSignerEmail">-</td></tr>
+            <tr><td>Capricorn Txn ID</td><td id="esignMetaTxn">-</td></tr>
+            <tr><td>Capricorn Reference ID</td><td id="esignMetaRef">-</td></tr>
+            <tr><td>Live Signing URL</td><td id="esignMetaSignUrl">-</td></tr>
+            <tr><td>Signed PDF Download URL</td><td id="esignMetaSignedPdfUrl">-</td></tr>
+            <tr><td>Page & Coordinates</td><td id="esignMetaCoords">-</td></tr>
+            <tr><td>Cost Charged</td><td id="esignMetaCost">-</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Tab 4: Network & Audit -->
+      <div id="esignTabViewAudit" style="display: none;">
+        <table class="meta-grid-table">
+          <tbody>
+            <tr><td>Outbound Server IP</td><td id="esignAuditServerIp">187.127.139.6</td></tr>
+            <tr><td>Client Device IP</td><td id="esignAuditClientIp">-</td></tr>
+            <tr><td>User-Agent</td><td id="esignAuditUa" style="word-break: break-all;">-</td></tr>
+            <tr><td>Endpoint Invoked</td><td id="esignAuditEndpoint">-</td></tr>
+            <tr><td>Dispatch Method</td><td id="esignAuditMethod">-</td></tr>
+            <tr><td>Execution Duration</td><td id="esignAuditDuration">-</td></tr>
+            <tr><td>Creation Timestamp</td><td id="esignAuditCreated">-</td></tr>
+            <tr><td>Signing Timestamp</td><td id="esignAuditSigned">-</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openEsignInspector(docId) {
+    const modal = document.getElementById('esignInspectorModal');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    document.getElementById('esignModalDocIdBadge').innerText = '#' + docId;
+    document.getElementById('esignModalCodeReq').innerText = 'Fetching outbound dispatch payload...';
+    document.getElementById('esignModalCodeResp').innerText = 'Fetching inbound gateway payload...';
+
+    fetch('/admin/esign-logs/' + docId + '/details')
+      .then(res => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(data => {
+        populateEsignInspector(data);
+      })
+      .catch(err => {
+        document.getElementById('esignModalCodeReq').innerText = 'Error loading inspection data: ' + err.message;
+        document.getElementById('esignModalCodeResp').innerText = 'Error loading inspection data: ' + err.message;
+      });
+  }
+
+  function populateEsignInspector(d) {
+    document.getElementById('esignRibbonServerIp').innerText = d.server_ip || '187.127.139.6';
+    document.getElementById('esignRibbonIp').innerText = d.ip_address || '127.0.0.1';
+    document.getElementById('esignRibbonCompany').innerText = d.company ? d.company.name : 'System';
+    document.getElementById('esignRibbonMethod').innerText = d.method || 'Capricorn E-Sign';
+    document.getElementById('esignRibbonLatency').innerText = (d.duration_ms || 0) + ' ms';
+
+    // Format Request code
+    const reqPre = document.getElementById('esignModalCodeReq');
+    if (d.raw_request && Object.keys(d.raw_request).length > 0) {
+      reqPre.innerText = JSON.stringify(d.raw_request, null, 2);
+    } else {
+      reqPre.innerText = JSON.stringify({
+        title: d.title,
+        signatory_name: d.signatory_name,
+        signatory_mobile: d.signatory_mobile,
+        signatory_email: d.signatory_email,
+        auth_status: "Authenticated"
+      }, null, 2);
+    }
+
+    // Format Response code
+    const respPre = document.getElementById('esignModalCodeResp');
+    if (d.raw_response && Object.keys(d.raw_response).length > 0) {
+      respPre.innerText = JSON.stringify(d.raw_response, null, 2);
+    } else {
+      respPre.innerText = JSON.stringify({
+        txn: d.capricorn_txn,
+        reference: d.capricorn_reference,
+        status: d.status,
+        redirect_url: d.sign_url,
+        signed_pdf_url: d.signed_pdf_url
+      }, null, 2);
+    }
+
+    // Signer & Doc details tab
+    document.getElementById('esignMetaTitle').innerText = d.title;
+    document.getElementById('esignMetaSignerName').innerText = d.signatory_name;
+    document.getElementById('esignMetaSignerMobile').innerText = d.signatory_mobile || 'N/A';
+    document.getElementById('esignMetaSignerEmail').innerText = d.signatory_email || 'N/A';
+    document.getElementById('esignMetaTxn').innerText = d.capricorn_txn || '-';
+    document.getElementById('esignMetaRef').innerText = d.capricorn_reference || '-';
+    document.getElementById('esignMetaSignUrl').innerText = d.sign_url || 'N/A';
+    document.getElementById('esignMetaSignedPdfUrl').innerText = d.signed_pdf_url || 'N/A';
+    document.getElementById('esignMetaCoords').innerText = (d.coordinates || '200,250,400,500') + ' (Page ' + (d.page_num || '1') + ')';
+    document.getElementById('esignMetaCost').innerText = '₹' + (d.cost_charged || 0).toFixed(2);
+
+    // Network & Audit tab
+    document.getElementById('esignAuditServerIp').innerText = d.server_ip || '187.127.139.6';
+    document.getElementById('esignAuditClientIp').innerText = d.ip_address || '127.0.0.1';
+    document.getElementById('esignAuditUa').innerText = d.user_agent || '-';
+    document.getElementById('esignAuditEndpoint').innerText = d.endpoint || '/api/esign';
+    document.getElementById('esignAuditMethod').innerText = d.method || 'E-Sign Gateway';
+    document.getElementById('esignAuditDuration').innerText = (d.duration_ms || 0) + ' ms';
+    document.getElementById('esignAuditCreated').innerText = d.created_at || '-';
+    document.getElementById('esignAuditSigned').innerText = d.signed_at || 'Not yet signed';
+
+    selectEsignInspectorTab('request');
+  }
+
+  function selectEsignInspectorTab(tab) {
+    const btnReq = document.getElementById('esignTabBtnReq');
+    const btnResp = document.getElementById('esignTabBtnResp');
+    const btnMeta = document.getElementById('esignTabBtnMeta');
+    const btnAudit = document.getElementById('esignTabBtnAudit');
+
+    const viewReq = document.getElementById('esignTabViewReq');
+    const viewResp = document.getElementById('esignTabViewResp');
+    const viewMeta = document.getElementById('esignTabViewMeta');
+    const viewAudit = document.getElementById('esignTabViewAudit');
+
+    [btnReq, btnResp, btnMeta, btnAudit].forEach(b => b.classList.remove('active'));
+    viewReq.style.display = 'none';
+    viewResp.style.display = 'none';
+    viewMeta.style.display = 'none';
+    viewAudit.style.display = 'none';
+
+    if (tab === 'request') {
+      btnReq.classList.add('active');
+      viewReq.style.display = 'block';
+    } else if (tab === 'response') {
+      btnResp.classList.add('active');
+      viewResp.style.display = 'block';
+    } else if (tab === 'meta') {
+      btnMeta.classList.add('active');
+      viewMeta.style.display = 'block';
+    } else if (tab === 'audit') {
+      btnAudit.classList.add('active');
+      viewAudit.style.display = 'block';
+    }
+  }
+
+  function closeEsignInspectorModal() {
+    document.getElementById('esignInspectorModal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function handleEsignBackdropClick(e) {
+    if (e.target.id === 'esignInspectorModal') {
+      closeEsignInspectorModal();
+    }
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeEsignInspectorModal();
+    }
+  });
+
+  function copyEsignCodePayload(elementId, btn) {
+    const text = document.getElementById(elementId).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const origHtml = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-check2"></i> <span>Copied!</span>';
+      btn.style.background = '#059669';
+      btn.style.borderColor = '#059669';
+      setTimeout(() => {
+        btn.innerHTML = origHtml;
+        btn.style.background = 'rgba(255, 255, 255, 0.1)';
+        btn.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+      }, 2000);
+    }).catch(err => {
+      alert('Could not copy to clipboard: ' + err);
+    });
+  }
+</script>
+{% endblock %}

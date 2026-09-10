@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime, timezone
 from decimal import Decimal
 from app.extensions import db
@@ -45,6 +46,16 @@ class ESignDocument(db.Model):
     # Financial tracking
     cost_charged = db.Column(db.Numeric(10, 2), nullable=True, default=Decimal('0.00'))
 
+    # Raw Payload, Network & Audit Logs
+    raw_request = db.Column(db.Text, nullable=True)
+    raw_response = db.Column(db.Text, nullable=True)
+    server_ip = db.Column(db.String(100), nullable=True, default='187.127.139.6', index=True)
+    ip_address = db.Column(db.String(100), nullable=True, index=True)
+    method = db.Column(db.String(100), nullable=True)
+    endpoint = db.Column(db.String(255), nullable=True)
+    user_agent = db.Column(db.String(255), nullable=True)
+    duration_ms = db.Column(db.Integer, nullable=True)
+
     # Timestamps
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
     dispatched_at = db.Column(db.DateTime, nullable=True)
@@ -57,6 +68,24 @@ class ESignDocument(db.Model):
 
     def __repr__(self):
         return f"<ESignDocument {self.id}: {self.title} ({self.status})>"
+
+    @property
+    def response_dict(self):
+        if not self.raw_response:
+            return {}
+        try:
+            return json.loads(self.raw_response)
+        except Exception:
+            return {"raw": self.raw_response}
+
+    @property
+    def request_dict(self):
+        if not self.raw_request:
+            return {}
+        try:
+            return json.loads(self.raw_request)
+        except Exception:
+            return {"raw": self.raw_request}
 
     @property
     def status_badge_class(self):
@@ -94,6 +123,14 @@ class ESignDocument(db.Model):
             "sign_url": self.redirect_url,
             "signed_pdf_url": self.signed_pdf_url,
             "cost_charged": float(self.cost_charged or Decimal('0.00')),
+            "ip_address": self.ip_address,
+            "server_ip": self.server_ip or '187.127.139.6',
+            "method": self.method,
+            "endpoint": self.endpoint,
+            "user_agent": self.user_agent,
+            "duration_ms": self.duration_ms,
+            "raw_request": self.request_dict,
+            "raw_response": self.response_dict,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "dispatched_at": self.dispatched_at.isoformat() if self.dispatched_at else None,
             "signed_at": self.signed_at.isoformat() if self.signed_at else None,
