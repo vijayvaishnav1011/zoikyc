@@ -194,9 +194,9 @@
 
     <!-- Right Header Actions (Gateway status & Wallet Balance) -->
     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-      {% if company.api_key and company.aes_key and company.pos_code and company.api_user_id %}
+      {% if company.pos_code and company.api_user_id and company.api_password and company.aes_key %}
       <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; background: #ecfdf5; color: #047857; padding: 6px 12px; border-radius: 20px; font-weight: 700; border: 1px solid #a7f3d0;">
-        <i class="bi bi-broadcast" style="color: #10b981;"></i> CVLKRA Connected
+        <i class="bi bi-broadcast" style="color: #10b981;"></i> CVLKRA Connected (Live SOAP V6.0)
       </span>
       {% else %}
       <span style="font-size: 0.76rem; color: #64748b; background: #f8fafc; padding: 6px 12px; border-radius: 20px; border: 1px solid #e2e8f0;">
@@ -781,8 +781,11 @@
           alert('Please select Day, Month, and Year for Date of Birth.');
           return false;
         }
-        btnSubmit.disabled = true;
-        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verifying...';
+        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="margin-right: 6px;"></span> Sending request to CVL KRA...';
+        btnSubmit.style.pointerEvents = 'none';
+        setTimeout(function () {
+          btnSubmit.disabled = true;
+        }, 20);
       });
     }
 

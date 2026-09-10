@@ -1,7 +1,7 @@
 import os
 from decimal import Decimal
 from datetime import datetime, timezone
-from flask import render_template, redirect, url_for, flash, request, send_file, current_app, abort
+from flask import render_template, redirect, url_for, flash, request, send_file, current_app, abort, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import func
 from app.admin import admin_bp
@@ -459,6 +459,71 @@ def update_company_gateway_credentials(company_id):
     db.session.commit()
     flash(f"Gateway & CVL credentials for '{company.name}' successfully saved!", "success")
     return redirect(url_for('admin.company_detail', company_id=company.id))
+
+
+@admin_bp.route('/companies/<int:company_id>/test-cvl-connection', methods=['POST'])
+@admin_required
+def test_company_cvl_connection(company_id):
+    """
+    AJAX endpoint — tests the CVL KRA SOAP GetPassword call for a company.
+    Accepts credentials from the request JSON body (so admin can test BEFORE saving),
+    or falls back to the saved DB credentials if the body fields are blank.
+    Returns a JSON result: {success, stage, message, detail}
+    """
+    company = Company.query.get_or_404(company_id)
+    data = request.get_json(silent=True) or {}
+
+    # Prefer values submitted from the form; fall back to what's in the DB
+    pos_code  = (data.get('pos_code')   or '').strip() or (company.pos_code or '')
+    username  = (data.get('username')   or '').strip() or (company.api_user_id or '')
+    password  = (data.get('password')   or '').strip() or (company.api_password or '')
+    pass_key  = (data.get('pass_key')   or '').strip() or (company.aes_key or '')
+
+    missing = []
+    if not pos_code: missing.append('POS Code')
+    if not username: missing.append('Username')
+    if not password: missing.append('Password')
+    if not pass_key: missing.append('AES-192 Key (PassKey)')
+    if missing:
+        return jsonify({
+            'success': False,
+            'stage': 'validation',
+            'message': 'Missing credentials: ' + ', '.join(missing),
+            'detail': 'Fill in all four fields and try again.'
+        })
+
+    from app.integrations.pan import PANVerificationProvider
+    provider = PANVerificationProvider()
+    creds = {
+        'base_url': 'https://pancheck.www.kracvl.com/CVLPanInquiry.svc',
+        'poscode':  pos_code,
+        'username': username,
+        'password': password,
+        'passkey':  pass_key,
+    }
+
+    import time
+    t0 = time.time()
+    enc_pass, err = provider.get_encrypted_password(creds)
+    elapsed_ms = int((time.time() - t0) * 1000)
+
+    if err:
+        return jsonify({
+            'success': False,
+            'stage': 'GetPassword',
+            'message': 'CVL KRA rejected the credentials.',
+            'detail': err,
+            'duration_ms': elapsed_ms,
+        })
+
+    return jsonify({
+        'success': True,
+        'stage': 'GetPassword',
+        'message': 'CVL KRA connection successful! GetPassword returned a valid encrypted token.',
+        'detail': f'APP_GET_PASS received ({len(enc_pass)} chars). Ready to call GetPanStatus.',
+        'duration_ms': elapsed_ms,
+    })
+
 
 @admin_bp.route('/companies/<int:company_id>/regenerate-api-key', methods=['POST'])
 @admin_required

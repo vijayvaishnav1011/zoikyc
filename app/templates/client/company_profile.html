@@ -235,12 +235,21 @@
               <i class="bi bi-eye-fill" id="apiKeyEyeIcon"></i>
             </button>
           </div>
-          {% if form.api_key.errors %}<span style="color: var(--accent-rose); font-size: 0.78rem;">{{ form.api_key.errors[0] }}</span>{% endif %}
-        </div>
+        <!-- Test Connection result box -->
+        <div id="cvlClientTestResult" style="display: none; margin-bottom: 14px; padding: 10px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; border: 1px solid transparent;"></div>
 
-        <button type="submit" class="btn-tiancai-pill" style="max-width: 240px;">
-          <i class="bi bi-floppy-fill"></i> Save KRA Keys
-        </button>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <button type="submit" class="btn-tiancai-pill" style="max-width: 240px;">
+            <i class="bi bi-floppy-fill"></i> Save KRA Keys
+          </button>
+          <button type="button" id="cvlClientTestBtn" onclick="testCvlConnectionClient()"
+            style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; font-size: 0.84rem; font-weight: 700;
+                   background: linear-gradient(135deg, #0ea5e9, #2563eb); color: #fff; border: none; border-radius: 20px;
+                   cursor: pointer; transition: opacity 0.2s; box-shadow: 0 3px 10px rgba(37,99,235,0.25);">
+            <i class="bi bi-lightning-charge-fill"></i>
+            <span>Test Connection</span>
+          </button>
+        </div>
       </div>
 
 
@@ -309,6 +318,94 @@
     const code = document.getElementById('phpCodeBlock').innerText;
     navigator.clipboard.writeText(code).then(() => {
       // brief visual feedback handled by button text change not needed since icon isn't tracked
+    });
+  }
+
+  function testCvlConnectionClient() {
+    const btn = document.getElementById('cvlClientTestBtn');
+    const resultBox = document.getElementById('cvlClientTestResult');
+    if (!btn || !resultBox) return;
+
+    const posCode = (document.getElementById('pos_code') || document.querySelector('[name="pos_code"]'))?.value?.trim() || '';
+    const username = (document.getElementById('api_user_id') || document.querySelector('[name="api_user_id"]'))?.value?.trim() || '';
+    const password = document.getElementById('apiPasswordInput')?.value?.trim() || '';
+    const passKey  = document.getElementById('aesKeyInput')?.value?.trim() || '';
+
+    if (!posCode || !username || !password || !passKey) {
+      resultBox.style.display = 'block';
+      resultBox.style.background = '#fef2f2';
+      resultBox.style.borderColor = '#fecaca';
+      resultBox.style.color = '#991b1b';
+      resultBox.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="margin-right: 6px;"></i> Please fill in POS Code, Username, Password, and PassKey first.';
+      return;
+    }
+
+    const origHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" style="width:13px;height:13px;"></span> Testing CVL Production...';
+
+    resultBox.style.display = 'block';
+    resultBox.style.background = '#f0f9ff';
+    resultBox.style.borderColor = '#bae6fd';
+    resultBox.style.color = '#0369a1';
+    resultBox.innerHTML = '<i class="bi bi-arrow-repeat" style="margin-right: 6px;"></i> Contacting pancheck.www.kracvl.com (SOAP V6.0 GetPassword)...';
+
+    const csrfToken = (document.querySelector('input[name="csrf_token"]') || {}).value || '';
+
+    fetch('/company/test-cvl-connection', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      },
+      body: JSON.stringify({
+        pos_code: posCode,
+        username: username,
+        password: password,
+        pass_key: passKey
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.innerHTML = origHtml;
+
+      if (data.success) {
+        resultBox.style.background = '#ecfdf5';
+        resultBox.style.borderColor = '#a7f3d0';
+        resultBox.style.color = '#065f46';
+        resultBox.innerHTML = `
+          <div style="display:flex;align-items:center;gap:8px;">
+            <i class="bi bi-check-circle-fill" style="color:#059669;font-size:1.1rem;"></i>
+            <div>
+              <div style="font-weight:700;">${data.message}</div>
+              <div style="font-size:0.75rem;color:#047857;margin-top:2px;">${data.detail}</div>
+            </div>
+          </div>`;
+      } else {
+        resultBox.style.background = '#fef2f2';
+        resultBox.style.borderColor = '#fecaca';
+        resultBox.style.color = '#991b1b';
+        resultBox.innerHTML = `
+          <div style="display:flex;align-items:flex-start;gap:8px;">
+            <i class="bi bi-x-circle-fill" style="color:#dc2626;font-size:1.1rem;margin-top:1px;"></i>
+            <div>
+              <div style="font-weight:700;">${data.message}</div>
+              <div style="font-size:0.75rem;color:#b91c1c;margin-top:2px;font-family:monospace;">${data.detail}</div>
+            </div>
+          </div>`;
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.innerHTML = origHtml;
+      resultBox.style.background = '#fef2f2';
+      resultBox.style.borderColor = '#fecaca';
+      resultBox.style.color = '#991b1b';
+      resultBox.innerHTML = `<i class="bi bi-wifi-off" style="margin-right:6px;"></i> Network error testing CVL: ${err.message}`;
     });
   }
 </script>

@@ -1,5 +1,5 @@
 import os
-from flask import render_template, redirect, url_for, flash, request, send_file, current_app, abort
+from flask import render_template, redirect, url_for, flash, request, send_file, current_app, abort, jsonify
 from flask_login import login_required, current_user
 from app.company import company_bp
 from app.company.forms import CompanyProfileForm, CompanyDocumentUploadForm
@@ -59,6 +59,70 @@ def profile():
         company=company,
         team_users=team_users
     )
+
+
+@company_bp.route('/company/test-cvl-connection', methods=['POST'])
+@login_required
+def test_client_cvl_connection():
+    """
+    AJAX endpoint for client portal: tests the CVL KRA SOAP GetPassword call.
+    Accepts credentials from the request body or falls back to saved DB credentials.
+    """
+    company = current_user.company
+    if not company:
+        return jsonify({'success': False, 'message': 'No organisation found'}), 400
+
+    data = request.get_json(silent=True) or {}
+    pos_code  = (data.get('pos_code')   or '').strip() or (company.pos_code or '')
+    username  = (data.get('username')   or '').strip() or (company.api_user_id or '')
+    password  = (data.get('password')   or '').strip() or (company.api_password or '')
+    pass_key  = (data.get('pass_key')   or '').strip() or (company.aes_key or '')
+
+    missing = []
+    if not pos_code: missing.append('POS Code')
+    if not username: missing.append('Username')
+    if not password: missing.append('Password')
+    if not pass_key: missing.append('AES Key (PassKey)')
+    if missing:
+        return jsonify({
+            'success': False,
+            'stage': 'validation',
+            'message': 'Missing credentials: ' + ', '.join(missing),
+            'detail': 'Please fill in all four CVL KRA fields.'
+        })
+
+    from app.integrations.pan import PANVerificationProvider
+    provider = PANVerificationProvider()
+    creds = {
+        'base_url': 'https://pancheck.www.kracvl.com/CVLPanInquiry.svc',
+        'poscode':  pos_code,
+        'username': username,
+        'password': password,
+        'passkey':  pass_key,
+    }
+
+    import time
+    t0 = time.time()
+    enc_pass, err = provider.get_encrypted_password(creds)
+    elapsed_ms = int((time.time() - t0) * 1000)
+
+    if err:
+        return jsonify({
+            'success': False,
+            'stage': 'GetPassword',
+            'message': 'CVL KRA rejected the credentials.',
+            'detail': err,
+            'duration_ms': elapsed_ms,
+        })
+
+    return jsonify({
+        'success': True,
+        'stage': 'GetPassword',
+        'message': f'CVL KRA connected successfully! (Response: {elapsed_ms}ms)',
+        'detail': f'Encrypted password verified with CVL Production for POS {pos_code}.',
+        'duration_ms': elapsed_ms,
+    })
+
 
 @company_bp.route('/company/documents', methods=['GET', 'POST'])
 @login_required
