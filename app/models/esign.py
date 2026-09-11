@@ -110,7 +110,7 @@ class ESignDocument(db.Model):
         return labels.get(self.status, self.status.replace('_', ' ').title())
 
     def to_dict(self):
-        return {
+        data = {
             "id": self.id,
             "title": self.title,
             "status": self.status,
@@ -140,3 +140,6 @@ class ESignDocument(db.Model):
                 "client_id": self.company.client_id if self.company else None,
             }
         }
+        if self.status == 'signed' and self.signed_pdf_url:
+            data["signedpdfurl"] = self.signed_pdf_url
+        return data

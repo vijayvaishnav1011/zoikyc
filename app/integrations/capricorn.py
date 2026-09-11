@@ -28,6 +28,7 @@ class CapricornESignProvider(BaseESignProvider):
         self.api_url = api_url or os.environ.get('CAPRICORN_API_URL', self.DEFAULT_API_URL)
         self.token = token or os.environ.get('CAPRICORN_API_TOKEN', self.DEFAULT_TOKEN)
         self.key = key or os.environ.get('CAPRICORN_API_KEY', self.DEFAULT_KEY)
+        self.last_signed_pdf_url: Optional[str] = None
 
     def get_provider_name(self) -> str:
         return "Capricorn Identity Services"
@@ -251,6 +252,7 @@ class CapricornESignProvider(BaseESignProvider):
 
             # Case 1: Direct binary PDF stream
             if isinstance(raw_bytes, (bytes, bytearray)) and raw_bytes.startswith(b'%PDF'):
+                self.last_signed_pdf_url = signed_pdf_url
                 os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
                 with open(target_file_path, "wb") as f:
                     f.write(raw_bytes)
@@ -270,6 +272,16 @@ class CapricornESignProvider(BaseESignProvider):
                 if isinstance(sig_info, dict) and sig_info.get("status") == "pending":
                     logger.info(f"Capricorn document at {signed_pdf_url} is still pending signature.")
                     return False
+
+                # Extract direct Capricorn signed PDF viewer link (docs/signed/?p=...)
+                viewer_url = (
+                    inner_resp.get("signedpdfurl") or
+                    resp_data.get("signedpdfurl") or
+                    resp_obj.get("signedpdfurl") or
+                    data.get("signedpdfurl")
+                )
+                if viewer_url and isinstance(viewer_url, str):
+                    self.last_signed_pdf_url = viewer_url
 
                 signed_b64 = (
                     inner_resp.get("signedpdf") or 
@@ -301,3 +313,29 @@ class CapricornESignProvider(BaseESignProvider):
         except Exception as e:
             logger.exception(f"Exception downloading signed PDF from {signed_pdf_url}: {e}")
             return False
+
+    def get_signed_document_viewer_url(self, txn: str, reference: str) -> Optional[str]:
+        """
+        Queries Capricorn apij/getdoc to extract the direct signed PDF viewer URL
+        (e.g., https://demo.esign.network/docs/signed/?p=...).
+        """
+        try:
+            url = f"https://demo.esign.network/apij/getdoc/v1.0/{txn}/{reference}"
+            resp = requests.get(url, timeout=15)
+            if resp.status_code == 200:
+                data = resp.json()
+                resp_obj = data.get("response", {})
+                resp_data = resp_obj.get("responsedata", {})
+                inner_resp = resp_data.get("response", {}) if isinstance(resp_data, dict) else {}
+                viewer_url = (
+                    inner_resp.get("signedpdfurl") or
+                    resp_data.get("signedpdfurl") or
+                    resp_obj.get("signedpdfurl") or
+                    data.get("signedpdfurl")
+                )
+                if viewer_url and isinstance(viewer_url, str):
+                    self.last_signed_pdf_url = viewer_url
+                    return viewer_url
+        except Exception as e:
+            logger.warning(f"Failed to fetch Capricorn signed viewer URL for txn={txn}, ref={reference}: {e}")
+        return None

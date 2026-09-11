@@ -466,5 +466,55 @@ class ESignIntegrationTestCase(unittest.TestCase):
         self.assertIn("Alpha Partnership Agreement", filter_html)
         self.assertNotIn("Beta Vendor Contract", filter_html)
 
+    def test_signed_pdf_url_in_callback_json_and_redirect(self):
+        """Verify signedpdfurl is returned in callback JSON and status API, and used for redirect."""
+        expected_viewer_url = "https://demo.esign.network/docs/signed/?p=JLjvcsMZBeE@@@@@@LctB0kTB0DgeuMuhxRmoowy2iddoVbZ7TcShtXuHBA=="
+
+        doc = ESignDocument(
+            company_id=self.company.id,
+            title="Viewer URL Contract",
+            signatory_name="Pankaj Bairagi",
+            original_filename="contract.pdf",
+            file_path="uploads/test_sample.pdf",
+            status="sent_to_capricorn",
+            capricorn_txn="84933947",
+            capricorn_reference="OHIUIR9J7MVTAV0"
+        )
+        db.session.add(doc)
+        db.session.commit()
+
+        # Mock Capricorn download_signed_pdf to simulate fetching from getdoc and setting last_signed_pdf_url
+        with patch.object(CapricornESignProvider, 'download_signed_pdf') as mock_download:
+            def side_effect(download_url, target_file_path):
+                # Simulate setting the viewer url on provider
+                return True
+            mock_download.side_effect = side_effect
+
+            with patch.object(CapricornESignProvider, 'get_signed_document_viewer_url', return_value=expected_viewer_url):
+                # 1. POST callback returns JSON with signedpdfurl
+                resp = self.client.post('/esign/callback', json={
+                    "txn": "84933947",
+                    "reference": "OHIUIR9J7MVTAV0",
+                    "signedpdfurl": expected_viewer_url,
+                    "status": "SUCCESS"
+                })
+                self.assertEqual(resp.status_code, 200)
+                data = resp.get_json()
+                self.assertEqual(data.get("status"), "success")
+                self.assertEqual(data.get("signedpdfurl"), expected_viewer_url)
+
+                # 2. Check document state updated
+                updated_doc = ESignDocument.query.get(doc.id)
+                self.assertEqual(updated_doc.status, "signed")
+                self.assertEqual(updated_doc.signed_pdf_url, expected_viewer_url)
+
+                # 3. Check status API returns signedpdfurl
+                self.company.api_key = "zoi_live_test_api_key_123"
+                db.session.commit()
+                status_resp = self.client.get(f'/api/esign/zoi_live_test_api_key_123/{doc.id}')
+                self.assertEqual(status_resp.status_code, 200)
+                status_data = status_resp.get_json()
+                self.assertEqual(status_data["document"]["signedpdfurl"], expected_viewer_url)
+
 if __name__ == '__main__':
     unittest.main()
