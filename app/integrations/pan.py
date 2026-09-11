@@ -151,6 +151,11 @@ CVL_STATUS_MAP = {
     "013": "Existing KYC Hold",
     "014": "Existing KYC Rejected",
     "022": "KYC Registered with CVLMF",
+    "401": "Incomplete KYC Data",
+    "402": "KYC On Hold / Under Process",
+    "403": "Data Mismatch / Additional Documents Required",
+    "404": "KYC Application Rejected",
+    "405": "KYC Record Deactivated",
     "888": "Not Checked with Multiple KRA",
     "999": "Invalid PAN Format",
 }
