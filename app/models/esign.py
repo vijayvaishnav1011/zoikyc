@@ -41,7 +41,7 @@ class ESignDocument(db.Model):
 
     # Signing configuration
     page_num = db.Column(db.String(20), nullable=False, default='all')
-    coordinates = db.Column(db.String(100), nullable=False, default='400,700,550,750')
+    coordinates = db.Column(db.String(100), nullable=False, default='400,20,550,90')
 
     # Financial tracking
     cost_charged = db.Column(db.Numeric(10, 2), nullable=True, default=Decimal('0.00'))

@@ -679,7 +679,7 @@ def public_api_esign(api_key=None):
     ).strip()[:200]
 
     page_num = str(payload_data.get('pagenum') or payload_data.get('page_num') or payload_data.get('page') or 'all').strip()
-    coordinates = (payload_data.get('cood') or payload_data.get('coordinates') or '400,700,550,750').strip()
+    coordinates = (payload_data.get('cood') or payload_data.get('coordinates') or '400,20,550,90').strip()
     reason = (payload_data.get('reason') or 'Agreement sign').strip()
     location = (payload_data.get('location') or 'Delhi').strip()
     client_remarks = (payload_data.get('client_remarks') or payload_data.get('remarks') or '').strip() or None

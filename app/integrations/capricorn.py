@@ -72,7 +72,7 @@ class CapricornESignProvider(BaseESignProvider):
         signatory_email: Optional[str] = None,
         callback_url: str = "",
         page_num: str = "all",
-        coordinates: str = "400,700,550,750",
+        coordinates: str = "400,20,550,90",
         sign_mode: str = "online-aadhaar-otp",
         reason: str = "Agreement sign",
         location: str = "Delhi"
@@ -80,7 +80,7 @@ class CapricornESignProvider(BaseESignProvider):
         """
         Encodes the PDF to Base64 (pdf64) and dispatches the E-Sign request to Capricorn API.
         Supports 'pagenum': 'all' for single signature box on all pages, or specific page number.
-        Default signature placement coordinates: 400,700,550,750.
+        Default signature placement coordinates: 400,20,550,90.
         Returns parsed dictionary containing redirecturl, reference, signedpdfurl, and txn.
         """
         pdf64_str = self.convert_pdf_to_base64(pdf_file_path)

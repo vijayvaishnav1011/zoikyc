@@ -139,7 +139,7 @@ class ESignIntegrationTestCase(unittest.TestCase):
         self.assertEqual(signatory['mobile'], "9876543210")
         self.assertEqual(signatory['sms'], "y")
         self.assertEqual(signatory['option']['pagenum'], "all")
-        self.assertEqual(signatory['option']['cood'], "400,700,550,750")
+        self.assertEqual(signatory['option']['cood'], "400,20,550,90")
 
     @patch('app.integrations.capricorn.requests.post')
     def test_client_document_upload_and_dispatch(self, mock_post):
