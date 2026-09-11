@@ -220,7 +220,7 @@ Dispatches a PDF document for Aadhaar OTP e-signature.
 | `file_base64` | `string` | **Yes\*** | — | Base64-encoded PDF string (used with JSON body). |
 | `file` | `file` | **Yes\*** | — | Binary PDF file (used with `multipart/form-data`). |
 | `page_num` | `string` | No | `"all"` | `"all"` to sign every page, or page number (`"1"`, `"2"`). |
-| `coordinates` | `string` | No | `"400,700,550,750"` | Signature box coordinates `x1,y1,x2,y2` on page. |
+| `cood` / `coordinates` | `string` | No | `"400,20,550,90"` | Signature box coordinates `x1,y1,x2,y2` on page. |
 | `sign_mode` | `string` | No | `"online-aadhaar-otp"` | Signature mode. |
 | `reason` | `string` | No | `"Aadhaar E-Sign Verification"` | Signing reason. |
 | `location` | `string` | No | `"India"` | Signing location. |
@@ -235,8 +235,8 @@ Dispatches a PDF document for Aadhaar OTP e-signature.
   "signatory_mobile": "9876543210",
   "signatory_email": "pankaj@example.com",
   "page_num": "all",
-  "coordinates": "400,700,550,750",
-  "file_base64": "JVBERi0xLjQKJcTl8uXrp/ogMQowIG9iai..."
+  "cood": "400,20,550,90",
+  "file_base64": "JVBERi0xLjQKJcTl8uXrp/ogMQowIG9ia..."
 }
 ```
 
