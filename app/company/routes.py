@@ -16,13 +16,13 @@ def profile():
         flash("No organisation associated with this user.", "danger")
         return redirect(url_for('dashboard.index'))
 
+    is_verified = (company.status == 'active')
+
     form = CompanyProfileForm(obj=company)
     if form.company_name.data is None:
         form.company_name.data = company.name
 
     if form.validate_on_submit():
-        is_verified = (company.status == 'active')
-
         # Only allow changing legal credentials if organisation is not yet verified
         if not is_verified:
             company.name = form.company_name.data.strip()

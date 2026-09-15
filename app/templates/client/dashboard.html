@@ -72,38 +72,23 @@
     {% endif %}
   </div>
 
-  <!-- API Pricing & Verification Metric Card -->
+  <!-- API Pricing & Verification Metric Card (Only shown once approved by Admin) -->
+  {% if company and company.status == 'active' and company.per_kyc_price is not none %}
   <div class="metric-card">
-    {% if company and company.status == 'active' and company.per_kyc_price is not none %}
-      <div>
-        <div class="metric-title">
-          <i class="bi bi-tag-fill" style="color: var(--tiancai-purple-light);"></i> Verification Pricing
-        </div>
-        <div class="metric-value" style="font-size: 1.25rem; color: var(--text-dark);">
-          ₹{{ "%.2f"|format(company.per_kyc_price) }} <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">/ KYC check</span>
-        </div>
-        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
-          Min. Recharge Top-up: <strong style="color: #059669;">₹{{ "%.2f"|format(company.min_recharge_amount) if company.min_recharge_amount is not none else '1000.00' }}</strong>
-        </div>
+    <div>
+      <div class="metric-title">
+        <i class="bi bi-tag-fill" style="color: var(--tiancai-purple-light);"></i> Verification Pricing
       </div>
-      <span class="metric-badge" style="background: rgba(126, 34, 206, 0.1); color: var(--tiancai-purple-medium); font-weight: 800;">Your Tier</span>
-    {% else %}
-      <div>
-        <div class="metric-title">
-          <i class="bi bi-tag-fill" style="color: var(--tiancai-purple-light);"></i> Verification Pricing
-        </div>
-        <div class="metric-value" style="font-size: 1.15rem; color: #d97706; font-weight: 700;">
-          Awaiting Approval
-        </div>
-        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
-          Pricing will be assigned upon admin activation
-        </div>
+      <div class="metric-value" style="font-size: 1.25rem; color: var(--text-dark);">
+        ₹{{ "%.2f"|format(company.per_kyc_price) }} <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">/ KYC check</span>
       </div>
-      <span class="metric-badge" style="background: rgba(217, 119, 6, 0.12); color: #d97706; font-weight: 700;">
-        <i class="bi bi-clock-history"></i> Pending
-      </span>
-    {% endif %}
+      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
+        Min. Recharge Top-up: <strong style="color: #059669;">₹{{ "%.2f"|format(company.min_recharge_amount) if company.min_recharge_amount is not none else '1000.00' }}</strong>
+      </div>
+    </div>
+    <span class="metric-badge" style="background: rgba(126, 34, 206, 0.1); color: var(--tiancai-purple-medium); font-weight: 800;">Your Tier</span>
   </div>
+  {% endif %}
 </div>
 
 <!-- Recent Wallet Transactions Table -->
@@ -111,10 +96,10 @@
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
     <div>
       <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark);">Recent Transactions</h3>
-      <p style="font-size: 0.8rem; color: var(--text-muted);">Real-time ledger updates for your wallet balance movements.</p>
+      <p style="font-size: 0.8rem; color: var(--text-muted);">Real-time updates for your wallet balance.</p>
     </div>
     <a href="{{ url_for('wallet.transactions') }}" style="color: var(--tiancai-blue); font-weight: 700; text-decoration: none; font-size: 0.85rem;">
-      View Full Ledger <i class="bi bi-arrow-right"></i>
+      View Full History <i class="bi bi-arrow-right"></i>
     </a>
   </div>
 
@@ -160,7 +145,7 @@
   {% else %}
   <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
     <i class="bi bi-inbox" style="font-size: 2.5rem; color: var(--text-light); display: block; margin-bottom: 12px;"></i>
-    <p style="font-size: 0.95rem; margin-bottom: 16px;">No transactions recorded yet in your wallet ledger.</p>
+    <p style="font-size: 0.95rem; margin-bottom: 16px;">No transactions recorded yet in your wallet.</p>
     <a href="{{ url_for('wallet.recharge') }}" class="btn-tiancai-pill" style="text-decoration: none; display: inline-flex; width: auto; padding: 10px 22px;">
       <i class="bi bi-plus-circle"></i> Make Your First Recharge
     </a>

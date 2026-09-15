@@ -13,9 +13,6 @@
         <span>Customer Document Execution Requests</span>
         <span class="saas-count-badge">{{ counts.all }} Total</span>
       </h3>
-      <div class="saas-page-subtitle">
-        Upload customer agreements, track UIDAI Aadhaar OTP signing status, and download legally binding executed PDFs.
-      </div>
     </div>
 
     <!-- Right Header Actions (Float Pill & New Request Button) -->
@@ -27,32 +24,6 @@
 
       <a href="{{ url_for('esign.upload') }}" class="btn-purple-pill" style="width: auto; padding: 9px 20px; font-size: 0.84rem; text-decoration: none;">
         <i class="bi bi-plus-lg"></i> New Customer Request
-      </a>
-    </div>
-  </div>
-
-  <!-- Dedicated REST API Endpoint Card -->
-  <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 280px;">
-      <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0; box-shadow: 0 4px 10px rgba(124, 58, 237, 0.25);">
-        <i class="bi bi-code-slash"></i>
-      </div>
-      <div>
-        <div style="font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b;">
-          Dedicated E-Sign REST API Endpoint ({{ company.name }})
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-top: 3px; flex-wrap: wrap;">
-          <span style="font-size: 0.72rem; font-weight: 800; background: #ede9fe; color: #7c3aed; padding: 2px 8px; border-radius: 4px;">POST</span>
-          <code id="esignApiEndpointText" style="font-size: 0.84rem; font-family: monospace; color: #1e293b; background: #ffffff; padding: 3px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 700;">https://zoikyc.com/api/esign/{{ company.api_key or company.client_id }}</code>
-        </div>
-      </div>
-    </div>
-    <div style="display: flex; gap: 8px; align-items: center;">
-      <button type="button" onclick="copyEsignEndpoint()" id="btnCopyEsignEndpoint" class="btn btn-sm" style="background: #ffffff; color: #334155; border: 1px solid #cbd5e1; font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-        <i class="bi bi-clipboard"></i> Copy Endpoint
-      </button>
-      <a href="/api/esign/{{ company.api_key or company.client_id }}" target="_blank" class="btn btn-sm" style="background: #7c3aed; color: #ffffff; font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25);">
-        <i class="bi bi-box-arrow-up-right"></i> View API Docs
       </a>
     </div>
   </div>
@@ -279,26 +250,6 @@
 
 {% block extra_js %}
 <script>
-function copyEsignEndpoint() {
-  const codeEl = document.getElementById('esignApiEndpointText');
-  if (!codeEl) return;
-  const text = codeEl.innerText.trim();
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('btnCopyEsignEndpoint');
-    if (!btn) return;
-    const originalHTML = btn.innerHTML;
-    btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
-    btn.style.borderColor = '#10b981';
-    btn.style.color = '#059669';
-    setTimeout(() => {
-      btn.innerHTML = originalHTML;
-      btn.style.borderColor = '#cbd5e1';
-      btn.style.color = '#334155';
-    }, 2000);
-  }).catch(() => {
-    prompt('Copy API Endpoint:', text);
-  });
-}
 
 function copySignLink(url, btn) {
   if (!url) return;
