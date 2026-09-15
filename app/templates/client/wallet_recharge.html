@@ -49,7 +49,11 @@
         {{ form.amount(class="ref-form-control", id="amount", value="1000.00", placeholder="e.g. 1000.00",
         style="font-size: 1.2rem; font-weight: 800; color: #059669;") }}
         <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 5px;">
-          KYC Verification Rate: <strong style="color: #7e22ce;">₹{{ "%.2f"|format(per_kyc_price) }} / KYC</strong>
+          {% if company and company.status == 'active' %}
+            KYC Verification Rate: <strong style="color: #7e22ce;">₹{{ "%.2f"|format(per_kyc_price) }} / KYC</strong>
+          {% else %}
+            KYC Verification Rate: <strong style="color: #d97706;">Pending Activation</strong>
+          {% endif %}
         </div>
         {% if form.amount.errors %}
         <span style="color: var(--accent-rose); font-size: 0.8rem;">{{ form.amount.errors[0] }}</span>

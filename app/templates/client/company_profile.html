@@ -288,7 +288,11 @@
                 <span style="font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: #e0e7ff; color: #4338ca;">POST</span>
                 <span>Aadhaar E-Sign & e-KYC Endpoint</span>
               </label>
-              <span style="font-size: 0.72rem; color: #059669; font-weight: 700;">₹{{ '%.2f'|format(company.per_kyc_price) }} / sign</span>
+              {% if company and company.status == 'active' and company.per_kyc_price is not none %}
+                <span style="font-size: 0.72rem; color: #059669; font-weight: 700;">₹{{ '%.2f'|format(company.per_kyc_price) }} / sign</span>
+              {% else %}
+                <span style="font-size: 0.72rem; color: #d97706; font-weight: 700;">Rate Pending Approval</span>
+              {% endif %}
             </div>
             <div style="display: flex; gap: 6px;">
               <input type="text" readonly value="https://zoikyc.com/api/esign/{{ company.api_key }}" id="clientEsignEndpointDisplay" class="ref-form-control" style="font-family: monospace; font-size: 0.84rem; font-weight: 700; color: #4338ca; background: #f8fafc; height: 36px;" />
