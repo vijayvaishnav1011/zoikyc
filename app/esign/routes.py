@@ -996,3 +996,19 @@ def public_sign_redirect(doc_id, api_key=None):
     }), 400
 
 
+@esign_bp.route('/api/test-webhook', methods=['POST'])
+@csrf.exempt
+def public_test_webhook():
+    """
+    A public test endpoint clients can use as their 'callback_url' to see what payload ZoiKYC sends.
+    It simply logs the received JSON payload so developers can inspect it.
+    Use https://zoikyc.com/api/test-webhook as your callback_url to test.
+    """
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    current_app.logger.info(f"==== TEST WEBHOOK RECEIVED ====\n{json.dumps(payload, indent=2)}\n===============================")
+    
+    return jsonify({
+        "success": True,
+        "message": "Webhook received successfully! Check ZoiKYC logs to see the payload.",
+        "received_data": payload
+    }), 200
