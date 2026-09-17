@@ -312,14 +312,14 @@
     <table class="saas-table">
       <thead>
         <tr>
-          <th>Timestamp (IST)</th>
-          <th>Initiator & Organisation</th>
-          <th>Outbound Server IP</th>
-          <th>Target PAN</th>
-          <th>Gateway</th>
-          <th>Status & Reason</th>
+          <th>Date</th>
+          <th>Company</th>
+          <th>IP</th>
+          <th>PAN</th>
+          <th>Method</th>
+          <th>Status</th>
           <th>Latency</th>
-          <th style="text-align: right;">Inspector</th>
+          <th style="text-align: right;">Action</th>
         </tr>
       </thead>
       <tbody>
@@ -335,40 +335,27 @@
             </div>
           </td>
 
-          <!-- Initiator & Organisation -->
+          <!-- Company -->
           <td>
-            <div style="font-weight: 700; color: #0f172a; font-size: 0.88rem;">
-              {{ log.company.name if log.company else 'Global Platform' }}
+            <div style="font-weight: 600; color: #0f172a; font-size: 0.85rem;">
+              {{ log.company.name if log.company else 'System' }}
             </div>
-            <div class="company-sub-meta">
-              <span class="chip-client-id">{{ log.company.client_id or 'SYSTEM' }}</span>
-              <span style="color: #94a3b8;">&bull;</span>
-              <span style="color: #475569; font-weight: 500;">
-                {% if log.user %}
-                  {{ log.user.email }}
-                {% else %}
-                  <span style="color: #94a3b8; font-style: italic;">Public API / Automated</span>
-                {% endif %}
-              </span>
+            <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">
+              {{ log.user.email if log.user else 'API' }}
             </div>
           </td>
 
-          <!-- Outbound Server IP (Checked by CVL KRA) -->
+          <!-- IP -->
           <td>
-            <span class="ip-badge" style="background: rgba(126, 34, 206, 0.08); color: #7e22ce; border-color: #e9d5ff;" title="Outbound Server IP connecting to CVL KRA">
-              <i class="bi bi-hdd-network-fill" style="color: #7e22ce; font-size: 0.72rem;"></i>
-              {{ log.server_ip or '187.127.139.6' }}
-            </span>
-            <div style="font-size: 0.72rem; color: #64748b; margin-top: 2px;" title="{{ log.user_agent or 'No user-agent logged' }}">
-              <span style="color: #94a3b8;">User Device:</span> {{ log.ip_address or '127.0.0.1' }}
+            <div style="font-family: monospace; font-size: 0.8rem; color: #64748b;">
+              {{ log.ip_address or '127.0.0.1' }}
             </div>
           </td>
 
           <!-- Target PAN -->
           <td>
-            <span class="pan-badge">{{ log.pan_number }}</span>
-            <div style="font-size: 0.76rem; color: #475569; margin-top: 3px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;" title="{{ log.full_name or 'N/A' }}">
-              {{ log.full_name or 'Name Not Available' }}
+            <div style="font-weight: 600; color: #0f172a; font-size: 0.85rem;">
+              {{ log.pan_number }}
             </div>
           </td>
 
@@ -389,29 +376,17 @@
             {% endif %}
           </td>
 
-          <!-- Status & Message -->
+          <!-- Status -->
           <td>
-            <div>
-              {% if log.status == 'verified' %}
-                <span class="audit-status verified">
-                  <i class="bi bi-check-circle-fill"></i> Verified
-                </span>
-              {% elif log.status == 'failed' %}
-                <span class="audit-status failed">
-                  <i class="bi bi-x-circle-fill"></i> Failed
-                </span>
-              {% else %}
-                <span class="audit-status pending">
-                  <i class="bi bi-exclamation-triangle-fill"></i> {{ log.status|title }}
-                </span>
-              {% endif %}
-            </div>
-
-            {% if log.status_message %}
-            <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ log.status_message }}">
-              {{ log.status_message }}
-            </div>
+            {% if log.status == 'verified' %}
+              <span class="audit-status verified"><i class="bi bi-check-circle-fill"></i> Verified</span>
+            {% elif log.status == 'failed' %}
+              <span class="audit-status failed"><i class="bi bi-x-circle-fill"></i> Failed</span>
+            {% else %}
+              <span class="audit-status pending">Pending</span>
             {% endif %}
+
+
           </td>
 
           <!-- Latency -->

@@ -414,14 +414,14 @@
     <table class="saas-table">
       <thead>
         <tr>
-          <th>Timestamp (IST)</th>
-          <th>Initiator & Organisation</th>
-          <th>Document & Signatory</th>
-          <th>Gateway & Transaction</th>
-          <th>Outbound & Client IP</th>
-          <th>Status & Billing</th>
+          <th>Date</th>
+          <th>Company</th>
+          <th>Signatory</th>
+          <th>Transaction</th>
+          <th>IP</th>
+          <th>Status</th>
           <th>Latency</th>
-          <th style="text-align: right;">Inspector</th>
+          <th style="text-align: right;">Action</th>
         </tr>
       </thead>
       <tbody>
@@ -437,99 +437,50 @@
             </div>
           </td>
 
-          <!-- Initiator & Organisation -->
+          <!-- Company -->
           <td>
-            <div style="font-weight: 700; color: #0f172a; font-size: 0.88rem;">
-              {{ doc.company.name if doc.company else 'Global Platform' }}
+            <div style="font-weight: 600; color: #0f172a; font-size: 0.85rem;">
+              {{ doc.company.name if doc.company else 'System' }}
             </div>
-            <div class="company-sub-meta">
-              <span class="chip-client-id">{{ doc.company.client_id or 'SYSTEM' }}</span>
-              <span style="color: #94a3b8;">&bull;</span>
-              <span style="color: #475569; font-weight: 500;">
-                {% if doc.created_by %}
-                  {{ doc.created_by.email }}
-                {% else %}
-                  <span style="color: #94a3b8; font-style: italic;">Public REST API</span>
-                {% endif %}
-              </span>
+            <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">
+              {{ doc.created_by.email if doc.created_by else 'API' }}
             </div>
           </td>
 
-          <!-- Document & Signatory -->
+          <!-- Signatory -->
           <td>
-            <div style="font-weight: 700; color: #0f172a; font-size: 0.84rem; display: flex; align-items: center; gap: 6px;">
-              <i class="bi bi-file-earmark-pdf-fill" style="color: #ef4444;"></i>
-              <span>{{ doc.title }}</span>
+            <div style="font-weight: 600; color: #0f172a; font-size: 0.85rem;">
+              {{ doc.signatory_name }}
             </div>
-            <div style="font-size: 0.76rem; color: #475569; margin-top: 2px;">
-              Signer: <strong>{{ doc.signatory_name }}</strong>
-              {% if doc.signatory_mobile and doc.signatory_mobile != '9999999999' %}
-                ({{ doc.signatory_mobile }})
-              {% endif %}
-            </div>
-            <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 1px;">
-              Page {{ doc.page_num }} &bull; ({{ doc.coordinates }})
+            <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">
+              {{ doc.signatory_mobile }}
             </div>
           </td>
 
-          <!-- Gateway & Txn ID -->
+          <!-- Transaction -->
           <td>
-            <div class="doc-badge" title="Capricorn Reference ID">
-              <i class="bi bi-shield-check"></i> {{ doc.capricorn_reference or 'Pending Ref' }}
-            </div>
-            <div style="font-size: 0.74rem; font-family: monospace; color: #64748b; margin-top: 2px;">
-              Txn: {{ doc.capricorn_txn or '-' }}
-            </div>
-            {% if doc.redirect_url %}
-              <div style="margin-top: 3px;">
-                <a href="{{ doc.redirect_url }}" target="_blank" style="font-size: 0.72rem; color: #0284c7; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;">
-                  <i class="bi bi-box-arrow-up-right"></i> Sign Link
-                </a>
-              </div>
-            {% endif %}
-          </td>
-
-          <!-- Outbound Server IP & Client IP -->
-          <td>
-            <span class="ip-badge" style="background: rgba(126, 34, 206, 0.08); color: #7e22ce; border-color: #e9d5ff;" title="Outbound Server IP communicating with Capricorn">
-              <i class="bi bi-hdd-network-fill" style="color: #7e22ce; font-size: 0.72rem;"></i>
-              {{ doc.server_ip or '187.127.139.6' }}
-            </span>
-            <div style="font-size: 0.72rem; color: #64748b; margin-top: 2px;">
-              <span style="color: #94a3b8;">Client IP:</span> {{ doc.ip_address or '127.0.0.1' }}
-            </div>
-            <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 1px;">
-              {{ doc.method or 'E-Sign Gateway' }}
+            <div style="font-family: monospace; font-size: 0.8rem; color: #475569;">
+              {{ doc.capricorn_reference or 'Pending' }}
             </div>
           </td>
 
-          <!-- Status & Billing -->
+          <!-- IP -->
+          <td>
+            <div style="font-family: monospace; font-size: 0.8rem; color: #64748b;">
+              {{ doc.ip_address or '127.0.0.1' }}
+            </div>
+          </td>
+
+          <!-- Status -->
           <td>
             {% if doc.status == 'signed' %}
-              <span class="audit-status signed">
-                <i class="bi bi-check-circle-fill"></i> Signed & Sealed
-              </span>
-              <div style="font-size: 0.72rem; color: #059669; font-weight: 700; margin-top: 3px;">
-                <i class="bi bi-check2"></i> ₹{{ "%.2f"|format(doc.cost_charged) if doc.cost_charged is not none else ("%.2f"|format(doc.company.per_kyc_price) if doc.company and doc.company.per_kyc_price is not none else "20.00") }} debited
-              </div>
+              <span class="audit-status signed"><i class="bi bi-check-circle-fill"></i> Signed</span>
             {% elif doc.status == 'sent_to_capricorn' %}
-              <span class="audit-status awaiting">
-                <i class="bi bi-send-check-fill"></i> Awaiting OTP
-              </span>
-              <div style="font-size: 0.72rem; color: #0369a1; margin-top: 3px;">
-                <i class="bi bi-shield-check"></i> Debits on sign
-              </div>
+              <span class="audit-status awaiting"><i class="bi bi-send-check-fill"></i> Awaiting</span>
             {% elif doc.status == 'failed' or doc.status == 'rejected_by_admin' %}
-              <span class="audit-status failed">
-                <i class="bi bi-x-circle-fill"></i> {{ doc.status_label }}
-              </span>
-              <div style="font-size: 0.7rem; color: #dc2626; margin-top: 2px;">
-                No charge
-              </div>
+              <span class="audit-status failed"><i class="bi bi-x-circle-fill"></i> Failed</span>
             {% else %}
-              <span class="audit-status pending">
-                {{ doc.status_label }}
-              </span>
+              <span class="audit-status pending">Pending</span>
             {% endif %}
           </td>
 
