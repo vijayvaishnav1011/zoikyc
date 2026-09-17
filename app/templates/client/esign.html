@@ -97,12 +97,11 @@
     <table class="saas-table">
       <thead>
         <tr>
-          <th>Customer / Signatory</th>
-          <th>Agreement & Remarks</th>
-          <th>Placement</th>
+          <th>Customer</th>
+          <th>Document</th>
           <th>Status</th>
-          <th>Date Created</th>
-          <th style="text-align: right; padding-right: 22px;">Actions</th>
+          <th>Date</th>
+          <th style="text-align: right; padding-right: 22px;">Action</th>
         </tr>
       </thead>
       <tbody>
@@ -142,27 +141,21 @@
             {% endif %}
           </td>
 
-          <!-- 3. Placement Info -->
-          <td>
-            <span class="chip-client-id" style="font-size: 0.72rem;">Page {{ doc.page_num }}</span>
-            <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px; font-family: monospace;">
-              {{ doc.coordinates }}
-            </div>
-          </td>
+
 
           <!-- 4. Status Badge -->
           <td>
             {% if doc.status == 'pending_admin' %}
               <span class="saas-status-badge badge-pending">
-                <i class="bi bi-hourglass-split"></i> Pending Dispatch
+                <i class="bi bi-hourglass-split"></i> Pending
               </span>
             {% elif doc.status == 'sent_to_capricorn' %}
               <span class="saas-status-badge" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;">
-                <i class="bi bi-send-check-fill"></i> Awaiting OTP
+                <i class="bi bi-send-check-fill"></i> Awaiting
               </span>
             {% elif doc.status == 'signed' %}
               <span class="saas-status-badge badge-active">
-                <i class="bi bi-check-circle-fill"></i> Signed & Sealed
+                <i class="bi bi-check-circle-fill"></i> Signed
               </span>
             {% elif doc.status == 'rejected_by_admin' %}
               <span class="saas-status-badge badge-suspended">
