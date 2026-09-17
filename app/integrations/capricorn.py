@@ -195,9 +195,21 @@ class CapricornESignProvider(BaseESignProvider):
 
             # Check if there is an explicit error
             if response_obj.get("error"):
+                raw_err = str(response_obj.get("error"))
+                if "Index was outside the bounds of the array" in raw_err:
+                    friendly_err = (
+                        "Incompatible PDF structure: The document appears to be already digitally signed, exported from "
+                        "Microsoft Word with hybrid cross-reference streams, or has empty page content streams. "
+                        "Please re-save the document using 'File -> Print -> Save as PDF' to generate a clean PDF, then re-dispatch."
+                    )
+                    return {
+                        "success": False,
+                        "error": friendly_err,
+                        "raw_error": raw_err
+                    }
                 return {
                     "success": False,
-                    "error": str(response_obj.get("error"))
+                    "error": raw_err
                 }
 
             # Extract item details
