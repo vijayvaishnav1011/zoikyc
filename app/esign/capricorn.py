@@ -281,13 +281,6 @@ class CapricornESignProvider(BaseESignProvider):
                     f.write(raw_bytes)
                 return True
 
-            # Base64 JSON response
-            try:
-                data = resp.json()
-                resp_obj = data.get("response", {})
-                resp_data = resp_obj.get("responsedata", {})
-                inner_resp = resp_data.get("response", {}) if isinstance(resp_data, dict) else {}
-
             try:
                 data = resp.json()
                 resp_obj = data.get("response", {})
