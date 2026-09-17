@@ -65,42 +65,6 @@ class CapricornESignProvider(BaseESignProvider):
         """Generates an 8-digit unique numeric transaction ID as expected by Capricorn API."""
         return str(random.randint(10000000, 99999999))
 
-    def sanitize_pdf_bytes(self, pdf_bytes: bytes) -> bytes:
-        """
-        Sanitizes and flattens PDF byte stream using pypdf.
-        Ensures page dictionaries inherit parent resources properly.
-        """
-        try:
-            import io
-            import pypdf
-            reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
-            if reader.is_encrypted:
-                try:
-                    reader.decrypt('')
-                except Exception:
-                    pass
-
-            writer = pypdf.PdfWriter()
-            for page in reader.pages:
-                try:
-                    parent = page.get('/Parent')
-                    if parent and not page.get('/Resources'):
-                        parent_obj = parent.get_object() if hasattr(parent, 'get_object') else parent
-                        parent_res = parent_obj.get('/Resources')
-                        if parent_res:
-                            page[pypdf.generic.NameObject('/Resources')] = parent_res
-                except Exception:
-                    pass
-                writer.add_page(page)
-
-            out_stream = io.BytesIO()
-            writer.write(out_stream)
-            cleaned = out_stream.getvalue()
-            if cleaned and cleaned.startswith(b'%PDF'):
-                return cleaned
-        except Exception as ex:
-            logger.warning(f"PDF sanitization skipped: {ex}")
-        return pdf_bytes
 
     def convert_pdf_to_base64(self, file_path: str) -> str:
         """Reads a local PDF file and returns its Base64 encoded string without modifying the structure."""
