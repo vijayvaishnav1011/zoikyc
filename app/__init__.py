@@ -75,16 +75,98 @@ def create_app(config_name=None):
     @app.route('/version')
     def version_check():
         pypdf_ok = False
+        pypdf_ver = None
         try:
             import pypdf
             pypdf_ok = True
+            pypdf_ver = getattr(pypdf, '__version__', 'installed')
         except ImportError:
             pass
         return {
-            'version': '2.1.0',
+            'version': '2.1.2',
             'pypdf_installed': pypdf_ok,
+            'pypdf_version': pypdf_ver,
             'service': 'ZoiKYC'
         }, 200
+
+    @app.route('/debug-pdf', methods=['POST'])
+    @csrf.exempt
+    def debug_pdf():
+        import traceback, base64, io, requests
+        from flask import request, jsonify
+        data = request.get_json(silent=True) or {}
+        raw_b64 = (data.get('file_base64') or data.get('pdf_base64') or '').strip()
+        if ',' in raw_b64 and 'base64' in raw_b64[:60]:
+            raw_b64 = raw_b64.split(',', 1)[1].strip()
+        
+        info = {}
+        try:
+            pdf_bytes = base64.b64decode(raw_b64)
+            info["original_len"] = len(pdf_bytes)
+            info["starts_with_pdf"] = pdf_bytes.startswith(b'%PDF')
+            
+            import pypdf
+            info["pypdf_version"] = getattr(pypdf, '__version__', 'unknown')
+            reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+            info["pages"] = len(reader.pages)
+            info["is_encrypted"] = reader.is_encrypted
+            writer = pypdf.PdfWriter()
+            for page in reader.pages:
+                writer.add_page(page)
+            out = io.BytesIO()
+            writer.write(out)
+            sanitized_bytes = out.getvalue()
+            info["sanitized_len"] = len(sanitized_bytes)
+            info["sanitized_starts_with_pdf"] = sanitized_bytes.startswith(b'%PDF')
+            
+            from app.integrations.capricorn import CapricornESignProvider
+            provider = CapricornESignProvider()
+            clean_b64_str = base64.b64encode(sanitized_bytes).decode('utf-8')
+            txn_id = provider.generate_unique_txn()
+            capricorn_payload = {
+                'request': {
+                    'auth': {'token': provider.token, 'key': provider.key, 'command': 'esign'},
+                    'parameter': {
+                        'uploadpdf': {
+                            'pdf64': clean_b64_str,
+                            'pdfurl': '',
+                            'title': 'Debug Agreement',
+                            'txn': txn_id,
+                            'callbackurl': 'https://zoikyc.com/esign/callback',
+                            'signatories': {
+                                'signatory': {
+                                    'id': 'signatory1',
+                                    'name': data.get('signatory_name', 'Pankaj Vaishnav'),
+                                    'email': 'no-reply@zoikyc.com',
+                                    'mail': '',
+                                    'mobile': '',
+                                    'sms': '',
+                                    'mode': 'online-aadhaar-otp',
+                                    'ekycid': 'esignnetwork',
+                                    'dsc': {'email': '', 'serial': '', 'organization': '', 'orgunit': ''},
+                                    'option': {
+                                        'cood': data.get('cood', '400,20,550,90'),
+                                        'pagenum': data.get('page_num', 'all'),
+                                        'reason': 'Agreement sign',
+                                        'location': 'Delhi',
+                                        'customtext': f"Signed by {data.get('signatory_name', 'Pankaj Vaishnav')}",
+                                        'enableltv': '', 'lockpdf': '', 'enablets': '', 'includesubject': '', 'includecn': ''
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            cap_resp = requests.post(provider.api_url, json=capricorn_payload, timeout=30)
+            info["capricorn_http_code"] = cap_resp.status_code
+            info["capricorn_response"] = cap_resp.json()
+        except Exception as ex:
+            info["exception"] = str(ex)
+            info["traceback"] = traceback.format_exc()
+            
+        return jsonify(info), 200
+
 
     # Root route - Public Landing Page for zoikyc.com
     @app.route('/')
