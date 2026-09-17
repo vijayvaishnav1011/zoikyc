@@ -141,7 +141,7 @@ class CapricornESignProvider(BaseESignProvider):
                                 "id": "signatory1",
                                 "sn": "",
                                 "name": signatory_name,
-                                "email": "",
+                                "email": "no-reply@zoikyc.com",
                                 "mail": "",
                                 "mobile": "",
                                 "sms": "",
