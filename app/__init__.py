@@ -87,11 +87,21 @@ def create_app(config_name=None):
             git_commit = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], stderr=subprocess.DEVNULL).decode().strip()
         except Exception:
             git_commit = 'unknown'
+        # Verify new parent-resource fix is deployed in capricorn.py
+        cap_fix_deployed = False
+        try:
+            import inspect
+            from app.integrations.capricorn import CapricornESignProvider
+            src = inspect.getsource(CapricornESignProvider.sanitize_pdf_bytes)
+            cap_fix_deployed = 'ROOT CAUSE FIX' in src or 'parent_res' in src
+        except Exception:
+            pass
         return {
             'version': '2.1.3',
             'pypdf_installed': pypdf_ok,
             'pypdf_version': pypdf_ver,
             'git_commit': git_commit,
+            'capricorn_parent_fix': cap_fix_deployed,
             'service': 'ZoiKYC'
         }, 200
 
