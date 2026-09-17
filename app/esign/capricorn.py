@@ -103,15 +103,16 @@ class CapricornESignProvider(BaseESignProvider):
         return pdf_bytes
 
     def convert_pdf_to_base64(self, file_path: str) -> str:
-        """Reads a local PDF file, sanitizes its structure, and returns its Base64 encoded string."""
+        """Reads a local PDF file and returns its Base64 encoded string without modifying the structure."""
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"PDF document not found at: {file_path}")
 
         with open(file_path, "rb") as f:
             pdf_bytes = f.read()
 
-        clean_bytes = self.sanitize_pdf_bytes(pdf_bytes)
-        return base64.b64encode(clean_bytes).decode("utf-8")
+        # Send the EXACT original PDF bytes. Do not rewrite with pypdf, 
+        # as it crashes Capricorn's .NET parser with "Index out of bounds".
+        return base64.b64encode(pdf_bytes).decode("utf-8")
 
     def send_document_for_esign(
         self,
