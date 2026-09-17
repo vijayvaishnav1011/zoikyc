@@ -78,14 +78,22 @@ class CapricornESignProvider(BaseESignProvider):
         """
         try:
             import io
-            import pypdf
-            reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+            try:
+                import pypdf
+                PdfReader = pypdf.PdfReader
+                PdfWriter = pypdf.PdfWriter
+            except ImportError:
+                import PyPDF2
+                PdfReader = PyPDF2.PdfReader
+                PdfWriter = PyPDF2.PdfWriter
+
+            reader = PdfReader(io.BytesIO(pdf_bytes))
             if reader.is_encrypted:
                 try:
                     reader.decrypt('')
                 except Exception:
                     pass
-            writer = pypdf.PdfWriter()
+            writer = PdfWriter()
             for page in reader.pages:
                 writer.add_page(page)
             out_stream = io.BytesIO()
@@ -93,9 +101,12 @@ class CapricornESignProvider(BaseESignProvider):
             cleaned_bytes = out_stream.getvalue()
             if cleaned_bytes and cleaned_bytes.startswith(b'%PDF'):
                 return cleaned_bytes
+        except ImportError:
+            logger.error("PDF auto-sanitization requires 'pypdf'. Run 'pip install pypdf' on the server.")
         except Exception as ex:
             logger.warning(f"PDF auto-sanitization skipped: {ex}")
         return pdf_bytes
+
 
     def convert_pdf_to_base64(self, file_path: str) -> str:
         """Reads a local PDF file, sanitizes its structure, and returns its Base64 encoded string."""
