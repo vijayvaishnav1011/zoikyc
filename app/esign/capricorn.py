@@ -180,12 +180,6 @@ class CapricornESignProvider(BaseESignProvider):
             "Accept": "application/json"
         }
 
-        try:
-            with open("/tmp/last_payload.json", "w") as f:
-                json.dump(payload, f)
-        except Exception:
-            pass
-
         logger.info(f"Dispatching Capricorn E-Sign request for txn={txn_id}, doc='{doc_title}'")
 
         try:
