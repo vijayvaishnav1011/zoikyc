@@ -14,7 +14,7 @@ from app.models.user import User
 from app.models.wallet import Wallet
 from app.models.transaction import WalletTransaction
 from app.models.esign import ESignDocument
-from app.integrations.capricorn import CapricornESignProvider
+from app.esign.capricorn import CapricornESignProvider
 
 class ESignIntegrationTestCase(unittest.TestCase):
     def setUp(self):
@@ -141,7 +141,7 @@ class ESignIntegrationTestCase(unittest.TestCase):
         self.assertEqual(signatory['option']['pagenum'], "all")
         self.assertEqual(signatory['option']['cood'], "400,20,550,90")
 
-    @patch('app.integrations.capricorn.requests.post')
+    @patch('app.esign.capricorn.requests.post')
     def test_client_document_upload_and_dispatch(self, mock_post):
         """Test client portal document upload directly dispatches to Capricorn without debiting yet."""
         mock_response = MagicMock()
@@ -192,7 +192,7 @@ class ESignIntegrationTestCase(unittest.TestCase):
             # Wallet float should NOT be debited on upload/dispatch
             self.assertEqual(self.wallet.balance, Decimal("500.00"))
 
-    @patch('app.integrations.capricorn.requests.post')
+    @patch('app.esign.capricorn.requests.post')
     def test_admin_dispatch_and_delayed_debit(self, mock_post):
         """Test Super Admin dispatching to Capricorn: converts to Base64 without immediate debit."""
         # Mock Capricorn response
@@ -285,7 +285,7 @@ class ESignIntegrationTestCase(unittest.TestCase):
             updated_doc = ESignDocument.query.get(doc.id)
             self.assertEqual(updated_doc.status, 'pending_admin')
 
-    @patch('app.integrations.capricorn.requests.get')
+    @patch('app.esign.capricorn.requests.get')
     def test_capricorn_callback_and_wallet_deduction(self, mock_get):
         """Verify callback marks document as signed, downloads PDF, and dynamically debits company per_kyc_price."""
         mock_pdf_resp = MagicMock()
@@ -519,7 +519,7 @@ class ESignIntegrationTestCase(unittest.TestCase):
                 self.assertNotIn("signedpdfurl", status_data["document"])
                 self.assertNotIn("esign.network", str(status_data["document"]))
 
-    @patch('app.integrations.capricorn.requests.post')
+    @patch('app.esign.capricorn.requests.post')
     def test_public_api_clean_response_and_callbackurl(self, mock_post):
         mock_resp = MagicMock()
         mock_resp.status_code = 200

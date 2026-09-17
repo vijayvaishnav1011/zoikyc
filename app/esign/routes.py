@@ -14,7 +14,7 @@ from app.models.esign import ESignDocument
 from app.models.company import Company
 from app.models.wallet import Wallet
 from app.models.transaction import WalletTransaction
-from app.integrations.capricorn import CapricornESignProvider
+from app.esign.capricorn import CapricornESignProvider
 from app.extensions import db, csrf
 
 @esign_bp.route('/esign')
