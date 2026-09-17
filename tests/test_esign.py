@@ -491,7 +491,7 @@ class ESignIntegrationTestCase(unittest.TestCase):
             mock_download.side_effect = side_effect
 
             with patch.object(CapricornESignProvider, 'get_signed_document_viewer_url', return_value=expected_viewer_url):
-                # 1. POST callback returns JSON with signedpdfurl
+                # 1. POST callback returns JSON with status success and download_url
                 resp = self.client.post('/esign/callback', json={
                     "txn": "84933947",
                     "reference": "OHIUIR9J7MVTAV0",
@@ -501,20 +501,23 @@ class ESignIntegrationTestCase(unittest.TestCase):
                 self.assertEqual(resp.status_code, 200)
                 data = resp.get_json()
                 self.assertEqual(data.get("status"), "success")
-                self.assertEqual(data.get("signedpdfurl"), expected_viewer_url)
+                self.assertIn("download_url", data)
 
                 # 2. Check document state updated
                 updated_doc = ESignDocument.query.get(doc.id)
                 self.assertEqual(updated_doc.status, "signed")
                 self.assertEqual(updated_doc.signed_pdf_url, expected_viewer_url)
 
-                # 3. Check status API returns signedpdfurl
+                # 3. Check status API returns branded download_url and does NOT expose esign.network
                 self.company.api_key = "zoi_live_test_api_key_123"
                 db.session.commit()
                 status_resp = self.client.get(f'/api/esign/zoi_live_test_api_key_123/{doc.id}')
                 self.assertEqual(status_resp.status_code, 200)
                 status_data = status_resp.get_json()
-                self.assertEqual(status_data["document"]["signedpdfurl"], expected_viewer_url)
+                self.assertIn("download_url", status_data["document"])
+                self.assertIn("sign_url", status_data["document"])
+                self.assertNotIn("signedpdfurl", status_data["document"])
+                self.assertNotIn("esign.network", str(status_data["document"]))
 
     @patch('app.integrations.capricorn.requests.post')
     def test_public_api_clean_response_and_callbackurl(self, mock_post):

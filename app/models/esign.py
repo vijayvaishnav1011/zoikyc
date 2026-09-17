@@ -111,7 +111,13 @@ class ESignDocument(db.Model):
         }
         return labels.get(self.status, self.status.replace('_', ' ').title())
 
+    @property
+    def branded_sign_url(self):
+        return f"https://zoikyc.com/esign/sign/{self.id}"
+
     def to_dict(self):
+        active_key = self.company.api_key if self.company else None
+        download_url = f"https://zoikyc.com/api/esign/{active_key}/{self.id}/download" if active_key else f"https://zoikyc.com/esign/{self.id}/download?type=signed"
         data = {
             "id": self.id,
             "title": self.title,
@@ -120,10 +126,10 @@ class ESignDocument(db.Model):
             "signatory_name": self.signatory_name,
             "signatory_mobile": self.signatory_mobile,
             "signatory_email": self.signatory_email,
-            "capricorn_txn": self.capricorn_txn,
-            "capricorn_reference": self.capricorn_reference,
-            "sign_url": self.redirect_url,
-            "download_url": f"https://zoikyc.com/api/esign/{self.company.api_key}/{self.id}/download" if (self.company and self.company.api_key) else f"https://zoikyc.com/esign/{self.id}/download?type=signed",
+            "reference_id": self.capricorn_reference,
+            "txn_id": self.capricorn_txn,
+            "sign_url": self.branded_sign_url,
+            "download_url": download_url,
             "callback_url": self.callback_url or "",
             "ip_address": self.ip_address,
             "server_ip": self.server_ip or '187.127.139.6',
@@ -142,6 +148,4 @@ class ESignDocument(db.Model):
                 "client_id": self.company.client_id if self.company else None,
             }
         }
-        if self.status == 'signed' and self.signed_pdf_url:
-            data["signedpdfurl"] = self.signed_pdf_url
         return data

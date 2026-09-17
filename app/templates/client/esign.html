@@ -205,10 +205,10 @@
                   <i class="bi bi-file-earmark-check-fill"></i> Download Signed PDF
                 </a>
               {% elif doc.status == 'sent_to_capricorn' and doc.redirect_url %}
-                <a href="{{ doc.redirect_url }}" target="_blank" class="btn btn-sm" style="background: #0284c7; color: #ffffff; font-weight: 700; padding: 6px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);" title="Open Capricorn Aadhaar OTP Signing Screen directly">
+                <a href="https://zoikyc.com/esign/sign/{{ doc.id }}" target="_blank" class="btn btn-sm" style="background: #0284c7; color: #ffffff; font-weight: 700; padding: 6px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);" title="Open Aadhaar OTP Signing Screen">
                   <i class="bi bi-shield-check"></i> Sign Now (OTP)
                 </a>
-                <button type="button" class="btn btn-sm" onclick="copySignLink('{{ doc.redirect_url }}', this)" style="background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; font-weight: 700; padding: 6px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;" title="Copy OTP Signing Link for Customer">
+                <button type="button" class="btn btn-sm" onclick="copySignLink('https://zoikyc.com/esign/sign/{{ doc.id }}', this)" style="background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; font-weight: 700; padding: 6px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;" title="Copy OTP Signing Link for Customer">
                   <i class="bi bi-link-45deg"></i> Copy Link
                 </button>
               {% endif %}

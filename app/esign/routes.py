@@ -483,14 +483,14 @@ def callback():
                 requests.post(cb_url, json=payload, timeout=10)
             except Exception as ex:
                 current_app.logger.warning(f"Failed to post client callbackurl {cb_url}: {ex}")
+        active_key = doc.company.api_key if (doc.company and doc.company.api_key) else None
+        download_api_url = f"https://zoikyc.com/api/esign/{active_key}/{doc.id}/download" if active_key else f"https://zoikyc.com/esign/{doc.id}/download?type=signed"
         cb_payload = {
             "status": "success",
-            "doc_id": doc.id,
+            "document_id": doc.id,
             "reference_id": doc.capricorn_reference,
             "txn_id": doc.capricorn_txn,
-            "signedpdfurl": doc.signed_pdf_url,
-            "redirect_url": doc.signed_pdf_url,
-            "download_url": url_for('esign.public_api_esign_download', api_key=doc.company.api_key, doc_id=doc.id, _external=True) if (doc.company and doc.company.api_key) else None
+            "download_url": download_api_url
         }
         t = threading.Thread(target=_post_client_webhook, args=(doc.callback_url, cb_payload))
         t.daemon = True
@@ -498,6 +498,8 @@ def callback():
 
     if request.method == 'GET':
         if not current_app.config.get('TESTING'):
+            active_key = doc.company.api_key if (doc.company and doc.company.api_key) else None
+            download_url = f"https://zoikyc.com/api/esign/{active_key}/{doc.id}/download" if active_key else f"https://zoikyc.com/esign/{doc.id}/download?type=signed"
             if doc.callback_url:
                 from urllib.parse import urlencode, urlparse, parse_qsl, urlunparse
                 try:
@@ -505,28 +507,28 @@ def callback():
                     qs = dict(parse_qsl(parsed.query))
                     qs.update({
                         "status": "success",
-                        "doc_id": str(doc.id),
+                        "document_id": str(doc.id),
                         "reference_id": doc.capricorn_reference or "",
-                        "signedpdfurl": doc.signed_pdf_url or ""
+                        "download_url": download_url
                     })
                     return redirect(urlunparse(parsed._replace(query=urlencode(qs))))
                 except Exception:
                     pass
-            if doc.signed_pdf_url:
-                return redirect(doc.signed_pdf_url)
-        active_key = doc.company.api_key if (doc.company and doc.company.api_key) else None
-        if active_key and not current_app.config.get('TESTING'):
-            return redirect(url_for('esign.public_api_esign_download', api_key=active_key, doc_id=doc.id, _external=True))
+            if active_key:
+                return redirect(url_for('esign.public_api_esign_download', api_key=active_key, doc_id=doc.id, _external=True))
+            return redirect(url_for('esign.download_document', doc_id=doc.id, type='signed'))
+
         flash(f"Aadhaar OTP verification completed! Document '{doc.title}' has been digitally signed.", "success")
         return redirect(url_for('esign.index'))
 
+    active_key = doc.company.api_key if (doc.company and doc.company.api_key) else None
+    download_api_url = f"https://zoikyc.com/api/esign/{active_key}/{doc.id}/download" if active_key else f"https://zoikyc.com/esign/{doc.id}/download?type=signed"
     return jsonify({
         "status": "success",
-        "doc_id": doc.id,
+        "document_id": doc.id,
         "reference_id": doc.capricorn_reference,
         "txn_id": doc.capricorn_txn,
-        "signedpdfurl": doc.signed_pdf_url,
-        "download_url": url_for('esign.public_api_esign_download', api_key=doc.company.api_key, doc_id=doc.id, _external=True) if (doc.company and doc.company.api_key) else None,
+        "download_url": download_api_url,
         "callback_url": doc.callback_url or ""
     }), 200
 
@@ -830,6 +832,7 @@ def public_api_esign(api_key=None):
         db.session.commit()
 
         active_key = company.api_key or target_key
+        sign_api_url = f"https://zoikyc.com/esign/sign/{esign_doc.id}"
         download_api_url = f"https://zoikyc.com/api/esign/{active_key}/{esign_doc.id}/download"
         from app.utils.timezone import to_ist_iso
         resp_payload = {
@@ -839,7 +842,7 @@ def public_api_esign(api_key=None):
             "document_id": esign_doc.id,
             "reference_id": esign_doc.capricorn_reference,
             "txn_id": esign_doc.capricorn_txn,
-            "sign_url": esign_doc.redirect_url,
+            "sign_url": sign_api_url,
             "download_url": download_api_url,
             "callback_url": esign_doc.callback_url or "",
             "signatory_name": esign_doc.signatory_name,
@@ -881,9 +884,30 @@ def public_api_esign_status(api_key, doc_id):
     if doc.status == 'signed' and (not doc.cost_charged or doc.cost_charged == Decimal('0.00')):
         charge_wallet_for_signed_doc(doc)
 
-    doc_data = doc.to_dict()
     active_key = company.api_key or target_key
-    doc_data["download_url"] = f"https://zoikyc.com/api/esign/{active_key}/{doc.id}/download"
+    from app.utils.timezone import to_ist_iso
+    doc_data = {
+        "id": doc.id,
+        "title": doc.title,
+        "status": doc.status,
+        "status_label": doc.status_label,
+        "signatory_name": doc.signatory_name,
+        "signatory_mobile": doc.signatory_mobile,
+        "signatory_email": doc.signatory_email,
+        "reference_id": doc.capricorn_reference,
+        "txn_id": doc.capricorn_txn,
+        "sign_url": f"https://zoikyc.com/esign/sign/{doc.id}",
+        "download_url": f"https://zoikyc.com/api/esign/{active_key}/{doc.id}/download",
+        "callback_url": doc.callback_url or "",
+        "created_at": to_ist_iso(doc.created_at),
+        "dispatched_at": to_ist_iso(doc.dispatched_at),
+        "signed_at": to_ist_iso(doc.signed_at),
+        "company": {
+            "id": company.id,
+            "name": company.name,
+            "client_id": company.client_id
+        }
+    }
 
     return jsonify({
         "success": True,
@@ -943,3 +967,33 @@ def public_api_esign_download(api_key, doc_id):
 
     download_name = f"Signed_{doc.original_filename}"
     return send_file(full_path, as_attachment=True, download_name=download_name, mimetype='application/pdf')
+
+
+@esign_bp.route('/esign/sign/<int:doc_id>', methods=['GET'])
+@esign_bp.route('/api/esign/sign/<int:doc_id>', methods=['GET'])
+@esign_bp.route('/api/esign/<path:api_key>/<int:doc_id>/sign', methods=['GET'])
+@csrf.exempt
+def public_sign_redirect(doc_id, api_key=None):
+    """
+    Branded ZoiKYC E-Sign Redirection Link.
+    Hides third-party gateway (esign.network) from consumer/signatory.
+    Redirects the user directly to the active signing session.
+    """
+    doc = ESignDocument.query.get_or_404(doc_id)
+
+    # If already signed, send directly to ZoiKYC download URL
+    if doc.status == 'signed':
+        active_key = (api_key or (doc.company.api_key if doc.company else None) or '').strip()
+        if active_key:
+            return redirect(url_for('esign.public_api_esign_download', api_key=active_key, doc_id=doc.id, _external=True))
+        return redirect(url_for('esign.download_document', doc_id=doc.id, type='signed'))
+
+    # If active session exists, redirect to Capricorn OTP signing screen
+    if doc.redirect_url:
+        return redirect(doc.redirect_url)
+
+    return jsonify({
+        "success": False,
+        "status": "not_ready",
+        "error": "Signing session is not ready or has expired. Please create a new document."
+    }), 400
