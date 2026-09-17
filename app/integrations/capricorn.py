@@ -71,19 +71,26 @@ class CapricornESignProvider(BaseESignProvider):
 
     def sanitize_pdf_bytes(self, pdf_bytes: bytes) -> bytes:
         """
-        Reconstructs and sanitizes PDF cross-reference tables and streams.
-        Removes hybrid Microsoft Word / Office 365 xref stream offsets (/XRefStm)
-        and flattens the file into standard PDF 1.4/1.7 so Capricorn's .NET stamper
+        Reconstructs and sanitizes PDF structure so Capricorn's .NET stamper
         never throws 'Index was outside the bounds of the array'.
+
+        ROOT CAUSE FIX: PDFs from Microsoft Word / LibreOffice store /Resources
+        (fonts, images, XObjects) in the /Pages parent dictionary rather than in
+        each individual /Page dictionary. Capricorn's .NET stamper reads /Resources
+        per-page and crashes when a page has no /Resources of its own. We resolve
+        the inherited parent /Resources onto every page explicitly before writing,
+        which produces a clean, flat PDF that Capricorn can process correctly.
         """
         try:
             import io
             try:
                 import pypdf
+                from pypdf.generic import DictionaryObject, NameObject
                 PdfReader = pypdf.PdfReader
                 PdfWriter = pypdf.PdfWriter
             except ImportError:
                 import PyPDF2
+                from PyPDF2.generic import DictionaryObject, NameObject
                 PdfReader = PyPDF2.PdfReader
                 PdfWriter = PyPDF2.PdfWriter
 
@@ -93,6 +100,55 @@ class CapricornESignProvider(BaseESignProvider):
                     reader.decrypt('')
                 except Exception:
                     pass
+
+            # Resolve parent /Resources into each page that lacks its own.
+            # This is the key fix: Word/LibreOffice PDFs store shared fonts and
+            # XObjects on the /Pages parent; Capricorn expects them per-page.
+            for page in reader.pages:
+                try:
+                    page_obj = page.get_object() if hasattr(page, 'get_object') else page
+
+                    # Get parent resources
+                    parent = page_obj.get('/Parent')
+                    parent_res = None
+                    if parent is not None:
+                        parent_obj = parent.get_object() if hasattr(parent, 'get_object') else parent
+                        parent_res = parent_obj.get('/Resources')
+                        if parent_res is not None and hasattr(parent_res, 'get_object'):
+                            parent_res = parent_res.get_object()
+
+                    if parent_res is None:
+                        continue  # No inherited resources, nothing to fix
+
+                    # Get or create per-page /Resources
+                    page_res = page_obj.get('/Resources')
+                    if page_res is not None and hasattr(page_res, 'get_object'):
+                        page_res = page_res.get_object()
+
+                    if page_res is None:
+                        # Page has no /Resources at all — assign full copy of parent's
+                        page_obj[NameObject('/Resources')] = parent_res
+                    else:
+                        # Page has its own /Resources — merge missing keys from parent
+                        for res_key, res_val in parent_res.items():
+                            if res_key not in page_res:
+                                page_obj[NameObject('/Resources')][NameObject(res_key)] = res_val
+                            else:
+                                # Sub-dicts like /Font: merge font entries individually
+                                page_entry = page_res.get(res_key)
+                                if page_entry is not None and hasattr(page_entry, 'get_object'):
+                                    page_entry = page_entry.get_object()
+                                parent_entry = res_val
+                                if hasattr(parent_entry, 'get_object'):
+                                    parent_entry = parent_entry.get_object()
+                                if isinstance(page_entry, dict) and isinstance(parent_entry, dict):
+                                    for sub_key, sub_val in parent_entry.items():
+                                        if sub_key not in page_entry:
+                                            page_entry[NameObject(sub_key)] = sub_val
+                except Exception as page_ex:
+                    logger.debug(f"Page resource merge skipped for one page: {page_ex}")
+                    continue
+
             writer = PdfWriter()
             for page in reader.pages:
                 writer.add_page(page)
@@ -100,6 +156,7 @@ class CapricornESignProvider(BaseESignProvider):
             writer.write(out_stream)
             cleaned_bytes = out_stream.getvalue()
             if cleaned_bytes and cleaned_bytes.startswith(b'%PDF'):
+                logger.info(f"PDF sanitized successfully: {len(pdf_bytes)} -> {len(cleaned_bytes)} bytes")
                 return cleaned_bytes
         except ImportError:
             logger.error("PDF auto-sanitization requires 'pypdf'. Run 'pip install pypdf' on the server.")
