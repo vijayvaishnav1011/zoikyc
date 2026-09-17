@@ -523,9 +523,9 @@ def callback():
         "doc_id": doc.id,
         "reference_id": doc.capricorn_reference,
         "txn_id": doc.capricorn_txn,
-        "redirect_url": doc.callback_url or doc.signed_pdf_url,
         "signedpdfurl": doc.signed_pdf_url,
-        "download_url": url_for('esign.public_api_esign_download', api_key=doc.company.api_key, doc_id=doc.id, _external=True) if (doc.company and doc.company.api_key) else None
+        "download_url": url_for('esign.public_api_esign_download', api_key=doc.company.api_key, doc_id=doc.id, _external=True) if (doc.company and doc.company.api_key) else None,
+        "callback_url": doc.callback_url or ""
     }), 200
 
 
@@ -837,16 +837,14 @@ def public_api_esign(api_key=None):
             "document_id": esign_doc.id,
             "reference_id": esign_doc.capricorn_reference,
             "txn_id": esign_doc.capricorn_txn,
-            "redirect_url": esign_doc.redirect_url,
             "sign_url": esign_doc.redirect_url,
             "download_url": download_api_url,
+            "callback_url": esign_doc.callback_url or "",
             "signatory_name": esign_doc.signatory_name,
             "signatory_mobile": esign_doc.signatory_mobile,
             "title": esign_doc.title,
             "created_at": to_ist_iso(esign_doc.created_at)
         }
-        if esign_doc.callback_url:
-            resp_payload["callback_url"] = esign_doc.callback_url
         return jsonify(resp_payload), 200
     else:
         error_msg = result.get('error', 'Capricorn Gateway error')
