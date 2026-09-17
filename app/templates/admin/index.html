@@ -5,30 +5,20 @@
 
 {% block content %}
 <!-- Super Admin Hero Banner -->
-<div class="dashboard-hero-banner" style="background: linear-gradient(135deg, #1e053a 0%, #3b0764 50%, #581c87 100%);">
-  <div
-    style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; position: relative; z-index: 5;">
+<div class="dashboard-hero-banner" style="background: #ffffff; border: 1px solid rgba(226, 232, 240, 0.8);">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
     <div>
-      <div
-        style="display: inline-flex; align-items: center; gap: 6px; background: rgba(250, 204, 21, 0.2); color: #fef08a; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 8px;">
-        <i class="bi bi-shield-fill-check"></i> Master Control Panel
-      </div>
-      <h1 style="font-size: 1.75rem; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; margin-bottom: 6px;">
-        ZoiKYC Super Administration
+      <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--text-dark); margin-bottom: 4px;">
+        Admin Dashboard
       </h1>
-      <p style="color: rgba(255, 255, 255, 0.85); font-size: 0.9rem; max-width: 680px; line-height: 1.5;">
-        Verify client compliance documents, audit multi-tenant wallet balances, and monitor live FinTech transaction
-        throughput.
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Platform Overview & System Monitoring
       </p>
     </div>
     <div class="admin-hero-btn-group">
       <a href="{{ url_for('admin.companies') }}" class="btn-tiancai-pill"
-        style="text-decoration: none; padding: 11px 22px; font-size: 0.88rem; width: auto; background: var(--tiancai-purple-gradient); box-shadow: 0 8px 20px rgba(88, 28, 135, 0.35);">
-        <i class="bi bi-buildings"></i> Client Organisations Directory ({{ total_companies }})
-      </a>
-      <a href="{{ url_for('admin.transactions') }}"
-        style="text-decoration: none; padding: 11px 20px; font-size: 0.88rem; background: rgba(255, 255, 255, 0.15); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: var(--radius-pill); font-weight: 700; display: inline-flex; align-items: center; gap: 6px; transition: var(--transition);">
-        <i class="bi bi-receipt-cutoff"></i> Global Transactions ({{ total_transactions }})
+        style="text-decoration: none; padding: 10px 18px; font-size: 0.85rem;">
+        <i class="bi bi-buildings"></i> Organizations ({{ total_companies }})
       </a>
     </div>
   </div>
@@ -56,32 +46,27 @@
   <div class="metric-card">
     <div>
       <div class="metric-title">
-        <i class="bi bi-patch-check-fill" style="color: #059669;"></i> Verified Organizations
+        <i class="bi bi-patch-check-fill" style="color: var(--tiancai-blue);"></i> Verified Organizations
       </div>
-      <div class="metric-value" style="color: #059669;">
+      <div class="metric-value">
         {{ active_companies }}
       </div>
       <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
         {{ pending_companies }} pending KYC verification
       </div>
     </div>
-    <span class="metric-badge badge-active">KYC Verified</span>
   </div>
 
   <!-- Total Platform Wallet Reserves Card -->
   <div class="metric-card">
     <div>
       <div class="metric-title">
-        <i class="bi bi-wallet2" style="color: #059669;"></i> Total Wallet Reserves
+        <i class="bi bi-wallet2" style="color: var(--tiancai-blue);"></i> Total Wallet Reserves
       </div>
-      <div class="metric-value" style="color: #059669;">
+      <div class="metric-value">
         {{ total_wallet_reserves | currency }}
       </div>
-      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
-
-      </div>
     </div>
-
   </div>
 
   <!-- Platform Fee Configuration Card -->
