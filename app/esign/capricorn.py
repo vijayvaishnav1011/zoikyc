@@ -29,7 +29,15 @@ class CapricornESignProvider(BaseESignProvider):
             raw_url = raw_url.replace("www..esign.network", "www.esign.network")
         self.api_url = raw_url
         self.token = token or os.environ.get('CAPRICORN_API_TOKEN', self.DEFAULT_TOKEN)
-        self.key = key or os.environ.get('CAPRICORN_API_KEY', self.DEFAULT_KEY)
+        
+        final_key = key or os.environ.get('CAPRICORN_API_KEY', self.DEFAULT_KEY)
+        # BUG FIX: Docker/Coolify strips $$$$$$ down to $$$ due to bash variable escaping.
+        # This causes Capricorn's backend to throw 'Index was outside the bounds of the array.'
+        # We must restore the key to the original 6 dollar signs if it was corrupted.
+        if "$$$" in final_key and "$$$$$$" not in final_key:
+            final_key = final_key.replace("$$$", "$$$$$$")
+            
+        self.key = final_key
         self.last_signed_pdf_url: Optional[str] = None
 
     @property
