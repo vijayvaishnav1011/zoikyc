@@ -114,29 +114,44 @@ def create_app(config_name=None):
         raw_b64 = (data.get('file_base64') or data.get('pdf_base64') or '').strip()
         if ',' in raw_b64 and 'base64' in raw_b64[:60]:
             raw_b64 = raw_b64.split(',', 1)[1].strip()
-        
+
         info = {}
         try:
             pdf_bytes = base64.b64decode(raw_b64)
             info["original_len"] = len(pdf_bytes)
             info["starts_with_pdf"] = pdf_bytes.startswith(b'%PDF')
-            
+
             import pypdf
             info["pypdf_version"] = getattr(pypdf, '__version__', 'unknown')
-            reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
-            info["pages"] = len(reader.pages)
-            info["is_encrypted"] = reader.is_encrypted
-            writer = pypdf.PdfWriter()
-            for page in reader.pages:
-                writer.add_page(page)
-            out = io.BytesIO()
-            writer.write(out)
-            sanitized_bytes = out.getvalue()
-            info["sanitized_len"] = len(sanitized_bytes)
-            info["sanitized_starts_with_pdf"] = sanitized_bytes.startswith(b'%PDF')
-            
+            reader0 = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+            info["pages"] = len(reader0.pages)
+            info["is_encrypted"] = reader0.is_encrypted
+
+            # Inspect per-page /Resources BEFORE sanitize
+            before_page_res = []
+            for p in reader0.pages:
+                pr = p.get('/Resources')
+                if pr is not None and hasattr(pr, 'get_object'): pr = pr.get_object()
+                before_page_res.append(list(pr.keys()) if pr else None)
+            info["before_page_resources"] = before_page_res
+
             from app.integrations.capricorn import CapricornESignProvider
             provider = CapricornESignProvider()
+
+            # Use the REAL fixed sanitize_pdf_bytes
+            sanitized_bytes = provider.sanitize_pdf_bytes(pdf_bytes)
+            info["sanitized_len"] = len(sanitized_bytes)
+            info["sanitized_starts_with_pdf"] = sanitized_bytes.startswith(b'%PDF')
+
+            # Inspect per-page /Resources AFTER sanitize
+            reader2 = pypdf.PdfReader(io.BytesIO(sanitized_bytes))
+            after_page_res = []
+            for p in reader2.pages:
+                pr = p.get('/Resources')
+                if pr is not None and hasattr(pr, 'get_object'): pr = pr.get_object()
+                after_page_res.append(list(pr.keys()) if pr else None)
+            info["after_page_resources"] = after_page_res
+
             clean_b64_str = base64.b64encode(sanitized_bytes).decode('utf-8')
             txn_id = provider.generate_unique_txn()
             capricorn_payload = {
