@@ -257,27 +257,25 @@ curl -X POST "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY" \
 {
   "success": true,
   "status": "ready_for_signing",
-  "message": "Document successfully created and dispatched for Aadhaar E-Sign. Wallet will be charged once signing is completed.",
-  "document_id": 9,
-  "reference_id": "OHIUIR9J7MVTAV0",
-  "txn_id": "84933947",
-  "sign_url": "https://demo.esign.network/api/esign/v1.0/84933947/OHIUIR9J7MVTAV0/signatory1/continue",
-  "download_url": "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY/9/download",
-  "signatory_name": "Pankaj Vaishnav",
-  "signatory_mobile": "9876543210",
-  "title": "Employment Agreement",
-  "billing_status": "charges_on_completion",
-  "per_sign_fee": 35.0,
-  "cost_charged": 0.0,
-  "wallet_balance": 4895.0,
-  "created_at": "2026-09-10T16:34:05.000361"
+  "message": "Document successfully created and dispatched for Aadhaar E-Sign",
+  "document_id": 19,
+  "reference_id": "1UCDYQEFALFTNWX",
+  "txn_id": "49591406",
+  "sign_url": "https://www.esign.network/api/esign/v1.0/49591406/1UCDYQEFALFTNWX/signatory1/continue",
+  "download_url": "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY/19/download",
+  "callback_url": "",
+  "signatory_name": "Vijay Vaishnav",
+  "signatory_mobile": "9999999999",
+  "title": "Customer Agreement",
+  "created_at": "2026-09-17T11:05:30+05:30"
 }
 ```
 
 #### Key Fields:
-- `sign_url`: **Share this URL with the signatory**. Opening this URL presents the Aadhaar OTP signing interface.
-- `download_url`: Permanent endpoint to download the document or finalized signed PDF.
-- `billing_status`: Set to `"charges_on_completion"`. Initial dispatch fee is `0.0`. Wallet will only be charged when the signature is finalized.
+- `sign_url`: **Direct signing link**. Provide this URL to the customer; opening it starts the official Aadhaar OTP e-sign process.
+- `download_url`: Permanent direct endpoint to download the document once signed.
+- `callback_url`: Your webhook / redirect destination (optional). Leave empty string `""` to default to the live signed document preview.
+- `created_at`: Timestamp generated in Indian Standard Time (IST - UTC+05:30).
 
 ---
 
@@ -292,25 +290,25 @@ Returns current status, audit trail timestamps, and if signed, the direct Capric
 {
   "success": true,
   "document": {
-    "id": 9,
-    "title": "Employment Agreement",
+    "id": 19,
+    "title": "Customer Agreement",
     "status": "sent_to_capricorn",
     "status_label": "Awaiting Aadhaar OTP",
-    "signatory_name": "Pankaj Vaishnav",
-    "signatory_mobile": "9876543210",
-    "signatory_email": "pankaj@example.com",
-    "capricorn_txn": "84933947",
-    "capricorn_reference": "OHIUIR9J7MVTAV0",
-    "sign_url": "https://demo.esign.network/api/esign/v1.0/84933947/OHIUIR9J7MVTAV0/signatory1/continue",
-    "download_url": "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY/9/download",
-    "cost_charged": 0.0,
-    "created_at": "2026-09-10T16:34:05.000361",
-    "dispatched_at": "2026-09-10T16:34:06.120400",
+    "signatory_name": "Vijay Vaishnav",
+    "signatory_mobile": "9999999999",
+    "signatory_email": "",
+    "capricorn_txn": "49591406",
+    "capricorn_reference": "1UCDYQEFALFTNWX",
+    "sign_url": "https://www.esign.network/api/esign/v1.0/49591406/1UCDYQEFALFTNWX/signatory1/continue",
+    "download_url": "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY/19/download",
+    "callback_url": "",
+    "created_at": "2026-09-17T11:05:30+05:30",
+    "dispatched_at": "2026-09-17T11:05:31+05:30",
     "signed_at": null,
     "company": {
       "id": 2,
-      "name": "Alpha Corp",
-      "client_id": "CLI-ALPHA-01"
+      "name": "Your Company",
+      "client_id": "CLI-CORP-01"
     }
   }
 }
@@ -321,26 +319,25 @@ Returns current status, audit trail timestamps, and if signed, the direct Capric
 {
   "success": true,
   "document": {
-    "id": 9,
-    "title": "Employment Agreement",
+    "id": 19,
+    "title": "Customer Agreement",
     "status": "signed",
     "status_label": "Signed & Verified",
-    "signatory_name": "Pankaj Vaishnav",
-    "signatory_mobile": "9876543210",
-    "signatory_email": "pankaj@example.com",
-    "capricorn_txn": "84933947",
-    "capricorn_reference": "OHIUIR9J7MVTAV0",
-    "sign_url": "https://demo.esign.network/api/esign/v1.0/84933947/OHIUIR9J7MVTAV0/signatory1/continue",
-    "signedpdfurl": "https://demo.esign.network/docs/signed/?p=JLjvcsMZBeE@@@@@@LctB0kTB0DgeuMuhxRmoowy2iddoVbZ7TcShtXuHBA==",
-    "download_url": "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY/9/download",
-    "cost_charged": 35.0,
-    "created_at": "2026-09-10T16:34:05.000361",
-    "dispatched_at": "2026-09-10T16:34:06.120400",
-    "signed_at": "2026-09-10T16:36:12.894310",
+    "signatory_name": "Vijay Vaishnav",
+    "signatory_mobile": "9999999999",
+    "signatory_email": "",
+    "capricorn_txn": "49591406",
+    "capricorn_reference": "1UCDYQEFALFTNWX",
+    "sign_url": "https://www.esign.network/api/esign/v1.0/49591406/1UCDYQEFALFTNWX/signatory1/continue",
+    "signedpdfurl": "https://www.esign.network/docs/signed/?p=JLjvcsMZBeE@@@@@@LctB0kTB0DgeuMuhxRmoowy2iddoVbZ7TcShtXuHBA==",
+    "download_url": "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY/19/download",
+    "created_at": "2026-09-17T11:05:30+05:30",
+    "dispatched_at": "2026-09-17T11:05:31+05:30",
+    "signed_at": "2026-09-17T11:08:15+05:30",
     "company": {
       "id": 2,
-      "name": "Alpha Corp",
-      "client_id": "CLI-ALPHA-01"
+      "name": "Your Company",
+      "client_id": "CLI-CORP-01"
     }
   }
 }
@@ -375,24 +372,26 @@ Directly streams or downloads the finalized digitally signed PDF file from ZoiKY
 
 ---
 
-### 3.4 Capricorn Callback & Browser Redirect
-When the signatory enters the OTP and Capricorn verifies the Aadhaar signature:
-1. Capricorn redirects the user's browser to the callback URL: `https://zoikyc.com/esign/callback?txn=...&reference=...`.
-2. ZoiKYC marks the document as `signed`, records the signed PDF, and debits your wallet.
-3. The server immediately returns an **HTTP 302 redirect directly to Capricorn's official viewer URL**:
-   ```
-   https://demo.esign.network/docs/signed/?p=...
-   ```
-   The customer views their signed copy in the browser.
+### 3.4 Post-Signing Direct Redirect & Callback
+When the customer completes Aadhaar OTP verification:
 
-#### If invoked as a Webhook (POST JSON):
+1. **If `callback_url` is provided**:
+   - The signer's browser will be automatically redirected to:
+     `{callback_url}?doc_id={document_id}&status=signed&download_url={download_url}`
+   - Your webhook server will also receive a background `POST` request with the JSON payload below.
+
+2. **If `callback_url` is blank `""`**:
+   - The signer's browser is immediately redirected to Capricorn's official live document viewer:
+     `https://www.esign.network/docs/signed/?p=...`
+
+#### Callback JSON Payload:
 ```json
 {
   "status": "success",
-  "doc_id": 9,
-  "signedpdfurl": "https://demo.esign.network/docs/signed/?p=JLjvcsMZBeE@@@@@@LctB0kTB0DgeuMuhxRmoowy2iddoVbZ7TcShtXuHBA==",
-  "download_url": "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY/9/download",
-  "cost_charged": 35.0
+  "doc_id": 19,
+  "signedpdfurl": "https://www.esign.network/docs/signed/?p=JLjvcsMZBeE@@@@@@LctB0kTB0DgeuMuhxRmoowy2iddoVbZ7TcShtXuHBA==",
+  "download_url": "https://zoikyc.com/api/esign/YOUR_API_KEY/19/download",
+  "reference_id": "1UCDYQEFALFTNWX"
 }
 ```
 
@@ -547,4 +546,4 @@ async function checkEsignStatus(docId) {
 If you encounter unexpected errors or have questions regarding gateway setups:
 - **Admin Portal**: Manage your CVL KRA credentials, wallet balance, and API keys at [https://zoikyc.com/admin/](https://zoikyc.com/admin/)
 - **Support Email**: [info@zoikyc.com](mailto:info@zoikyc.com)
-- **Live Capricorn Gateway**: [https://demo.esign.network/esigndoc/](https://demo.esign.network/esigndoc/)
+- **Live Capricorn Gateway**: [https://www.esign.network/esigndoc/](https://www.esign.network/esigndoc/)
