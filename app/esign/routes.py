@@ -1064,3 +1064,12 @@ def debug_test_capricorn():
         return jsonify(r.json())
     except Exception as e:
         return str(e)
+
+@esign_bp.route('/debug/read_payload', methods=['GET'])
+@csrf.exempt
+def debug_read_payload():
+    try:
+        with open("/tmp/last_payload.json", "r") as f:
+            return f.read(), 200, {'Content-Type': 'application/json'}
+    except Exception as e:
+        return str(e)
