@@ -5,17 +5,16 @@ import json
 import logging
 import random
 import requests
-from datetime import datetime
 from typing import Dict, Any, Optional
-from flask import current_app
 from app.integrations.base import BaseESignProvider
 
 logger = logging.getLogger(__name__)
 
+
 class CapricornESignProvider(BaseESignProvider):
     """
-    Integration provider for Capricorn Identity Services E-Sign API (demo.esign.network).
-    Supports Base64 PDF transmission, online-aadhaar-otp signing, and signed document retrieval.
+    Integration provider for Capricorn Identity Services E-Sign API (esign.network).
+    Handles Base64 PDF transmission, online-aadhaar-otp signing, and signed document retrieval.
     """
 
     POST_JSON_URL = "https://www.esign.network/op/api/v1.0/postjson"
@@ -50,7 +49,6 @@ class CapricornESignProvider(BaseESignProvider):
 
     def health_check(self) -> bool:
         try:
-            # Capricorn doesn't have an explicit ping endpoint, check if URL is reachable
             resp = requests.head(self.api_url, timeout=5)
             return resp.status_code in [200, 405]
         except Exception as e:
@@ -58,11 +56,9 @@ class CapricornESignProvider(BaseESignProvider):
             return False
 
     def create_esign_request(self, document_id: str, signer_info: dict) -> dict:
-        """Required by BaseESignProvider interface."""
-        raise NotImplementedError("Use send_document_for_esign for full Capricorn payload")
+        raise NotImplementedError("Use send_document_for_esign for Capricorn payload")
 
     def get_esign_status(self, request_id: str) -> dict:
-        """Fetches status of an e-sign request if provider supports polling."""
         return {"status": "UNKNOWN", "request_id": request_id}
 
     def generate_unique_txn(self) -> str:
@@ -71,105 +67,46 @@ class CapricornESignProvider(BaseESignProvider):
 
     def sanitize_pdf_bytes(self, pdf_bytes: bytes) -> bytes:
         """
-        Reconstructs and sanitizes PDF structure so Capricorn's .NET stamper
-        never throws 'Index was outside the bounds of the array'.
-
-        ROOT CAUSE FIX: PDFs from Microsoft Word / LibreOffice store /Resources
-        (fonts, images, XObjects) in the /Pages parent dictionary rather than in
-        each individual /Page dictionary. Capricorn's .NET stamper reads /Resources
-        per-page and crashes when a page has no /Resources of its own. We resolve
-        the inherited parent /Resources onto every page explicitly before writing,
-        which produces a clean, flat PDF that Capricorn can process correctly.
+        Sanitizes and flattens PDF byte stream using pypdf.
+        Ensures page dictionaries inherit parent resources properly.
         """
         try:
             import io
-            try:
-                import pypdf
-                from pypdf.generic import DictionaryObject, NameObject
-                PdfReader = pypdf.PdfReader
-                PdfWriter = pypdf.PdfWriter
-            except ImportError:
-                import PyPDF2
-                from PyPDF2.generic import DictionaryObject, NameObject
-                PdfReader = PyPDF2.PdfReader
-                PdfWriter = PyPDF2.PdfWriter
-
-            reader = PdfReader(io.BytesIO(pdf_bytes))
+            import pypdf
+            reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
             if reader.is_encrypted:
                 try:
                     reader.decrypt('')
                 except Exception:
                     pass
 
-            # Resolve parent /Resources into each page that lacks its own.
-            # This is the key fix: Word/LibreOffice PDFs store shared fonts and
-            # XObjects on the /Pages parent; Capricorn expects them per-page.
+            writer = pypdf.PdfWriter()
             for page in reader.pages:
                 try:
-                    page_obj = page.get_object() if hasattr(page, 'get_object') else page
-
-                    # Get parent resources
-                    parent = page_obj.get('/Parent')
-                    parent_res = None
-                    if parent is not None:
+                    parent = page.get('/Parent')
+                    if parent and not page.get('/Resources'):
                         parent_obj = parent.get_object() if hasattr(parent, 'get_object') else parent
                         parent_res = parent_obj.get('/Resources')
-                        if parent_res is not None and hasattr(parent_res, 'get_object'):
-                            parent_res = parent_res.get_object()
-
-                    if parent_res is None:
-                        continue  # No inherited resources, nothing to fix
-
-                    # Get or create per-page /Resources
-                    page_res = page_obj.get('/Resources')
-                    if page_res is not None and hasattr(page_res, 'get_object'):
-                        page_res = page_res.get_object()
-
-                    if page_res is None:
-                        # Page has no /Resources at all — assign full copy of parent's
-                        page_obj[NameObject('/Resources')] = parent_res
-                    else:
-                        # Page has its own /Resources — merge missing keys from parent
-                        for res_key, res_val in parent_res.items():
-                            if res_key not in page_res:
-                                page_obj[NameObject('/Resources')][NameObject(res_key)] = res_val
-                            else:
-                                # Sub-dicts like /Font: merge font entries individually
-                                page_entry = page_res.get(res_key)
-                                if page_entry is not None and hasattr(page_entry, 'get_object'):
-                                    page_entry = page_entry.get_object()
-                                parent_entry = res_val
-                                if hasattr(parent_entry, 'get_object'):
-                                    parent_entry = parent_entry.get_object()
-                                if isinstance(page_entry, dict) and isinstance(parent_entry, dict):
-                                    for sub_key, sub_val in parent_entry.items():
-                                        if sub_key not in page_entry:
-                                            page_entry[NameObject(sub_key)] = sub_val
-                except Exception as page_ex:
-                    logger.debug(f"Page resource merge skipped for one page: {page_ex}")
-                    continue
-
-            writer = PdfWriter()
-            for page in reader.pages:
+                        if parent_res:
+                            page[pypdf.generic.NameObject('/Resources')] = parent_res
+                except Exception:
+                    pass
                 writer.add_page(page)
+
             out_stream = io.BytesIO()
             writer.write(out_stream)
-            cleaned_bytes = out_stream.getvalue()
-            if cleaned_bytes and cleaned_bytes.startswith(b'%PDF'):
-                logger.info(f"PDF sanitized successfully: {len(pdf_bytes)} -> {len(cleaned_bytes)} bytes")
-                return cleaned_bytes
-        except ImportError:
-            logger.error("PDF auto-sanitization requires 'pypdf'. Run 'pip install pypdf' on the server.")
+            cleaned = out_stream.getvalue()
+            if cleaned and cleaned.startswith(b'%PDF'):
+                return cleaned
         except Exception as ex:
-            logger.warning(f"PDF auto-sanitization skipped: {ex}")
+            logger.warning(f"PDF sanitization skipped: {ex}")
         return pdf_bytes
-
 
     def convert_pdf_to_base64(self, file_path: str) -> str:
         """Reads a local PDF file, sanitizes its structure, and returns its Base64 encoded string."""
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"PDF document not found at: {file_path}")
-        
+
         with open(file_path, "rb") as f:
             pdf_bytes = f.read()
 
@@ -191,15 +128,12 @@ class CapricornESignProvider(BaseESignProvider):
         location: str = "Delhi"
     ) -> Dict[str, Any]:
         """
-        Encodes the PDF to Base64 (pdf64) and dispatches the E-Sign request to Capricorn API.
-        Supports 'pagenum': 'all' for single signature box on all pages, or specific page number.
-        Default signature placement coordinates: 400,20,550,90.
-        Returns parsed dictionary containing redirecturl, reference, signedpdfurl, and txn.
+        Encodes the PDF to Base64 and dispatches the E-Sign request to Capricorn API.
+        Returns the untouched response and extracted direct signing URLs.
         """
         pdf64_str = self.convert_pdf_to_base64(pdf_file_path)
         txn_id = self.generate_unique_txn()
 
-        # Handle page_num formatting: 'all' applies single signature box across all pages
         cleaned_page = str(page_num).strip().lower() if page_num else "all"
         if cleaned_page in ["all", "all pages", "allpages", "every"]:
             final_pagenum = "all"
@@ -207,18 +141,15 @@ class CapricornESignProvider(BaseESignProvider):
             try:
                 final_pagenum = str(int(page_num))
             except (ValueError, TypeError):
-                final_pagenum = "all" if cleaned_page == "all" else str(page_num).strip()
+                final_pagenum = "all"
 
-        # Sanitize coordinates: strip whitespace/parentheses like "400, 700, 550, 750)" -> "400,700,550,750"
         raw_cood = str(coordinates or "").strip()
         cleaned_cood = re.sub(r'[^\d,]', '', raw_cood) if raw_cood else ""
-        if cleaned_cood.count(',') == 3 and all(part.strip().isdigit() for part in cleaned_cood.split(',')):
+        if cleaned_cood.count(',') == 3 and all(p.strip().isdigit() for p in cleaned_cood.split(',')):
             final_cood = cleaned_cood
         else:
             final_cood = "400,700,550,750"
 
-        sig_email = (signatory_email or "").strip()
-        sig_mobile = (signatory_mobile or "").strip()
         final_callback_url = (callback_url or "").strip() or "https://zoikyc.com/esign/callback"
 
         payload = {
@@ -286,30 +217,31 @@ class CapricornESignProvider(BaseESignProvider):
                 logger.error(f"Capricorn API returned non-200 status {resp.status_code}: {resp.text}")
                 return {
                     "success": False,
-                    "error": f"Capricorn API error (HTTP {resp.status_code}): {resp.text[:200]}"
+                    "error": resp.text,
+                    "raw": resp.text
                 }
 
             data = resp.json()
             response_obj = data.get("response", {})
 
-            # Check if there is an explicit error
+            # Return raw error directly from Capricorn untouched
             if response_obj.get("error"):
-                raw_err = str(response_obj.get("error"))
-                if "Index was outside the bounds of the array" in raw_err:
-                    friendly_err = (
-                        "Incompatible PDF structure: The document appears to be already digitally signed, exported from "
-                        "Microsoft Word with hybrid cross-reference streams, or has empty page content streams. "
-                        "Please re-save the document using 'File -> Print -> Save as PDF' to generate a clean PDF, then re-dispatch."
-                    )
-                    return {
-                        "success": False,
-                        "error": friendly_err,
-                        "raw_error": raw_err
-                    }
                 return {
                     "success": False,
-                    "error": raw_err
+                    "error": str(response_obj.get("error")),
+                    "raw": data
                 }
+
+            # Return status_desc if status indicates failure
+            status = response_obj.get("status")
+            if status is not None and str(status).lower() not in ["0", "success", "ok"]:
+                status_desc = response_obj.get("status_desc") or response_obj.get("error")
+                if status_desc:
+                    return {
+                        "success": False,
+                        "error": str(status_desc),
+                        "raw": data
+                    }
 
             # Extract item details
             items = response_obj.get("responsedata", {}).get("items", {}) if response_obj.get("responsedata") else {}
@@ -325,13 +257,14 @@ class CapricornESignProvider(BaseESignProvider):
             signed_pdf_url = item.get("signedpdfurl")
             returned_txn = item.get("txn") or txn_id
 
-            # Directly use esignurl (continue link) from Capricorn for live signing
             direct_signing_url = esign_url or redirect_url
 
             if not direct_signing_url and not reference:
+                err_msg = response_obj.get("error") or response_obj.get("status_desc") or str(data)
                 return {
                     "success": False,
-                    "error": f"Capricorn did not return redirect/esign URL. Raw response: {data}"
+                    "error": str(err_msg),
+                    "raw": data
                 }
 
             return {
@@ -343,7 +276,6 @@ class CapricornESignProvider(BaseESignProvider):
                 "signed_pdf_url": signed_pdf_url,
                 "raw": data
             }
-
 
         except requests.RequestException as e:
             logger.exception(f"Network error communicating with Capricorn API: {e}")
@@ -360,13 +292,13 @@ class CapricornESignProvider(BaseESignProvider):
 
     def download_signed_pdf(self, signed_pdf_url: str, target_file_path: str) -> bool:
         """
-        Downloads the finalized digitally signed PDF from Capricorn URL and stores it.
-        Supports both direct binary PDF streams and Capricorn's /apij/getdoc Base64 JSON responses.
+        Downloads finalized signed PDF from Capricorn URL and stores it.
+        Handles direct binary stream and Base64 encoded JSON responses.
         """
         try:
             resp = requests.get(signed_pdf_url, timeout=30)
             if resp.status_code != 200:
-                logger.error(f"Failed to download signed PDF from {signed_pdf_url}, status code: {resp.status_code}")
+                logger.error(f"Failed to download signed PDF: status {resp.status_code}")
                 return False
 
             raw_bytes = getattr(resp, 'content', None)
@@ -376,30 +308,27 @@ class CapricornESignProvider(BaseESignProvider):
                 except Exception:
                     raw_bytes = b''
 
-            # Case 1: Direct binary PDF stream
+            # Direct binary stream
             if isinstance(raw_bytes, (bytes, bytearray)) and raw_bytes.startswith(b'%PDF'):
                 self.last_signed_pdf_url = signed_pdf_url
                 os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
                 with open(target_file_path, "wb") as f:
                     f.write(raw_bytes)
-                logger.info(f"Saved binary PDF stream ({len(raw_bytes)} bytes) to {target_file_path}")
                 return True
 
-            # Case 2: Capricorn JSON response containing Base64 encoded signedpdf
+            # Base64 JSON response
             try:
                 data = resp.json()
                 resp_obj = data.get("response", {})
                 resp_data = resp_obj.get("responsedata", {})
                 inner_resp = resp_data.get("response", {}) if isinstance(resp_data, dict) else {}
 
-                # Check if signer has completed signing
                 summary = inner_resp.get("summary", {}) if isinstance(inner_resp, dict) else {}
                 sig_info = summary.get("signatory", {}) if isinstance(summary, dict) else {}
                 if isinstance(sig_info, dict) and sig_info.get("status") == "pending":
-                    logger.info(f"Capricorn document at {signed_pdf_url} is still pending signature.")
+                    logger.info("Document is still pending signature.")
                     return False
 
-                # Extract direct Capricorn signed PDF viewer link (docs/signed/?p=...)
                 viewer_url = (
                     inner_resp.get("signedpdfurl") or
                     resp_data.get("signedpdfurl") or
@@ -410,11 +339,10 @@ class CapricornESignProvider(BaseESignProvider):
                     self.last_signed_pdf_url = viewer_url
 
                 signed_b64 = (
-                    inner_resp.get("signedpdf") or 
-                    resp_obj.get("signedpdf") or 
+                    inner_resp.get("signedpdf") or
+                    resp_obj.get("signedpdf") or
                     data.get("signedpdf")
                 )
-
                 if signed_b64 and isinstance(signed_b64, str):
                     clean_b64 = signed_b64.strip()
                     if ',' in clean_b64 and 'base64' in clean_b64[:50]:
@@ -424,27 +352,17 @@ class CapricornESignProvider(BaseESignProvider):
                         os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
                         with open(target_file_path, "wb") as f:
                             f.write(pdf_decoded)
-                        logger.info(f"Successfully decoded Base64 signed PDF ({len(pdf_decoded)} bytes) to {target_file_path}")
                         return True
-                    else:
-                        logger.error(f"Decoded Base64 does not contain valid PDF header: {pdf_decoded[:30]}")
-                        return False
-                else:
-                    logger.warning(f"No signedpdf found in JSON from {signed_pdf_url}: {data}")
-                    return False
-            except (json.JSONDecodeError, ValueError) as json_err:
-                logger.error(f"Non-PDF, non-JSON response received from {signed_pdf_url}: {json_err}")
-                return False
+            except (json.JSONDecodeError, ValueError):
+                pass
 
+            return False
         except Exception as e:
-            logger.exception(f"Exception downloading signed PDF from {signed_pdf_url}: {e}")
+            logger.exception(f"Exception downloading signed PDF: {e}")
             return False
 
     def get_signed_document_viewer_url(self, txn: str, reference: str) -> Optional[str]:
-        """
-        Queries Capricorn apij/getdoc to extract the direct signed PDF viewer URL
-        (e.g., https://demo.esign.network/docs/signed/?p=...).
-        """
+        """Queries Capricorn apij/getdoc to extract direct signed PDF viewer URL."""
         try:
             url = self.get_apij_getdoc_url(txn, reference)
             resp = requests.get(url, timeout=15)

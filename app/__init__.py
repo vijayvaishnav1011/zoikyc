@@ -71,143 +71,14 @@ def create_app(config_name=None):
     def health_check():
         return {'status': 'healthy', 'service': 'ZoiKYC'}, 200
 
-    # Diagnostic deployment version endpoint
+    # Service health and version endpoints
     @app.route('/version')
     def version_check():
-        pypdf_ok = False
-        pypdf_ver = None
-        try:
-            import pypdf
-            pypdf_ok = True
-            pypdf_ver = getattr(pypdf, '__version__', 'installed')
-        except ImportError:
-            pass
-        import subprocess
-        try:
-            git_commit = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], stderr=subprocess.DEVNULL).decode().strip()
-        except Exception:
-            git_commit = 'unknown'
-        # Verify new parent-resource fix is deployed in capricorn.py
-        cap_fix_deployed = False
-        try:
-            import inspect
-            from app.integrations.capricorn import CapricornESignProvider
-            src = inspect.getsource(CapricornESignProvider.sanitize_pdf_bytes)
-            cap_fix_deployed = 'ROOT CAUSE FIX' in src or 'parent_res' in src
-        except Exception:
-            pass
         return {
+            'service': 'ZoiKYC',
             'version': '2.1.3',
-            'pypdf_installed': pypdf_ok,
-            'pypdf_version': pypdf_ver,
-            'git_commit': git_commit,
-            'capricorn_parent_fix': cap_fix_deployed,
-            'service': 'ZoiKYC'
+            'status': 'active'
         }, 200
-
-    @app.route('/debug-ip')
-    def debug_ip():
-        import requests as rq
-        from flask import jsonify
-        try:
-            r = rq.get('https://api.ipify.org?format=json', timeout=10)
-            outbound_ip = r.json().get('ip', 'unknown')
-        except Exception as e:
-            outbound_ip = f'error: {e}'
-        return jsonify({'outbound_ip': outbound_ip, 'note': 'This is the IP Capricorn sees when we call their API'}), 200
-
-    @app.route('/debug-pdf', methods=['POST'])
-    @csrf.exempt
-    def debug_pdf():
-        import traceback, base64, io, requests
-        from flask import request, jsonify
-        data = request.get_json(silent=True) or {}
-        raw_b64 = (data.get('file_base64') or data.get('pdf_base64') or '').strip()
-        if ',' in raw_b64 and 'base64' in raw_b64[:60]:
-            raw_b64 = raw_b64.split(',', 1)[1].strip()
-
-        info = {}
-        try:
-            pdf_bytes = base64.b64decode(raw_b64)
-            info["original_len"] = len(pdf_bytes)
-            info["starts_with_pdf"] = pdf_bytes.startswith(b'%PDF')
-
-            import pypdf
-            info["pypdf_version"] = getattr(pypdf, '__version__', 'unknown')
-            reader0 = pypdf.PdfReader(io.BytesIO(pdf_bytes))
-            info["pages"] = len(reader0.pages)
-            info["is_encrypted"] = reader0.is_encrypted
-
-            # Inspect per-page /Resources BEFORE sanitize
-            before_page_res = []
-            for p in reader0.pages:
-                pr = p.get('/Resources')
-                if pr is not None and hasattr(pr, 'get_object'): pr = pr.get_object()
-                before_page_res.append(list(pr.keys()) if pr else None)
-            info["before_page_resources"] = before_page_res
-
-            from app.integrations.capricorn import CapricornESignProvider
-            provider = CapricornESignProvider()
-
-            # Use the REAL fixed sanitize_pdf_bytes
-            sanitized_bytes = provider.sanitize_pdf_bytes(pdf_bytes)
-            info["sanitized_len"] = len(sanitized_bytes)
-            info["sanitized_starts_with_pdf"] = sanitized_bytes.startswith(b'%PDF')
-
-            # Inspect per-page /Resources AFTER sanitize
-            reader2 = pypdf.PdfReader(io.BytesIO(sanitized_bytes))
-            after_page_res = []
-            for p in reader2.pages:
-                pr = p.get('/Resources')
-                if pr is not None and hasattr(pr, 'get_object'): pr = pr.get_object()
-                after_page_res.append(list(pr.keys()) if pr else None)
-            info["after_page_resources"] = after_page_res
-
-            clean_b64_str = base64.b64encode(sanitized_bytes).decode('utf-8')
-            txn_id = provider.generate_unique_txn()
-            capricorn_payload = {
-                'request': {
-                    'auth': {'token': provider.token, 'key': provider.key, 'command': 'esign'},
-                    'parameter': {
-                        'uploadpdf': {
-                            'pdf64': clean_b64_str,
-                            'pdfurl': '',
-                            'title': 'Debug Agreement',
-                            'txn': txn_id,
-                            'callbackurl': 'https://zoikyc.com/esign/callback',
-                            'signatories': {
-                                'signatory': {
-                                    'id': 'signatory1',
-                                    'name': data.get('signatory_name', 'Pankaj Vaishnav'),
-                                    'email': 'no-reply@zoikyc.com',
-                                    'mail': '',
-                                    'mobile': '',
-                                    'sms': '',
-                                    'mode': 'online-aadhaar-otp',
-                                    'ekycid': 'esignnetwork',
-                                    'dsc': {'email': '', 'serial': '', 'organization': '', 'orgunit': ''},
-                                    'option': {
-                                        'cood': data.get('cood', '400,20,550,90'),
-                                        'pagenum': data.get('page_num', 'all'),
-                                        'reason': 'Agreement sign',
-                                        'location': 'Delhi',
-                                        'customtext': f"Signed by {data.get('signatory_name', 'Pankaj Vaishnav')}",
-                                        'enableltv': '', 'lockpdf': '', 'enablets': '', 'includesubject': '', 'includecn': ''
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            cap_resp = requests.post(provider.api_url, json=capricorn_payload, timeout=30)
-            info["capricorn_http_code"] = cap_resp.status_code
-            info["capricorn_response"] = cap_resp.json()
-        except Exception as ex:
-            info["exception"] = str(ex)
-            info["traceback"] = traceback.format_exc()
-            
-        return jsonify(info), 200
 
 
     # Root route - Public Landing Page for zoikyc.com
