@@ -294,15 +294,20 @@ class CapricornESignProvider(BaseESignProvider):
                 resp_obj = data.get("response", {})
                 resp_data = resp_obj.get("responsedata", {})
                 
-                viewer_url = resp_data.get("signedpdfurl") or resp_obj.get("signedpdfurl")
+                # The actual payload is sometimes nested in another "response" key inside responsedata
+                inner_resp = resp_data.get("response", {}) if isinstance(resp_data, dict) else {}
+                
+                viewer_url = inner_resp.get("signedpdfurl") or resp_data.get("signedpdfurl") or resp_obj.get("signedpdfurl")
                 if viewer_url:
                     self.last_signed_pdf_url = viewer_url
 
-                signed_b64 = resp_data.get("signedpdf") or resp_obj.get("signedpdf")
+                signed_b64 = inner_resp.get("signedpdf") or resp_data.get("signedpdf") or resp_obj.get("signedpdf")
                 if signed_b64:
                     pdf_decoded = base64.b64decode(signed_b64)
                     if pdf_decoded.startswith(b'%PDF'):
-                        os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
+                        target_dir = os.path.dirname(target_file_path)
+                        if target_dir:
+                            os.makedirs(target_dir, exist_ok=True)
                         with open(target_file_path, "wb") as f:
                             f.write(pdf_decoded)
                         return True
@@ -323,7 +328,10 @@ class CapricornESignProvider(BaseESignProvider):
                 resp_obj = data.get("response", {})
                 resp_data = resp_obj.get("responsedata", {})
                 
-                viewer_url = resp_data.get("signedpdfurl") or resp_obj.get("signedpdfurl")
+                # Handle nested 'response' dictionary inside responsedata
+                inner_resp = resp_data.get("response", {}) if isinstance(resp_data, dict) else {}
+                
+                viewer_url = inner_resp.get("signedpdfurl") or resp_data.get("signedpdfurl") or resp_obj.get("signedpdfurl")
                 if viewer_url:
                     self.last_signed_pdf_url = viewer_url
                     return viewer_url
