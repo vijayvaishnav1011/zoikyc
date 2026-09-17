@@ -105,6 +105,17 @@ def create_app(config_name=None):
             'service': 'ZoiKYC'
         }, 200
 
+    @app.route('/debug-ip')
+    def debug_ip():
+        import requests as rq
+        from flask import jsonify
+        try:
+            r = rq.get('https://api.ipify.org?format=json', timeout=10)
+            outbound_ip = r.json().get('ip', 'unknown')
+        except Exception as e:
+            outbound_ip = f'error: {e}'
+        return jsonify({'outbound_ip': outbound_ip, 'note': 'This is the IP Capricorn sees when we call their API'}), 200
+
     @app.route('/debug-pdf', methods=['POST'])
     @csrf.exempt
     def debug_pdf():
