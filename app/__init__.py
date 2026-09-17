@@ -71,6 +71,21 @@ def create_app(config_name=None):
     def health_check():
         return {'status': 'healthy', 'service': 'ZoiKYC'}, 200
 
+    # Diagnostic deployment version endpoint
+    @app.route('/version')
+    def version_check():
+        pypdf_ok = False
+        try:
+            import pypdf
+            pypdf_ok = True
+        except ImportError:
+            pass
+        return {
+            'version': '2.1.0',
+            'pypdf_installed': pypdf_ok,
+            'service': 'ZoiKYC'
+        }, 200
+
     # Root route - Public Landing Page for zoikyc.com
     @app.route('/')
     def landing():
