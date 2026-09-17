@@ -33,6 +33,7 @@ class ESignDocument(db.Model):
     status = db.Column(db.String(50), nullable=False, default='pending_admin', index=True)
     admin_notes = db.Column(db.Text, nullable=True)
     client_remarks = db.Column(db.Text, nullable=True)
+    callback_url = db.Column(db.String(500), nullable=True)
 
     # Capricorn API identifiers
     capricorn_txn = db.Column(db.String(100), nullable=True, index=True)
@@ -121,9 +122,9 @@ class ESignDocument(db.Model):
             "signatory_email": self.signatory_email,
             "capricorn_txn": self.capricorn_txn,
             "capricorn_reference": self.capricorn_reference,
+            "redirect_url": self.redirect_url,
             "sign_url": self.redirect_url,
             "download_url": f"https://zoikyc.com/api/esign/{self.company.api_key}/{self.id}/download" if (self.company and self.company.api_key) else f"https://zoikyc.com/esign/{self.id}/download?type=signed",
-            "cost_charged": float(self.cost_charged or Decimal('0.00')),
             "ip_address": self.ip_address,
             "server_ip": self.server_ip or '187.127.139.6',
             "method": self.method,
@@ -141,6 +142,9 @@ class ESignDocument(db.Model):
                 "client_id": self.company.client_id if self.company else None,
             }
         }
+        if self.callback_url:
+            data["callback_url"] = self.callback_url
         if self.status == 'signed' and self.signed_pdf_url:
             data["signedpdfurl"] = self.signed_pdf_url
+            data["redirect_url"] = self.signed_pdf_url
         return data

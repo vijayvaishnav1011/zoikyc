@@ -389,8 +389,23 @@ def callback():
     if doc.status == 'signed':
         charge_wallet_for_signed_doc(doc)
         if request.method == 'GET':
-            if not current_app.config.get('TESTING') and doc.signed_pdf_url:
-                return redirect(doc.signed_pdf_url)
+            if not current_app.config.get('TESTING'):
+                if doc.callback_url:
+                    from urllib.parse import urlencode, urlparse, parse_qsl, urlunparse
+                    try:
+                        parsed = urlparse(doc.callback_url)
+                        qs = dict(parse_qsl(parsed.query))
+                        qs.update({
+                            "status": "success",
+                            "doc_id": str(doc.id),
+                            "reference_id": doc.capricorn_reference or "",
+                            "signedpdfurl": doc.signed_pdf_url or ""
+                        })
+                        return redirect(urlunparse(parsed._replace(query=urlencode(qs))))
+                    except Exception:
+                        pass
+                if doc.signed_pdf_url:
+                    return redirect(doc.signed_pdf_url)
             active_key = doc.company.api_key if (doc.company and doc.company.api_key) else None
             if active_key and not current_app.config.get('TESTING'):
                 return redirect(url_for('esign.public_api_esign_download', api_key=active_key, doc_id=doc.id, _external=True))
@@ -400,8 +415,10 @@ def callback():
             "status": "success",
             "message": "Already signed",
             "doc_id": doc.id,
+            "reference_id": doc.capricorn_reference,
+            "redirect_url": doc.callback_url or doc.signed_pdf_url,
             "signedpdfurl": doc.signed_pdf_url,
-            "cost_charged": float(doc.cost_charged or 0)
+            "download_url": url_for('esign.public_api_esign_download', api_key=doc.company.api_key, doc_id=doc.id, _external=True) if (doc.company and doc.company.api_key) else None
         }), 200
 
     # Retrieve signed PDF URL if passed or query Capricorn
@@ -455,9 +472,46 @@ def callback():
     # DEDUCT MONEY ONLY ONCE THE ESIGN IS DONE
     charge_wallet_for_signed_doc(doc)
 
+    # If client provided a callback_url, trigger async webhook notification
+    if doc.callback_url:
+        import threading
+        import requests
+        def _post_client_webhook(cb_url, payload):
+            try:
+                requests.post(cb_url, json=payload, timeout=10)
+            except Exception as ex:
+                current_app.logger.warning(f"Failed to post client callbackurl {cb_url}: {ex}")
+        cb_payload = {
+            "status": "success",
+            "doc_id": doc.id,
+            "reference_id": doc.capricorn_reference,
+            "txn_id": doc.capricorn_txn,
+            "signedpdfurl": doc.signed_pdf_url,
+            "redirect_url": doc.signed_pdf_url,
+            "download_url": url_for('esign.public_api_esign_download', api_key=doc.company.api_key, doc_id=doc.id, _external=True) if (doc.company and doc.company.api_key) else None
+        }
+        t = threading.Thread(target=_post_client_webhook, args=(doc.callback_url, cb_payload))
+        t.daemon = True
+        t.start()
+
     if request.method == 'GET':
-        if not current_app.config.get('TESTING') and doc.signed_pdf_url:
-            return redirect(doc.signed_pdf_url)
+        if not current_app.config.get('TESTING'):
+            if doc.callback_url:
+                from urllib.parse import urlencode, urlparse, parse_qsl, urlunparse
+                try:
+                    parsed = urlparse(doc.callback_url)
+                    qs = dict(parse_qsl(parsed.query))
+                    qs.update({
+                        "status": "success",
+                        "doc_id": str(doc.id),
+                        "reference_id": doc.capricorn_reference or "",
+                        "signedpdfurl": doc.signed_pdf_url or ""
+                    })
+                    return redirect(urlunparse(parsed._replace(query=urlencode(qs))))
+                except Exception:
+                    pass
+            if doc.signed_pdf_url:
+                return redirect(doc.signed_pdf_url)
         active_key = doc.company.api_key if (doc.company and doc.company.api_key) else None
         if active_key and not current_app.config.get('TESTING'):
             return redirect(url_for('esign.public_api_esign_download', api_key=active_key, doc_id=doc.id, _external=True))
@@ -467,9 +521,11 @@ def callback():
     return jsonify({
         "status": "success",
         "doc_id": doc.id,
+        "reference_id": doc.capricorn_reference,
+        "txn_id": doc.capricorn_txn,
+        "redirect_url": doc.callback_url or doc.signed_pdf_url,
         "signedpdfurl": doc.signed_pdf_url,
-        "download_url": url_for('esign.public_api_esign_download', api_key=doc.company.api_key, doc_id=doc.id, _external=True) if (doc.company and doc.company.api_key) else None,
-        "cost_charged": float(doc.cost_charged or 0.0)
+        "download_url": url_for('esign.public_api_esign_download', api_key=doc.company.api_key, doc_id=doc.id, _external=True) if (doc.company and doc.company.api_key) else None
     }), 200
 
 
@@ -683,6 +739,13 @@ def public_api_esign(api_key=None):
     reason = (payload_data.get('reason') or 'Agreement sign').strip()
     location = (payload_data.get('location') or 'Delhi').strip()
     client_remarks = (payload_data.get('client_remarks') or payload_data.get('remarks') or '').strip() or None
+    client_callback_url = (
+        payload_data.get('callback_url') or 
+        payload_data.get('callbackurl') or 
+        payload_data.get('redirect_url') or 
+        payload_data.get('return_url') or 
+        ""
+    ).strip() or None
 
     # Save to disk
     unique_name = f"esign_{uuid.uuid4().hex[:12]}.pdf"
@@ -703,6 +766,7 @@ def public_api_esign(api_key=None):
         signatory_name=signatory_name,
         signatory_mobile=signatory_mobile,
         signatory_email=signatory_email,
+        callback_url=client_callback_url,
         client_remarks=client_remarks,
         page_num=page_num,
         coordinates=coordinates,
@@ -765,24 +829,25 @@ def public_api_esign(api_key=None):
 
         active_key = company.api_key or target_key
         download_api_url = f"https://zoikyc.com/api/esign/{active_key}/{esign_doc.id}/download"
-        return jsonify({
+        from app.utils.timezone import to_ist_iso
+        resp_payload = {
             "success": True,
             "status": "ready_for_signing",
-            "message": "Document successfully created and dispatched for Aadhaar E-Sign. Wallet will be charged once signing is completed.",
+            "message": "Document successfully created and dispatched for Aadhaar E-Sign",
             "document_id": esign_doc.id,
             "reference_id": esign_doc.capricorn_reference,
             "txn_id": esign_doc.capricorn_txn,
+            "redirect_url": esign_doc.redirect_url,
             "sign_url": esign_doc.redirect_url,
             "download_url": download_api_url,
             "signatory_name": esign_doc.signatory_name,
             "signatory_mobile": esign_doc.signatory_mobile,
             "title": esign_doc.title,
-            "billing_status": "charges_on_completion",
-            "per_sign_fee": float(per_sign_fee),
-            "cost_charged": 0.0,
-            "wallet_balance": float(wallet.balance),
-            "created_at": esign_doc.created_at.isoformat()
-        }), 200
+            "created_at": to_ist_iso(esign_doc.created_at)
+        }
+        if esign_doc.callback_url:
+            resp_payload["callback_url"] = esign_doc.callback_url
+        return jsonify(resp_payload), 200
     else:
         error_msg = result.get('error', 'Capricorn Gateway error')
         esign_doc.status = 'failed'

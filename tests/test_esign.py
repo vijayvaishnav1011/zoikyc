@@ -135,9 +135,9 @@ class ESignIntegrationTestCase(unittest.TestCase):
         self.assertEqual(signatory['name'], "Rahul Sharma")
         self.assertEqual(signatory['mode'], "online-aadhaar-otp")
         self.assertEqual(signatory['email'], "rahul@example.com")
-        self.assertEqual(signatory['mail'], "y")
+        self.assertEqual(signatory['mail'], "n")
         self.assertEqual(signatory['mobile'], "9876543210")
-        self.assertEqual(signatory['sms'], "y")
+        self.assertEqual(signatory['sms'], "n")
         self.assertEqual(signatory['option']['pagenum'], "all")
         self.assertEqual(signatory['option']['cood'], "400,20,550,90")
 
@@ -515,6 +515,54 @@ class ESignIntegrationTestCase(unittest.TestCase):
                 self.assertEqual(status_resp.status_code, 200)
                 status_data = status_resp.get_json()
                 self.assertEqual(status_data["document"]["signedpdfurl"], expected_viewer_url)
+
+    @patch('app.integrations.capricorn.requests.post')
+    def test_public_api_clean_response_and_callbackurl(self, mock_post):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "response": {
+                "responsedata": {
+                    "items": {
+                        "item": {
+                            "txn": "49591406",
+                            "reference": "1UCDYQEFALFTNWX",
+                            "esignurl": "https://demo.esign.network/api/esign/v1.0/49591406/1UCDYQEFALFTNWX/signatory1/continue",
+                            "redirecturl": "https://demo.esign.network/api/esign/v1.0/49591406/1UCDYQEFALFTNWX/signatory1/continue",
+                            "signedpdfurl": ""
+                        }
+                    }
+                }
+            }
+        }
+        mock_post.return_value = mock_resp
+
+        self.company.api_key = "zoi_live_test_api_key_clean"
+        db.session.commit()
+
+        with open(self.test_pdf_path, 'rb') as f:
+            b64_pdf = base64.b64encode(f.read()).decode('utf-8')
+        resp = self.client.post('/api/esign/zoi_live_test_api_key_clean', json={
+            "pdf_base64": b64_pdf,
+            "title": "Vendor Contract",
+            "signatory_name": "Vijay Vaishnav",
+            "signatory_mobile": "9999999999",
+            "callbackurl": "http://161.97.150.41/getpdf"
+        })
+
+        self.assertEqual(resp.status_code, 200)
+        data = resp.get_json()
+        self.assertTrue(data.get("success"))
+        self.assertEqual(data.get("status"), "ready_for_signing")
+        self.assertEqual(data.get("message"), "Document successfully created and dispatched for Aadhaar E-Sign")
+        # Ensure billing and wallet details are NOT in response
+        self.assertNotIn("billing_status", data)
+        self.assertNotIn("per_sign_fee", data)
+        self.assertNotIn("cost_charged", data)
+        self.assertNotIn("wallet_balance", data)
+        # Ensure redirect_url and callback_url are present
+        self.assertIn("redirect_url", data)
+        self.assertEqual(data.get("callback_url"), "http://161.97.150.41/getpdf")
 
 if __name__ == '__main__':
     unittest.main()
