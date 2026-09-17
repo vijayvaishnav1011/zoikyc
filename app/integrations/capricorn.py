@@ -69,14 +69,44 @@ class CapricornESignProvider(BaseESignProvider):
         """Generates an 8-digit unique numeric transaction ID as expected by Capricorn API."""
         return str(random.randint(10000000, 99999999))
 
+    def sanitize_pdf_bytes(self, pdf_bytes: bytes) -> bytes:
+        """
+        Reconstructs and sanitizes PDF cross-reference tables and streams.
+        Removes hybrid Microsoft Word / Office 365 xref stream offsets (/XRefStm)
+        and flattens the file into standard PDF 1.4/1.7 so Capricorn's .NET stamper
+        never throws 'Index was outside the bounds of the array'.
+        """
+        try:
+            import io
+            import pypdf
+            reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+            if reader.is_encrypted:
+                try:
+                    reader.decrypt('')
+                except Exception:
+                    pass
+            writer = pypdf.PdfWriter()
+            for page in reader.pages:
+                writer.add_page(page)
+            out_stream = io.BytesIO()
+            writer.write(out_stream)
+            cleaned_bytes = out_stream.getvalue()
+            if cleaned_bytes and cleaned_bytes.startswith(b'%PDF'):
+                return cleaned_bytes
+        except Exception as ex:
+            logger.warning(f"PDF auto-sanitization skipped: {ex}")
+        return pdf_bytes
+
     def convert_pdf_to_base64(self, file_path: str) -> str:
-        """Reads a local PDF file and returns its Base64 encoded string."""
+        """Reads a local PDF file, sanitizes its structure, and returns its Base64 encoded string."""
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"PDF document not found at: {file_path}")
         
         with open(file_path, "rb") as f:
             pdf_bytes = f.read()
-        return base64.b64encode(pdf_bytes).decode("utf-8")
+
+        clean_bytes = self.sanitize_pdf_bytes(pdf_bytes)
+        return base64.b64encode(clean_bytes).decode("utf-8")
 
     def send_document_for_esign(
         self,
