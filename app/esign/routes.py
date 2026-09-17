@@ -843,7 +843,6 @@ def public_api_esign(api_key=None):
             "reference_id": esign_doc.capricorn_reference,
             "txn_id": esign_doc.capricorn_txn,
             "sign_url": sign_api_url,
-            "redirect_url": esign_doc.redirect_url,
             "download_url": download_api_url,
             "callback_url": esign_doc.callback_url or "",
             "signatory_name": esign_doc.signatory_name,
