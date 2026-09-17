@@ -102,7 +102,7 @@
           <i class="bi bi-paperclip" style="color: var(--tiancai-blue);"></i> {{ uploaded.document_name }}
         </div>
         <div style="font-size: 0.72rem; color: var(--text-light); margin-top: 3px;">
-          Uploaded: {{ uploaded.created_at.strftime('%b %d, %Y %H:%M') if uploaded.created_at else '' }}
+          Uploaded: {{ uploaded.created_at|to_ist('%b %d, %Y %I:%M %p') if uploaded.created_at else '' }}
         </div>
         {% if uploaded.notes %}
         <div style="font-size: 0.75rem; color: #7e22ce; margin-top: 4px;">

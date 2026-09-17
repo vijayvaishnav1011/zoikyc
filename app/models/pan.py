@@ -94,8 +94,9 @@ class PANVerification(db.Model):
         created_iso = None
         try:
             if self.created_at:
-                created_str = self.created_at.strftime("%Y-%m-%d %H:%M:%S UTC")
-                created_iso = self.created_at.isoformat()
+                from app.utils.timezone import format_ist, to_ist_iso
+                created_str = format_ist(self.created_at, "%d %b %Y, %I:%M:%S %p IST")
+                created_iso = to_ist_iso(self.created_at)
         except Exception:
             pass
 

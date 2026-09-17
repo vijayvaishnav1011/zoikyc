@@ -135,7 +135,7 @@
             <span class="metric-badge badge-active">{{ txn.status | capitalize }}</span>
           </td>
           <td style="color: var(--text-muted); font-size: 0.8rem;">
-            {{ txn.created_at.strftime('%b %d, %Y %H:%M') if txn.created_at else 'N/A' }}
+            {{ txn.created_at|to_ist('%b %d, %Y %I:%M %p') if txn.created_at else 'N/A' }}
           </td>
         </tr>
         {% endfor %}

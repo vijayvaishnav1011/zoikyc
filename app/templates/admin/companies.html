@@ -159,7 +159,7 @@
 
           <!-- 7. Registered Date -->
           <td style="color: #64748b; font-size: 0.82rem; white-space: nowrap;">
-            {{ comp.created_at.strftime('%b %d, %Y') if comp.created_at else 'N/A' }}
+            {{ comp.created_at|to_ist('%b %d, %Y') if comp.created_at else 'N/A' }}
           </td>
 
           <!-- 8. Actions Group -->

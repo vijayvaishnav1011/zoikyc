@@ -3,6 +3,7 @@ import json
 from datetime import datetime, timezone
 from decimal import Decimal
 from app.extensions import db
+from app.utils.timezone import to_ist_iso
 
 class ESignDocument(db.Model):
     __tablename__ = 'esign_documents'
@@ -131,9 +132,9 @@ class ESignDocument(db.Model):
             "duration_ms": self.duration_ms,
             "raw_request": self.request_dict,
             "raw_response": self.response_dict,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "dispatched_at": self.dispatched_at.isoformat() if self.dispatched_at else None,
-            "signed_at": self.signed_at.isoformat() if self.signed_at else None,
+            "created_at": to_ist_iso(self.created_at),
+            "dispatched_at": to_ist_iso(self.dispatched_at),
+            "signed_at": to_ist_iso(self.signed_at),
             "company": {
                 "id": self.company.id if self.company else None,
                 "name": self.company.name if self.company else None,

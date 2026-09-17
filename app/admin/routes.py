@@ -15,6 +15,7 @@ from app.models.document import CompanyDocument
 from app.models.setting import SystemSetting, get_platform_fee_config
 from app.models.esign import ESignDocument
 from app.integrations.capricorn import CapricornESignProvider
+from app.utils.timezone import format_ist
 
 REQUIRED_KYC_DOCS = [
     ('certificate_of_incorporation', 'Certificate of Incorporation'),
@@ -678,7 +679,7 @@ def esign_log_details(doc_id):
             "method": doc.method or 'E-Sign Gateway',
             "endpoint": doc.endpoint or '/api/esign',
             "duration_ms": doc.duration_ms or 0,
-            "created_at": doc.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") if doc.created_at else "-",
+            "created_at": format_ist(doc.created_at, "%d %b %Y, %I:%M:%S %p IST") if doc.created_at else "-",
             "raw_request": doc.request_dict,
             "raw_response": doc.response_dict,
             "user": {"email": doc.created_by.email if doc.created_by else "Public API"},
@@ -962,7 +963,7 @@ def pan_verification_details(log_id):
             "ip_address": getattr(log, 'ip_address', '127.0.0.1') or '127.0.0.1',
             "method": getattr(log, 'method', 'CVL KRA'),
             "duration_ms": getattr(log, 'duration_ms', 0) or 0,
-            "created_at": log.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") if log.created_at else "-",
+            "created_at": format_ist(log.created_at, "%d %b %Y, %I:%M:%S %p IST") if log.created_at else "-",
             "raw_request": log.raw_request or "",
             "raw_response": log.raw_response or "",
             "user": {"email": log.user.email if log.user else "Public API"},

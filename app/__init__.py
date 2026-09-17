@@ -21,6 +21,8 @@ def create_app(config_name=None):
     csrf.init_app(app)
 
     # Register Jinja2 filters
+    from app.utils.timezone import to_ist, format_ist
+
     @app.template_filter('currency')
     def format_currency(value):
         if value is None:
@@ -30,6 +32,22 @@ def create_app(config_name=None):
             return f"₹{val:,.2f}"
         except (ValueError, TypeError):
             return "₹0.00"
+
+    @app.template_filter('to_ist')
+    def jinja_to_ist(value, fmt=None):
+        return to_ist(value, fmt=fmt)
+
+    @app.template_filter('ist_datetime')
+    def jinja_ist_datetime(value, fmt="%d %b %Y, %I:%M %p"):
+        return format_ist(value, fmt=fmt)
+
+    @app.template_filter('ist_date')
+    def jinja_ist_date(value, fmt="%d %b %Y"):
+        return format_ist(value, fmt=fmt)
+
+    @app.template_filter('ist_time')
+    def jinja_ist_time(value, fmt="%I:%M %p"):
+        return format_ist(value, fmt=fmt)
 
     # Register Blueprints
     from app.auth import auth_bp

@@ -13,6 +13,7 @@ from app.extensions import db
 from app.models.wallet import Wallet
 from app.models.transaction import WalletTransaction
 from app.models.setting import get_platform_fee_config
+from app.utils.timezone import now_ist
 
 def calculate_recharge_amounts(base_amount_inr):
     """
@@ -113,7 +114,7 @@ def process_wallet_recharge(company_id, amount, payment_method='razorpay', refer
         wallet.updated_at = datetime.now(timezone.utc)
 
         # Unique reference ID
-        unique_ref = reference_id or f"{reference_prefix}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:6].upper()}"
+        unique_ref = reference_id or f"{reference_prefix}_{now_ist().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:6].upper()}"
 
         # Create Ledger Transaction Record
         transaction = WalletTransaction(
@@ -236,7 +237,7 @@ def send_wallet_recharge_email(to_email, user_name, company_name, amount, platfo
     Asynchronously dispatches a branded HTML email confirmation to the user upon wallet recharge.
     """
     app = current_app._get_current_object()
-    txn_date = datetime.now().strftime("%d %b %Y, %I:%M %p IST")
+    txn_date = now_ist().strftime("%d %b %Y, %I:%M %p IST")
     thread = threading.Thread(
         target=_async_send_recharge_email_task,
         args=(app, to_email, user_name, company_name, client_id, gstin, address, amount, platform_fee, total_paid, updated_balance, reference_id, txn_date)

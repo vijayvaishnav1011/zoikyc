@@ -101,7 +101,7 @@
             <span class="saas-status-badge badge-active"><i class="bi bi-check-circle-fill"></i> {{ txn.status | capitalize }}</span>
           </td>
           <td style="color: #64748b; font-size: 0.8rem; white-space: nowrap;">
-            {{ txn.created_at.strftime('%b %d, %Y %H:%M:%S') if txn.created_at else 'N/A' }}
+            {{ txn.created_at|to_ist('%b %d, %Y %I:%M:%S %p') if txn.created_at else 'N/A' }}
           </td>
         </tr>
         {% endfor %}

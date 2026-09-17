@@ -14,6 +14,7 @@ import re
 import logging
 import xml.etree.ElementTree as ET
 from datetime import datetime
+from app.utils.timezone import now_ist
 
 import requests
 import base64
@@ -605,7 +606,7 @@ class PANVerificationProvider(BaseKYCProvider):
 
         reference_id = (
             kyc_data.get("BATCH_ID") or
-            f"CVL-{creds['poscode']}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            f"CVL-{creds['poscode']}-{now_ist().strftime('%Y%m%d%H%M%S')}"
         )
 
         return {
@@ -743,11 +744,11 @@ class PANVerificationProvider(BaseKYCProvider):
             "aadhaar_seeding_status": "LINKED (Aadhaar — Permanent Address)",
             "reference_id":         f"CVL-DEMO-{os.urandom(3).hex().upper()}",
             "method":               "GetPANStatus",
-            "status_date":          datetime.now().strftime("%d/%m/%Y"),
+            "status_date":          now_ist().strftime("%d/%m/%Y"),
             "kyc_mode":             "Normal KYC",
             "ipv_flag":             "Y",
             "remarks":              "",
-            "response_date":        datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+            "response_date":        now_ist().strftime("%d/%m/%Y %H:%M:%S"),
             "raw_response": {
                 "APP_PAN_NO":   pan_clean,
                 "APP_NAME":     sim_name,
@@ -755,7 +756,7 @@ class PANVerificationProvider(BaseKYCProvider):
                 "APP_KYC_MODE": "0",
                 "APP_IPV_FLAG": "Y",
                 "APP_PER_ADD_PROOF": "31",
-                "APP_STATUSDT": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                "APP_STATUSDT": now_ist().strftime("%d/%m/%Y %H:%M:%S"),
                 "NOTE":         "DEMO MODE — CVL KRA credentials not configured",
             },
         }

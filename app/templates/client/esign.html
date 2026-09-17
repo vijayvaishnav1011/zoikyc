@@ -193,8 +193,8 @@
 
           <!-- 5. Created Date -->
           <td style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap;">
-            {{ doc.created_at.strftime('%d %b %Y') }}<br>
-            <span style="font-size: 0.72rem;">{{ doc.created_at.strftime('%I:%M %p') }}</span>
+            {{ doc.created_at|to_ist('%d %b %Y') }}<br>
+            <span style="font-size: 0.72rem;">{{ doc.created_at|to_ist('%I:%M %p') }}</span>
           </td>
 
           <!-- 6. Actions -->

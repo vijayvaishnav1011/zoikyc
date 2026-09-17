@@ -56,7 +56,7 @@
           <td>{{ txn.description }}</td>
           <td><span class="metric-badge badge-active">{{ txn.status | capitalize }}</span></td>
           <td style="color: var(--text-muted); font-size: 0.82rem;">
-            {{ txn.created_at.strftime('%b %d, %Y %H:%M') if txn.created_at else '' }}
+            {{ txn.created_at|to_ist('%b %d, %Y %I:%M %p') if txn.created_at else '' }}
           </td>
         </tr>
         {% endfor %}
