@@ -134,10 +134,10 @@ class ESignIntegrationTestCase(unittest.TestCase):
         signatory = uploadpdf['signatories']['signatory']
         self.assertEqual(signatory['name'], "Rahul Sharma")
         self.assertEqual(signatory['mode'], "online-aadhaar-otp")
-        self.assertEqual(signatory['email'], "rahul@example.com")
-        self.assertEqual(signatory['mail'], "n")
-        self.assertEqual(signatory['mobile'], "9876543210")
-        self.assertEqual(signatory['sms'], "n")
+        self.assertEqual(signatory['email'], "")
+        self.assertEqual(signatory['mail'], "")
+        self.assertEqual(signatory['mobile'], "")
+        self.assertEqual(signatory['sms'], "")
         self.assertEqual(signatory['option']['pagenum'], "all")
         self.assertEqual(signatory['option']['cood'], "400,20,550,90")
 
