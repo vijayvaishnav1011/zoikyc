@@ -288,31 +288,18 @@ class CapricornESignProvider(BaseESignProvider):
                 resp_data = resp_obj.get("responsedata", {})
                 inner_resp = resp_data.get("response", {}) if isinstance(resp_data, dict) else {}
 
-                summary = inner_resp.get("summary", {}) if isinstance(inner_resp, dict) else {}
-                sig_info = summary.get("signatory", {}) if isinstance(summary, dict) else {}
-                if isinstance(sig_info, dict) and sig_info.get("status") == "pending":
-                    logger.info("Document is still pending signature.")
-                    return False
-
-                viewer_url = (
-                    inner_resp.get("signedpdfurl") or
-                    resp_data.get("signedpdfurl") or
-                    resp_obj.get("signedpdfurl") or
-                    data.get("signedpdfurl")
-                )
-                if viewer_url and isinstance(viewer_url, str):
+            try:
+                data = resp.json()
+                resp_obj = data.get("response", {})
+                resp_data = resp_obj.get("responsedata", {})
+                
+                viewer_url = resp_data.get("signedpdfurl") or resp_obj.get("signedpdfurl")
+                if viewer_url:
                     self.last_signed_pdf_url = viewer_url
 
-                signed_b64 = (
-                    inner_resp.get("signedpdf") or
-                    resp_obj.get("signedpdf") or
-                    data.get("signedpdf")
-                )
-                if signed_b64 and isinstance(signed_b64, str):
-                    clean_b64 = signed_b64.strip()
-                    if ',' in clean_b64 and 'base64' in clean_b64[:50]:
-                        clean_b64 = clean_b64.split(',', 1)[1].strip()
-                    pdf_decoded = base64.b64decode(clean_b64)
+                signed_b64 = resp_data.get("signedpdf") or resp_obj.get("signedpdf")
+                if signed_b64:
+                    pdf_decoded = base64.b64decode(signed_b64)
                     if pdf_decoded.startswith(b'%PDF'):
                         os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
                         with open(target_file_path, "wb") as f:
@@ -320,7 +307,6 @@ class CapricornESignProvider(BaseESignProvider):
                         return True
             except (json.JSONDecodeError, ValueError):
                 pass
-
             return False
         except Exception as e:
             logger.exception(f"Exception downloading signed PDF: {e}")
@@ -335,16 +321,11 @@ class CapricornESignProvider(BaseESignProvider):
                 data = resp.json()
                 resp_obj = data.get("response", {})
                 resp_data = resp_obj.get("responsedata", {})
-                inner_resp = resp_data.get("response", {}) if isinstance(resp_data, dict) else {}
-                viewer_url = (
-                    inner_resp.get("signedpdfurl") or
-                    resp_data.get("signedpdfurl") or
-                    resp_obj.get("signedpdfurl") or
-                    data.get("signedpdfurl")
-                )
-                if viewer_url and isinstance(viewer_url, str):
+                
+                viewer_url = resp_data.get("signedpdfurl") or resp_obj.get("signedpdfurl")
+                if viewer_url:
                     self.last_signed_pdf_url = viewer_url
                     return viewer_url
         except Exception as e:
-            logger.warning(f"Failed to fetch Capricorn signed viewer URL for txn={txn}, ref={reference}: {e}")
+            logger.warning(f"Failed to fetch Capricorn signed viewer URL: {e}")
         return None
