@@ -121,6 +121,7 @@ class CapricornESignProvider(BaseESignProvider):
 
         sig_email = (signatory_email or "").strip()
         sig_mobile = (signatory_mobile or "").strip()
+        final_callback_url = (callback_url or "").strip() or "https://zoikyc.com/esign/callback"
 
         payload = {
             "request": {
@@ -135,7 +136,7 @@ class CapricornESignProvider(BaseESignProvider):
                         "pdfurl": "",
                         "title": doc_title[:100],
                         "txn": txn_id,
-                        "callbackurl": callback_url,
+                        "callbackurl": final_callback_url,
                         "signatories": {
                             "signatory": {
                                 "id": "signatory1",
