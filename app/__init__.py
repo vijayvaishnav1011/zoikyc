@@ -82,10 +82,16 @@ def create_app(config_name=None):
             pypdf_ver = getattr(pypdf, '__version__', 'installed')
         except ImportError:
             pass
+        import subprocess
+        try:
+            git_commit = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], stderr=subprocess.DEVNULL).decode().strip()
+        except Exception:
+            git_commit = 'unknown'
         return {
-            'version': '2.1.2',
+            'version': '2.1.3',
             'pypdf_installed': pypdf_ok,
             'pypdf_version': pypdf_ver,
+            'git_commit': git_commit,
             'service': 'ZoiKYC'
         }, 200
 
