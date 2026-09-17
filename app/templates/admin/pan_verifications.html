@@ -246,50 +246,6 @@
 {% endblock %}
 
 {% block content %}
-<!-- Top Metrics Row -->
-<div class="audit-metrics-grid">
-  <!-- Card 1: Total Verifications -->
-  <div class="audit-metric-card metric-card-purple">
-    <div class="metric-top-row">
-      <span class="metric-label">Total Verifications</span>
-      <div class="metric-icon-wrap" style="background: #faf5ff; color: #7e22ce;">
-        <i class="bi bi-hdd-network-fill"></i>
-      </div>
-    </div>
-    <div class="metric-val">{{ total_logs }}</div>
-    <div class="metric-sub">
-      <i class="bi bi-diagram-3"></i> Total outbound calls logged
-    </div>
-  </div>
-
-  <!-- Card 2: Verified Successfully -->
-  <div class="audit-metric-card metric-card-emerald">
-    <div class="metric-top-row">
-      <span class="metric-label">Verified Records</span>
-      <div class="metric-icon-wrap" style="background: #ecfdf5; color: #10b981;">
-        <i class="bi bi-check-circle-fill"></i>
-      </div>
-    </div>
-    <div class="metric-val" style="color: #059669;">{{ verified_logs }}</div>
-    <div class="metric-sub" style="color: #059669;">
-      <i class="bi bi-shield-check"></i> Valid KRA records matched
-    </div>
-  </div>
-
-  <!-- Card 3: Failed / Restrictions -->
-  <div class="audit-metric-card metric-card-rose">
-    <div class="metric-top-row">
-      <span class="metric-label">Failed / Blocked</span>
-      <div class="metric-icon-wrap" style="background: #fff1f2; color: #ef4444;">
-        <i class="bi bi-shield-x"></i>
-      </div>
-    </div>
-    <div class="metric-val" style="color: #e11d48;">{{ failed_logs }}</div>
-    <div class="metric-sub" style="color: #e11d48;">
-      <i class="bi bi-exclamation-octagon"></i> IP whitelist / Auth errors
-    </div>
-  </div>
-</div>
 
 <!-- Main Table Container Card -->
 <div class="card" style="padding: 24px; border: 1px solid #e2e8f0; border-radius: var(--radius-xl); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);">

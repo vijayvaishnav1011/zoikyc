@@ -337,65 +337,7 @@
 {% endblock %}
 
 {% block content %}
-<!-- Overview Metrics Grid -->
-<div class="audit-metrics-grid">
-  <!-- 1. Total Requests -->
-  <div class="audit-metric-card metric-card-purple">
-    <div class="metric-top-row">
-      <div class="metric-label">Total E-Sign Requests</div>
-      <div class="metric-icon-wrap" style="background: #faf5ff; color: #9333ea;">
-        <i class="bi bi-pen-fill"></i>
-      </div>
-    </div>
-    <div class="metric-val">{{ total_logs }}</div>
-    <div class="metric-sub">
-      <i class="bi bi-diagram-3-fill"></i> Across all registered client organisations
-    </div>
-  </div>
-
-  <!-- 2. Signed & Verified -->
-  <div class="audit-metric-card metric-card-emerald">
-    <div class="metric-top-row">
-      <div class="metric-label">Signed & Verified</div>
-      <div class="metric-icon-wrap" style="background: #ecfdf5; color: #059669;">
-        <i class="bi bi-check-circle-fill"></i>
-      </div>
-    </div>
-    <div class="metric-val" style="color: #059669;">{{ signed_logs }}</div>
-    <div class="metric-sub" style="color: #059669;">
-      <i class="bi bi-wallet2"></i> Legally executed & debited (dynamic KYC rate)
-    </div>
-  </div>
-
-  <!-- 3. Awaiting Signer OTP -->
-  <div class="audit-metric-card metric-card-amber">
-    <div class="metric-top-row">
-      <div class="metric-label">Awaiting Signer OTP</div>
-      <div class="metric-icon-wrap" style="background: #fffbeb; color: #d97706;">
-        <i class="bi bi-hourglass-split"></i>
-      </div>
-    </div>
-    <div class="metric-val" style="color: #d97706;">{{ pending_logs }}</div>
-    <div class="metric-sub" style="color: #d97706;">
-      <i class="bi bi-link-45deg"></i> Signing session active (No charge yet)
-    </div>
-  </div>
-
-  <!-- 4. Failed / Errors -->
-  <div class="audit-metric-card metric-card-rose">
-    <div class="metric-top-row">
-      <div class="metric-label">Failed / Gateway Errors</div>
-      <div class="metric-icon-wrap" style="background: #fef2f2; color: #dc2626;">
-        <i class="bi bi-x-circle-fill"></i>
-      </div>
-    </div>
-    <div class="metric-val" style="color: #dc2626;">{{ failed_logs }}</div>
-    <div class="metric-sub" style="color: #dc2626;">
-      <i class="bi bi-shield-x"></i> Rejected or gateway failure
-    </div>
-  </div>
-</div>
-
+<!-- Overview Metrics Grid Removed for a cleaner UI -->
 <!-- Main Table Container Card -->
 <div class="card" style="padding: 24px; border: 1px solid #e2e8f0; border-radius: var(--radius-xl); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);">
 
@@ -406,9 +348,6 @@
         <span>E-Sign Document & API Traffic Logs</span>
         <span class="saas-count-badge">{{ total_logs }} Total</span>
       </h3>
-      <div class="saas-page-subtitle">
-        Real-time developer audit trail of all Aadhaar E-Sign sessions, Capricorn network payloads, customer signing links, wallet billing status, and client IPs.
-      </div>
     </div>
 
     <div>
