@@ -18,17 +18,32 @@ class CapricornESignProvider(BaseESignProvider):
     Supports Base64 PDF transmission, online-aadhaar-otp signing, and signed document retrieval.
     """
 
-    POST_JSON_URL = "https://demo.esign.network/op/api/v1.0/postjson"
-    POST_XML_URL = "https://demo.esign.network/op/api/v1.0/postxml"
+    POST_JSON_URL = "https://www.esign.network/op/api/v1.0/postjson"
+    POST_XML_URL = "https://www.esign.network/op/api/v1.0/postxml"
     DEFAULT_API_URL = POST_JSON_URL
-    DEFAULT_TOKEN = "4352F73EEDAB18ADEAF33FDA7C35BC9013E5E704"
-    DEFAULT_KEY = "QkXVeIcZZtdNvPnotGoXqG4hO9Os0@@@@@@sfp4bigUC4pgZTgUrKS4Tkew=="
+    DEFAULT_TOKEN = "1D70678680F404BF92E4618FDF5D39A518D9F192"
+    DEFAULT_KEY = "hLIc0TqVMt6aH4asHxpqlwloVZfL7raq8X8NSWu2OVCo$$$$$$shodIaK5g=="
 
     def __init__(self, api_url: Optional[str] = None, token: Optional[str] = None, key: Optional[str] = None):
-        self.api_url = api_url or os.environ.get('CAPRICORN_API_URL', self.DEFAULT_API_URL)
+        raw_url = api_url or os.environ.get('CAPRICORN_API_URL', self.DEFAULT_API_URL)
+        if raw_url:
+            raw_url = raw_url.replace("www..esign.network", "www.esign.network")
+        self.api_url = raw_url
         self.token = token or os.environ.get('CAPRICORN_API_TOKEN', self.DEFAULT_TOKEN)
         self.key = key or os.environ.get('CAPRICORN_API_KEY', self.DEFAULT_KEY)
         self.last_signed_pdf_url: Optional[str] = None
+
+    @property
+    def base_host(self) -> str:
+        if self.api_url and "www.esign.network" in self.api_url:
+            return "https://www.esign.network"
+        return "https://demo.esign.network"
+
+    def get_apij_getdoc_url(self, txn: str, reference: str) -> str:
+        return f"{self.base_host}/apij/getdoc/v1.0/{txn}/{reference}"
+
+    def get_portal_url(self) -> str:
+        return f"{self.base_host}/esigndoc/"
 
     def get_provider_name(self) -> str:
         return "Capricorn Identity Services"
@@ -212,7 +227,7 @@ class CapricornESignProvider(BaseESignProvider):
                 "success": True,
                 "txn": returned_txn,
                 "reference": reference,
-                "redirect_url": direct_signing_url or "https://demo.esign.network/esigndoc/",
+                "redirect_url": direct_signing_url or self.get_portal_url(),
                 "esign_url": esign_url,
                 "signed_pdf_url": signed_pdf_url,
                 "raw": data
@@ -320,7 +335,7 @@ class CapricornESignProvider(BaseESignProvider):
         (e.g., https://demo.esign.network/docs/signed/?p=...).
         """
         try:
-            url = f"https://demo.esign.network/apij/getdoc/v1.0/{txn}/{reference}"
+            url = self.get_apij_getdoc_url(txn, reference)
             resp = requests.get(url, timeout=15)
             if resp.status_code == 200:
                 data = resp.json()

@@ -241,7 +241,7 @@ def download(doc_id):
 
         if need_download:
             capricorn = CapricornESignProvider()
-            download_url = doc.signed_pdf_url or f"https://demo.esign.network/apij/getdoc/v1.0/{doc.capricorn_txn}/{doc.capricorn_reference}"
+            download_url = doc.signed_pdf_url or (capricorn.get_apij_getdoc_url(doc.capricorn_txn, doc.capricorn_reference) if doc.capricorn_txn and doc.capricorn_reference else None)
             signed_name = f"signed_{os.path.basename(doc.file_path)}"
             target_dir = os.path.join(current_app.root_path, 'uploads', 'esign', str(doc.company_id))
             target_path = os.path.join(target_dir, signed_name)
@@ -270,8 +270,9 @@ def download(doc_id):
 @esign_bp.route('/esign/portal')
 @login_required
 def direct_portal():
-    """Direct shortcut to open Capricorn Demo E-Sign portal."""
-    return redirect("https://demo.esign.network/esigndoc/")
+    """Direct shortcut to open Capricorn E-Sign portal."""
+    capricorn = CapricornESignProvider()
+    return redirect(capricorn.get_portal_url())
 
 @esign_bp.route('/esign/<int:doc_id>/sign')
 @login_required
@@ -289,7 +290,8 @@ def sign(doc_id):
         flash("This document has already been digitally signed and sealed.", "info")
     else:
         # If pending or without active session, direct to the live portal
-        return redirect("https://demo.esign.network/esigndoc/")
+        capricorn = CapricornESignProvider()
+        return redirect(capricorn.get_portal_url())
 
     return redirect(url_for('esign.index'))
 
@@ -423,7 +425,7 @@ def callback():
 
     # Retrieve signed PDF URL if passed or query Capricorn
     capricorn = CapricornESignProvider()
-    api_getdoc_url = f"https://demo.esign.network/apij/getdoc/v1.0/{doc.capricorn_txn}/{doc.capricorn_reference}" if doc.capricorn_txn and doc.capricorn_reference else None
+    api_getdoc_url = capricorn.get_apij_getdoc_url(doc.capricorn_txn, doc.capricorn_reference) if doc.capricorn_txn and doc.capricorn_reference else None
     download_url = signed_pdf_url or api_getdoc_url or doc.signed_pdf_url
     if download_url:
         signed_name = f"signed_{os.path.basename(doc.file_path)}"
@@ -921,7 +923,7 @@ def public_api_esign_download(api_key, doc_id):
 
     if need_download:
         capricorn = CapricornESignProvider()
-        download_url = doc.signed_pdf_url or f"https://demo.esign.network/apij/getdoc/v1.0/{doc.capricorn_txn}/{doc.capricorn_reference}"
+        download_url = doc.signed_pdf_url or (capricorn.get_apij_getdoc_url(doc.capricorn_txn, doc.capricorn_reference) if doc.capricorn_txn and doc.capricorn_reference else None)
         signed_name = f"signed_{os.path.basename(doc.file_path)}"
         target_dir = os.path.join(current_app.root_path, 'uploads', 'esign', str(doc.company_id))
         target_path = os.path.join(target_dir, signed_name)
