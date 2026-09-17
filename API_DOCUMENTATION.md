@@ -373,22 +373,29 @@ Directly streams or downloads the finalized digitally signed PDF file from ZoiKY
 When the customer completes Aadhaar OTP verification:
 
 1. **Browser Redirection**:
-   - **If `callback_url` is provided**: Signer is redirected to:
-     `{callback_url}?document_id={document_id}&status=success&reference_id={reference_id}&download_url={download_url}`
+   - **If `callback_url` is provided**: Signer is redirected to your front-end:
+     `{callback_url}?document_id={document_id}&status=success&reference_id={reference_id}&signedpdfurl={signedpdfurl}`
    - **If `callback_url` is blank `""`**: Signer is redirected directly to download their signed PDF from ZoiKYC:
      `https://zoikyc.com/api/esign/{YOUR_API_KEY}/{document_id}/download`
 
-2. **Server-to-Server Webhook**:
-   If `callback_url` was provided, ZoiKYC sends an asynchronous background `POST` request to your webhook URL:
+2. **Server-to-Server Webhook (POST)**:
+   If `callback_url` was provided, ZoiKYC sends an asynchronous background `POST` request to your webhook URL immediately when the signature is complete. 
+   
+   **Webhook JSON Payload sent to your server:**
 ```json
 {
   "status": "success",
   "document_id": 19,
   "reference_id": "1UCDYQEFALFTNWX",
   "txn_id": "49591406",
-  "download_url": "https://zoikyc.com/api/esign/YOUR_API_KEY/19/download"
+  "download_url": "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY/19/download"
 }
 ```
+
+> [!TIP]
+> **How to test Webhooks easily:**
+> Pass `"callback_url": "https://zoikyc.com/api/test-webhook"` in your document dispatch payload.
+> When the document is signed, ZoiKYC will fire the webhook to this test endpoint, and you can see the exact payload printed in your server logs!
 
 ---
 
