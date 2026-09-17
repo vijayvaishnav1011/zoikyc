@@ -275,12 +275,9 @@ def direct_portal():
     return redirect(capricorn.get_portal_url())
 
 @esign_bp.route('/esign/<int:doc_id>/sign')
-@login_required
 def sign(doc_id):
     doc = ESignDocument.query.get_or_404(doc_id)
 
-    if current_user.role != 'super_admin' and doc.company_id != current_user.company_id:
-        abort(403)
 
     if doc.status == 'sent_to_capricorn' and doc.redirect_url:
         return redirect(doc.redirect_url)
