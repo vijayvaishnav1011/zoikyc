@@ -581,12 +581,12 @@ function testCvlConnection(companyId) {
 
 </div>
 
-<!-- Recent Transactions of This Client -->
+<!-- Transactions of This Client -->
 <div class="card" style="margin-top: 24px;">
   <div class="saas-page-title-group" style="margin-bottom: 18px;">
     <h3>
-      <span>Recent Transactions</span>
-      <span class="saas-count-badge">{{ transactions | length }} Recent</span>
+      <span>Transactions</span>
+      <span class="saas-count-badge">{{ transactions | length }} Transactions</span>
     </h3>
   </div>
 
@@ -634,8 +634,7 @@ function testCvlConnection(companyId) {
   {% else %}
   <div
     style="text-align: center; padding: 36px 20px; color: var(--text-muted); background: #f8fafc; border-radius: 12px; border: 1.5px dashed #cbd5e1;">
-    <p style="margin: 0; font-size: 0.88rem;">No transactions recorded for this client organisation yet.
-    </p>
+    <p style="margin: 0; font-size: 0.88rem;">No transactions yet.</p>
   </div>
   {% endif %}
 </div>
