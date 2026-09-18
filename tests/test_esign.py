@@ -593,5 +593,83 @@ class ESignIntegrationTestCase(unittest.TestCase):
         self.assertEqual(resp2.status_code, 200)
         self.assertEqual(resp2.mimetype, 'application/pdf')
 
+    def test_capricorn_callback_cancelled_no_charge_and_clean_redirect(self):
+        """Verify that when signing is cancelled, wallet is not charged and callback redirect contains no download_url."""
+        initial_balance = self.wallet.balance
+        doc = ESignDocument(
+            company_id=self.company.id,
+            title="Clean Cancellation Agreement",
+            original_filename="cancel_test.pdf",
+            file_path="uploads/esign/2/cancel_test.pdf",
+            signatory_name="Pankaj Vaishnav",
+            signatory_mobile="9876543210",
+            capricorn_txn="88889999",
+            capricorn_reference="REFCANCEL123",
+            callback_url="https://www.cleantestagent.com/callback",
+            status="sent_to_capricorn",
+            cost_charged=Decimal("25.00")
+        )
+        db.session.add(doc)
+        db.session.commit()
+
+        # Capricorn callback with status=2txn=88889999 (common Capricorn concatenated format for Cancel)
+        resp = self.client.get('/esign/callback?reference=REFCANCEL123&status=2txn=88889999')
+        self.assertEqual(resp.status_code, 302)
+
+        # Ensure document status was updated to cancelled
+        updated_doc = db.session.get(ESignDocument, doc.id)
+        self.assertEqual(updated_doc.status, "cancelled")
+
+        # Ensure wallet was NOT charged
+        updated_wallet = db.session.get(Wallet, self.wallet.id)
+        self.assertEqual(updated_wallet.balance, initial_balance)
+
+        # Ensure redirect URL has status=cancelled and NO download_url
+        location = resp.headers.get('Location')
+        self.assertIn("https://www.cleantestagent.com/callback", location)
+        self.assertIn("status=cancelled", location)
+        self.assertIn(f"document_id={doc.id}", location)
+        self.assertIn("reference_id=REFCANCEL123", location)
+        self.assertNotIn("download_url", location)
+
+        # Ensure public download returns 400 without downloading
+        dl_resp = self.client.get(f'/api/esign/download/{doc.id}')
+        self.assertEqual(dl_resp.status_code, 400)
+        dl_json = dl_resp.get_json()
+        self.assertFalse(dl_json['success'])
+        self.assertEqual(dl_json['status'], 'cancelled')
+
+    def test_capricorn_callback_cancelled_renders_status_page_when_no_callback_url(self):
+        """Verify that when no callback_url is provided, cancelled signing renders a clean status page without auto-download."""
+        doc = ESignDocument(
+            company_id=self.company.id,
+            title="Direct Sign Agreement",
+            original_filename="direct_test.pdf",
+            file_path="uploads/esign/2/direct_test.pdf",
+            signatory_name="Pankaj Vaishnav",
+            signatory_mobile="9876543210",
+            capricorn_txn="77776666",
+            capricorn_reference="REFDIRECT123",
+            callback_url=None,
+            status="sent_to_capricorn",
+            cost_charged=Decimal("25.00")
+        )
+        db.session.add(doc)
+        db.session.commit()
+
+        # Unauthenticated signatory cancelling session
+        resp = self.client.get('/esign/callback?reference=REFDIRECT123&status=2')
+        self.assertEqual(resp.status_code, 200)
+        content = resp.get_data(as_text=True)
+        self.assertIn("Signing Cancelled", content)
+        self.assertIn("No charges have been deducted", content)
+        # Ensure NO iframe auto download
+        self.assertNotIn("<iframe", content)
+        self.assertNotIn("download_url", content)
+
+        # Check doc status
+        updated_doc = db.session.get(ESignDocument, doc.id)
+        self.assertEqual(updated_doc.status, "cancelled")
+
 if __name__ == '__main__':
     unittest.main()

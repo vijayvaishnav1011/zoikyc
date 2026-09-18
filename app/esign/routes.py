@@ -226,6 +226,10 @@ def download(doc_id):
     full_path = None
 
     if req_type == 'signed':
+        if doc.status in ['cancelled', 'failed']:
+            flash(f"Document signing was {doc.status}. Signed PDF is not available.", "warning")
+            return redirect(url_for('esign.index'))
+
         need_download = True
         if doc.signed_file_path:
             existing_path = os.path.join(current_app.root_path, doc.signed_file_path)
@@ -368,7 +372,19 @@ def callback():
     signed_pdf_url = request.args.get('signedpdfurl') or request.form.get('signedpdfurl') or json_data.get('signedpdfurl') or json_data.get('signed_pdf_url')
     status_param = request.args.get('status') or request.form.get('status') or json_data.get('status')
 
-    current_app.logger.info(f"Capricorn E-Sign callback received: txn={txn}, ref={reference}, status={status_param}")
+    # Capricorn bug workaround: Capricorn sometimes concatenates status and txn without '&' (e.g. status='2txn=76019987')
+    if not txn and status_param and 'txn=' in str(status_param):
+        import re
+        m = re.search(r'txn=([0-9A-Za-z]+)', str(status_param))
+        if m:
+            txn = m.group(1)
+
+    clean_status = str(status_param).strip().upper() if status_param else ""
+    if 'TXN=' in clean_status:
+        import re
+        clean_status = re.sub(r'TXN=.*', '', clean_status).strip()
+
+    current_app.logger.info(f"Capricorn E-Sign callback received: txn={txn}, ref={reference}, status={status_param} (clean={clean_status})")
 
     # Locate the document
     doc = None
@@ -389,123 +405,6 @@ def callback():
         charge_wallet_for_signed_doc(doc)
         clean_download_url = f"https://zoikyc.com/api/esign/download/{doc.id}"
         if request.method == 'GET':
-            if not current_app.config.get('TESTING'):
-                if doc.callback_url:
-                    from urllib.parse import urlencode, urlparse, parse_qsl, urlunparse
-                    try:
-                        target_cb = doc.callback_url.strip()
-                        if not (target_cb.startswith('http://') or target_cb.startswith('https://')):
-                            target_cb = f"https://{target_cb}"
-                        parsed = urlparse(target_cb)
-                        qs = dict(parse_qsl(parsed.query))
-                        qs.update({
-                            "status": "success",
-                            "document_id": str(doc.id),
-                            "reference_id": doc.capricorn_reference or "",
-                            "download_url": clean_download_url
-                        })
-                        final_redirect_url = urlunparse(parsed._replace(query=urlencode(qs)))
-                        return render_template(
-                            'client/esign_auto_download.html',
-                            download_url=clean_download_url,
-                            redirect_url=final_redirect_url,
-                            filename=doc.original_filename or f"Signed_{doc.id}.pdf",
-                            doc=doc
-                        )
-                    except Exception:
-                        pass
-                return redirect(clean_download_url)
-            flash("Document is already signed and archived.", "info")
-            return redirect(url_for('esign.index'))
-        return jsonify({
-            "status": "success",
-            "message": "Already signed",
-            "doc_id": doc.id,
-            "document_id": doc.id,
-            "reference_id": doc.capricorn_reference,
-            "redirect_url": doc.callback_url or clean_download_url,
-            "signedpdfurl": doc.signed_pdf_url,
-            "download_url": clean_download_url
-        }), 200
-
-    # Retrieve signed PDF URL if passed or query Capricorn
-    capricorn = CapricornESignProvider()
-    api_getdoc_url = capricorn.get_apij_getdoc_url(doc.capricorn_txn, doc.capricorn_reference) if doc.capricorn_txn and doc.capricorn_reference else None
-    download_url = signed_pdf_url or api_getdoc_url or doc.signed_pdf_url
-    if download_url:
-        signed_name = f"signed_{os.path.basename(doc.file_path)}"
-        target_dir = os.path.join(current_app.root_path, 'uploads', 'esign', str(doc.company_id))
-        target_path = os.path.join(target_dir, signed_name)
-
-        success = capricorn.download_signed_pdf(download_url, target_path)
-        if success:
-            doc.signed_file_path = f"uploads/esign/{doc.company_id}/{signed_name}"
-            if capricorn.last_signed_pdf_url:
-                doc.signed_pdf_url = capricorn.last_signed_pdf_url
-            elif signed_pdf_url:
-                doc.signed_pdf_url = signed_pdf_url
-            current_app.logger.info(f"Successfully downloaded signed PDF for doc {doc.id}, signedpdfurl={doc.signed_pdf_url}")
-        else:
-            current_app.logger.error(f"Failed to fetch signed PDF from {download_url} for doc {doc.id}")
-
-    # Fallback to query direct viewer url if not yet captured
-    if (not doc.signed_pdf_url or 'docs/signed' not in doc.signed_pdf_url) and doc.capricorn_txn and doc.capricorn_reference:
-        try:
-            viewer_url = capricorn.get_signed_document_viewer_url(doc.capricorn_txn, doc.capricorn_reference)
-            if viewer_url and isinstance(viewer_url, str):
-                doc.signed_pdf_url = viewer_url
-        except Exception as e:
-            current_app.logger.warning(f"Could not retrieve viewer URL for doc {doc.id}: {e}")
-
-    # Append callback event to audit log raw_response
-    try:
-        current_resp = doc.response_dict
-        current_resp['callback_payload'] = {
-            "txn": txn,
-            "reference": reference,
-            "signedpdfurl": signed_pdf_url or doc.signed_pdf_url,
-            "status": status_param,
-            "received_at": datetime.now(timezone.utc).isoformat(),
-            "client_ip": request.headers.get('X-Forwarded-For', request.remote_addr)
-        }
-        doc.raw_response = json.dumps(current_resp)
-    except Exception as log_ex:
-        current_app.logger.warning(f"Could not append callback to raw_response: {log_ex}")
-
-    doc.status = 'signed'
-    doc.signed_at = datetime.now(timezone.utc)
-    db.session.commit()
-
-    # DEDUCT MONEY ONLY ONCE THE ESIGN IS DONE
-    charge_wallet_for_signed_doc(doc)
-
-    clean_download_url = f"https://zoikyc.com/api/esign/download/{doc.id}"
-
-    # If client provided a callback_url, trigger async webhook notification
-    if doc.callback_url:
-        import threading
-        import requests
-        def _post_client_webhook(cb_url, payload):
-            try:
-                cb_target = cb_url.strip()
-                if not (cb_target.startswith('http://') or cb_target.startswith('https://')):
-                    cb_target = f"https://{cb_target}"
-                requests.post(cb_target, json=payload, timeout=10)
-            except Exception as ex:
-                current_app.logger.warning(f"Failed to post client callbackurl {cb_url}: {ex}")
-        cb_payload = {
-            "status": "success",
-            "document_id": doc.id,
-            "reference_id": doc.capricorn_reference,
-            "txn_id": doc.capricorn_txn,
-            "download_url": clean_download_url
-        }
-        t = threading.Thread(target=_post_client_webhook, args=(doc.callback_url, cb_payload))
-        t.daemon = True
-        t.start()
-
-    if request.method == 'GET':
-        if not current_app.config.get('TESTING'):
             if doc.callback_url:
                 from urllib.parse import urlencode, urlparse, parse_qsl, urlunparse
                 try:
@@ -520,29 +419,256 @@ def callback():
                         "reference_id": doc.capricorn_reference or "",
                         "download_url": clean_download_url
                     })
-                    final_redirect_url = urlunparse(parsed._replace(query=urlencode(qs)))
-                    return render_template(
-                        'client/esign_auto_download.html',
-                        download_url=clean_download_url,
-                        redirect_url=final_redirect_url,
-                        filename=doc.original_filename or f"Signed_{doc.id}.pdf",
-                        doc=doc
-                    )
+                    return redirect(urlunparse(parsed._replace(query=urlencode(qs))))
                 except Exception:
                     pass
-            return redirect(clean_download_url)
+            if current_user.is_authenticated:
+                flash("Document is already signed and archived.", "info")
+                return redirect(url_for('esign.index'))
+            return redirect(url_for('esign.public_api_esign_download', doc_id=doc.id))
+        return jsonify({
+            "status": "success",
+            "message": "Already signed",
+            "doc_id": doc.id,
+            "document_id": doc.id,
+            "reference_id": doc.capricorn_reference,
+            "redirect_url": doc.callback_url or clean_download_url,
+            "signedpdfurl": doc.signed_pdf_url,
+            "download_url": clean_download_url
+        }), 200
 
-        flash(f"Aadhaar OTP verification completed! Document '{doc.title}' has been digitally signed.", "success")
-        return redirect(url_for('esign.index'))
+    # If already cancelled or failed:
+    if doc.status in ['cancelled', 'failed']:
+        if request.method == 'GET':
+            if doc.callback_url:
+                from urllib.parse import urlencode, urlparse, parse_qsl, urlunparse
+                try:
+                    target_cb = doc.callback_url.strip()
+                    if not (target_cb.startswith('http://') or target_cb.startswith('https://')):
+                        target_cb = f"https://{target_cb}"
+                    parsed = urlparse(target_cb)
+                    qs = dict(parse_qsl(parsed.query))
+                    qs.update({
+                        "status": doc.status,
+                        "document_id": str(doc.id),
+                        "reference_id": doc.capricorn_reference or ""
+                    })
+                    return redirect(urlunparse(parsed._replace(query=urlencode(qs))))
+                except Exception:
+                    pass
+            if current_user.is_authenticated:
+                flash(f"Document signing was {doc.status}.", "warning")
+                return redirect(url_for('esign.index'))
+            return render_template(
+                'client/esign_status.html',
+                status=doc.status,
+                title="Signing Cancelled" if doc.status == "cancelled" else "Signing Failed",
+                message="Document signing was cancelled by the signatory." if doc.status == "cancelled" else "Document signing failed.",
+                doc=doc
+            )
+        return jsonify({
+            "status": doc.status,
+            "document_id": doc.id,
+            "reference_id": doc.capricorn_reference,
+            "txn_id": doc.capricorn_txn,
+            "error": f"Signing was {doc.status}."
+        }), 400
+
+    # Determine status from Capricorn parameter:
+    # 0 = Success, 1 = Fail, 2 = Cancelled by user
+    is_cancelled = clean_status.startswith('2') or 'CANCEL' in clean_status
+    is_failed = clean_status.startswith('1') or 'FAIL' in clean_status or 'ERROR' in clean_status
+    is_success_status = (clean_status.startswith('0') or clean_status in ['SUCCESS', 'OK']) if clean_status else not (is_cancelled or is_failed)
+
+    # If explicitly cancelled or failed, do not attempt to download
+    capricorn = CapricornESignProvider()
+    api_getdoc_url = capricorn.get_apij_getdoc_url(doc.capricorn_txn, doc.capricorn_reference) if (not is_cancelled and not is_failed and doc.capricorn_txn and doc.capricorn_reference) else None
+    download_url = signed_pdf_url or api_getdoc_url or doc.signed_pdf_url
+    pdf_downloaded = False
+
+    if is_success_status and download_url:
+        signed_name = f"signed_{os.path.basename(doc.file_path)}"
+        target_dir = os.path.join(current_app.root_path, 'uploads', 'esign', str(doc.company_id))
+        target_path = os.path.join(target_dir, signed_name)
+
+        success = capricorn.download_signed_pdf(download_url, target_path)
+        if success:
+            doc.signed_file_path = f"uploads/esign/{doc.company_id}/{signed_name}"
+            if capricorn.last_signed_pdf_url:
+                doc.signed_pdf_url = capricorn.last_signed_pdf_url
+            elif signed_pdf_url:
+                doc.signed_pdf_url = signed_pdf_url
+            pdf_downloaded = True
+            current_app.logger.info(f"Successfully downloaded signed PDF for doc {doc.id}, signedpdfurl={doc.signed_pdf_url}")
+        else:
+            current_app.logger.warning(f"Could not fetch signed PDF from {download_url} for doc {doc.id}")
+
+    # Fallback to query direct viewer url if not yet captured
+    if is_success_status and not pdf_downloaded and (not doc.signed_pdf_url or 'docs/signed' not in doc.signed_pdf_url) and doc.capricorn_txn and doc.capricorn_reference:
+        try:
+            viewer_url = capricorn.get_signed_document_viewer_url(doc.capricorn_txn, doc.capricorn_reference)
+            if viewer_url and isinstance(viewer_url, str):
+                doc.signed_pdf_url = viewer_url
+                signed_name = f"signed_{os.path.basename(doc.file_path)}"
+                target_dir = os.path.join(current_app.root_path, 'uploads', 'esign', str(doc.company_id))
+                target_path = os.path.join(target_dir, signed_name)
+                if capricorn.download_signed_pdf(viewer_url, target_path):
+                    doc.signed_file_path = f"uploads/esign/{doc.company_id}/{signed_name}"
+                    pdf_downloaded = True
+        except Exception as e:
+            current_app.logger.warning(f"Could not retrieve viewer URL for doc {doc.id}: {e}")
+
+    # Append callback event to audit log raw_response
+    try:
+        current_resp = doc.response_dict
+        current_resp['callback_payload'] = {
+            "txn": txn,
+            "reference": reference,
+            "signedpdfurl": signed_pdf_url or doc.signed_pdf_url,
+            "status": status_param,
+            "clean_status": clean_status,
+            "received_at": datetime.now(timezone.utc).isoformat(),
+            "client_ip": request.headers.get('X-Forwarded-For', request.remote_addr)
+        }
+        doc.raw_response = json.dumps(current_resp)
+    except Exception as log_ex:
+        current_app.logger.warning(f"Could not append callback to raw_response: {log_ex}")
+
+    # SUCCESS: Document signed & verified
+    has_valid_signed_pdf = pdf_downloaded or (doc.signed_file_path and os.path.exists(os.path.join(current_app.root_path, doc.signed_file_path)))
+    if is_success_status and has_valid_signed_pdf:
+        doc.status = 'signed'
+        doc.signed_at = datetime.now(timezone.utc)
+        db.session.commit()
+
+        # DEDUCT MONEY ONLY ONCE THE ESIGN IS CONFIRMED SIGNED
+        charge_wallet_for_signed_doc(doc)
+
+        clean_download_url = f"https://zoikyc.com/api/esign/download/{doc.id}"
+
+        # If client provided a callback_url, trigger async webhook notification
+        if doc.callback_url:
+            import threading
+            import requests
+            import logging
+            def _post_client_webhook(cb_url, payload):
+                log = logging.getLogger(__name__)
+                try:
+                    cb_target = cb_url.strip()
+                    if not (cb_target.startswith('http://') or cb_target.startswith('https://')):
+                        cb_target = f"https://{cb_target}"
+                    requests.post(cb_target, json=payload, timeout=10)
+                except Exception as ex:
+                    log.warning(f"Failed to post client callbackurl {cb_url}: {ex}")
+            cb_payload = {
+                "status": "success",
+                "document_id": doc.id,
+                "reference_id": doc.capricorn_reference,
+                "txn_id": doc.capricorn_txn,
+                "download_url": clean_download_url
+            }
+            t = threading.Thread(target=_post_client_webhook, args=(doc.callback_url, cb_payload))
+            t.daemon = True
+            t.start()
+
+        if request.method == 'GET':
+            if doc.callback_url:
+                from urllib.parse import urlencode, urlparse, parse_qsl, urlunparse
+                try:
+                    target_cb = doc.callback_url.strip()
+                    if not (target_cb.startswith('http://') or target_cb.startswith('https://')):
+                        target_cb = f"https://{target_cb}"
+                    parsed = urlparse(target_cb)
+                    qs = dict(parse_qsl(parsed.query))
+                    qs.update({
+                        "status": "success",
+                        "document_id": str(doc.id),
+                        "reference_id": doc.capricorn_reference or "",
+                        "download_url": clean_download_url
+                    })
+                    return redirect(urlunparse(parsed._replace(query=urlencode(qs))))
+                except Exception:
+                    pass
+            if current_user.is_authenticated:
+                flash(f"Aadhaar OTP verification completed! Document '{doc.title}' has been digitally signed.", "success")
+                return redirect(url_for('esign.index'))
+            return redirect(url_for('esign.public_api_esign_download', doc_id=doc.id))
+
+        return jsonify({
+            "status": "success",
+            "document_id": doc.id,
+            "reference_id": doc.capricorn_reference,
+            "txn_id": doc.capricorn_txn,
+            "download_url": clean_download_url,
+            "callback_url": doc.callback_url or ""
+        }), 200
+
+    # CANCELLED or FAILED: Signer aborted or OTP failed
+    failure_status = "cancelled" if is_cancelled else "failed"
+    failure_msg = "Document signing was cancelled by the signatory." if failure_status == "cancelled" else "Document signing failed or OTP verification timed out."
+    doc.status = failure_status
+    db.session.commit()
+
+    if doc.callback_url:
+        import threading
+        import requests
+        import logging
+        def _post_client_webhook_fail(cb_url, payload):
+            log = logging.getLogger(__name__)
+            try:
+                cb_target = cb_url.strip()
+                if not (cb_target.startswith('http://') or cb_target.startswith('https://')):
+                    cb_target = f"https://{cb_target}"
+                requests.post(cb_target, json=payload, timeout=10)
+            except Exception as ex:
+                log.warning(f"Failed to post client callbackurl {cb_url}: {ex}")
+        cb_payload = {
+            "status": failure_status,
+            "document_id": doc.id,
+            "reference_id": doc.capricorn_reference,
+            "txn_id": doc.capricorn_txn,
+            "error": failure_msg
+        }
+        t = threading.Thread(target=_post_client_webhook_fail, args=(doc.callback_url, cb_payload))
+        t.daemon = True
+        t.start()
+
+    if request.method == 'GET':
+        if doc.callback_url:
+            from urllib.parse import urlencode, urlparse, parse_qsl, urlunparse
+            try:
+                target_cb = doc.callback_url.strip()
+                if not (target_cb.startswith('http://') or target_cb.startswith('https://')):
+                    target_cb = f"https://{target_cb}"
+                parsed = urlparse(target_cb)
+                qs = dict(parse_qsl(parsed.query))
+                qs.update({
+                    "status": failure_status,
+                    "document_id": str(doc.id),
+                    "reference_id": doc.capricorn_reference or ""
+                })
+                return redirect(urlunparse(parsed._replace(query=urlencode(qs))))
+            except Exception:
+                pass
+        if current_user.is_authenticated:
+            flash(failure_msg, "warning")
+            return redirect(url_for('esign.index'))
+        return render_template(
+            'client/esign_status.html',
+            status=failure_status,
+            title="Signing Cancelled" if failure_status == "cancelled" else "Signing Failed",
+            message=failure_msg,
+            doc=doc
+        )
 
     return jsonify({
-        "status": "success",
+        "status": failure_status,
         "document_id": doc.id,
         "reference_id": doc.capricorn_reference,
         "txn_id": doc.capricorn_txn,
-        "download_url": clean_download_url,
-        "callback_url": doc.callback_url or ""
-    }), 200
+        "error": failure_msg
+    }), 400
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -962,6 +1088,13 @@ def public_api_esign_download(doc_id, api_key=None):
     else:
         doc = ESignDocument.query.get_or_404(doc_id)
 
+    if doc.status in ['cancelled', 'failed']:
+        return jsonify({
+            "success": False,
+            "status": doc.status,
+            "error": f"Document signing was {doc.status}. No signed PDF is available."
+        }), 400
+
     need_download = True
     full_path = None
     if doc.signed_file_path:
@@ -1015,6 +1148,13 @@ def public_sign_redirect(doc_id, api_key=None):
     # If already signed, send directly to clean ZoiKYC download URL
     if doc.status == 'signed':
         return redirect(f"https://zoikyc.com/api/esign/download/{doc.id}")
+
+    if doc.status in ['cancelled', 'failed']:
+        return jsonify({
+            "success": False,
+            "status": doc.status,
+            "error": f"Signing session was {doc.status}. Please initiate a new document request."
+        }), 400
 
     # If active session exists, redirect to Capricorn OTP signing screen
     if doc.redirect_url:
