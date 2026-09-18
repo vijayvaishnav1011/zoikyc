@@ -1244,9 +1244,8 @@ def public_api_esign_download(doc_id=None, api_key=None):
             "pdf_base64": encoded_pdf
         }), 200
 
-    as_attachment = True if (req_args.get('download') == 'true' or req_json.get('download') is True) else False
     download_name = f"Signed_{doc.original_filename}"
-    return send_file(full_path, as_attachment=as_attachment, download_name=download_name, mimetype='application/pdf')
+    return send_file(full_path, as_attachment=True, download_name=download_name, mimetype='application/pdf')
 
 
 @esign_bp.route('/esign/sign/<int:doc_id>', methods=['GET'])

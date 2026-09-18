@@ -348,16 +348,18 @@ Returns current status and audit timestamps.
 
 ---
 
-### 3.3 Download Signed PDF (Separate API)
-Directly streams or downloads the finalized digitally signed PDF file from ZoiKYC secure storage using your `document_id`, `reference_id`, and `api_key`.
+### 3.3 Download Signed PDF (Secure POST API)
+Downloads the finalized digitally signed PDF file from ZoiKYC secure storage using your `document_id`, `reference_id`, and `api_key`.
 
 > [!IMPORTANT]
-> **Authentication Required**: For security and data privacy, download endpoints require your valid API Key so unauthorized third parties cannot access or download documents.
+> **Authentication Required**: For security and data privacy, download endpoints strictly require your valid API Key and matching document credentials so unauthorized third parties cannot access or download documents. Direct public links are strictly disabled.
 
-#### Option A: POST with JSON Body (Recommended)
-- **Endpoint**: `POST https://zoikyc.com/api/esign/download`
+- **Method**: `POST`
+- **Endpoint**: `https://zoikyc.com/api/esign/download`
 - **Headers**:
-  - `Content-Type: application/json`
+  ```http
+  Content-Type: application/json
+  ```
 - **Request Body**:
 ```json
 {
@@ -368,17 +370,11 @@ Directly streams or downloads the finalized digitally signed PDF file from ZoiKY
 ```
 *(Also supports passing API Key via header `X-API-Key: zoi_live_YOUR_API_KEY`)*
 
-#### Option B: Direct Browser Link (GET)
-Paste this link in any browser tab to open the signed PDF immediately:
-```text
-https://zoikyc.com/api/esign/download?document_id=119&reference_id=2VFZXJKGZHL7OGR&api_key=zoi_live_YOUR_API_KEY
-```
-
 #### Response When Signed:
 - **HTTP Status**: `200 OK`
 - **Content-Type**: `application/pdf`
-- **Content-Disposition**: `inline; filename="Signed_Employment_Agreement.pdf"`
-- **Body**: Direct `%PDF` binary file stream (opens directly in PDF viewer/browser, or saves cleanly in cURL/code).
+- **Content-Disposition**: `attachment; filename="Signed_Employment_Agreement.pdf"`
+- **Body**: Direct binary `%PDF` stream (directly downloads the signed PDF file).
 
 *(Optional: Pass `"format": "base64"` in request to receive JSON containing base64-encoded PDF stream).*
 
