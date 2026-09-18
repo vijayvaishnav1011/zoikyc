@@ -1085,8 +1085,13 @@ def public_api_esign_download(doc_id=None, api_key=None):
             request.headers.get('x-api-key') or 
             request.headers.get('api_key') or
             req_json.get('api_key') or
+            req_json.get('api key') or
+            req_json.get('apiKey') or
             req_form.get('api_key') or
+            req_form.get('api key') or
+            req_form.get('apiKey') or
             req_args.get('api_key') or
+            req_args.get('apiKey') or
             ""
         ).strip()
         auth_header = request.headers.get('Authorization', '').strip()
@@ -1096,8 +1101,11 @@ def public_api_esign_download(doc_id=None, api_key=None):
     if not doc_id:
         raw_doc_id = (
             req_json.get('document_id') or 
+            req_json.get('document id') or
             req_json.get('doc_id') or
+            req_json.get('docId') or
             req_form.get('document_id') or 
+            req_form.get('document id') or 
             req_form.get('doc_id') or
             req_args.get('document_id') or 
             req_args.get('doc_id')
@@ -1110,6 +1118,8 @@ def public_api_esign_download(doc_id=None, api_key=None):
 
     ref_id = str(
         req_json.get('reference_id') or 
+        req_json.get('reference id') or
+        req_json.get('referenceId') or
         req_json.get('reference') or
         req_form.get('reference_id') or 
         req_form.get('reference') or

@@ -747,6 +747,17 @@ class ESignIntegrationTestCase(unittest.TestCase):
         self.assertEqual(resp2.status_code, 200)
         self.assertEqual(resp2.content_type, 'application/pdf')
 
+        # 2b. POST with 'api key' (space) in JSON body
+        resp2b = self.client.post('/api/esign/download',
+            json={
+                "api key": self.company.api_key,
+                "document_id": doc.id,
+                "reference_id": "REFSEP123"
+            }
+        )
+        self.assertEqual(resp2b.status_code, 200)
+        self.assertEqual(resp2b.content_type, 'application/pdf')
+
         # 3. GET with query parameters
         resp3 = self.client.get(f'/api/esign/download?document_id={doc.id}&reference_id=REFSEP123&api_key={self.company.api_key}')
         self.assertEqual(resp3.status_code, 200)
