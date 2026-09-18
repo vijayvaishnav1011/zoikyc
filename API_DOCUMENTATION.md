@@ -196,11 +196,11 @@ ZoiKYC provides legally binding digital signature execution under the Indian IT 
 
 ### Workflow Overview:
 1. **Dispatch**: Your system calls `POST /api/esign/<API_KEY>` with the PDF and signatory details.
-2. **Sign URL Delivered**: ZoiKYC prepares the document and returns a live `sign_url` and a clean `download_url`.
+2. **Sign URL Delivered**: ZoiKYC prepares the document and returns a live `sign_url` and `callback_url`.
 3. **Signatory OTP Signing**: The customer opens `sign_url` in any web or mobile browser, enters their 12-digit Aadhaar / VID number, and receives an OTP on their Aadhaar-registered mobile number.
-4. **Instant Viewer Redirect**: Once the signatory enters the OTP, the browser automatically redirects to your `callback_url` (or to download the signed PDF).
+4. **Clean Browser Redirect**: Once the signatory enters the OTP, the browser automatically redirects to your `callback_url` (`?status=success&document_id=...&reference_id=...`).
 5. **Wallet Debiting**: Your wallet is charged **only when the document is successfully signed** (`charges_on_completion`).
-6. **Fetch / Download**: Retrieve signed status via `GET /api/esign/<API_KEY>/<doc_id>` or download binary PDF via `GET /api/esign/download/<doc_id>`.
+6. **Fetch / Download**: Retrieve signed PDF directly via `POST /api/esign/download` by passing `document_id`, `reference_id`, and `api_key`.
 
 ---
 
@@ -532,10 +532,15 @@ def check_esign_status(doc_id):
     res = requests.get(url)
     return res.json()
 
-# 4. Download Signed PDF (Clean URL, no API key needed for signed docs)
-def download_signed_pdf(doc_id, output_path):
-    url = f"https://zoikyc.com/api/esign/download/{doc_id}"
-    res = requests.get(url, stream=True)
+# 4. Download Signed PDF (Direct PDF stream using document_id, reference_id & API Key)
+def download_signed_pdf(doc_id, reference_id, output_path):
+    url = "https://zoikyc.com/api/esign/download"
+    payload = {
+        "document_id": doc_id,
+        "reference_id": reference_id,
+        "api_key": API_KEY
+    }
+    res = requests.post(url, json=payload, stream=True)
     if res.status_code == 200:
         with open(output_path, "wb") as f:
             for chunk in res.iter_content(chunk_size=8192):
@@ -585,11 +590,16 @@ async function checkEsignStatus(docId) {
   return res.data;
 }
 
-// 4. Download Signed PDF
-async function downloadSignedPdf(docId, outputPath) {
+// 4. Download Signed PDF (Direct PDF stream using document_id, reference_id & API Key)
+async function downloadSignedPdf(docId, referenceId, outputPath) {
   const response = await axios({
-    method: 'GET',
-    url: `https://zoikyc.com/api/esign/download/${docId}`,
+    method: 'POST',
+    url: 'https://zoikyc.com/api/esign/download',
+    data: {
+      document_id: docId,
+      reference_id: referenceId,
+      api_key: API_KEY
+    },
     responseType: 'stream'
   });
   response.data.pipe(fs.createWriteStream(outputPath));
