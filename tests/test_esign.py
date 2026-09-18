@@ -569,5 +569,29 @@ class ESignIntegrationTestCase(unittest.TestCase):
         self.assertEqual(data.get("callback_url"), "http://161.97.150.41/getpdf")
         self.assertNotIn("redirect_url", data)
 
+    def test_public_download_without_login(self):
+        doc = ESignDocument(
+            company_id=self.company.id,
+            title="Public Agreement",
+            original_filename="public_agreement.pdf",
+            file_path="uploads/esign/2/public_agreement.pdf",
+            signatory_name="Pankaj",
+            signatory_mobile="9876543210",
+            status="signed",
+            signed_file_path=self.test_pdf_path
+        )
+        db.session.add(doc)
+        db.session.commit()
+
+        # 1. Test /api/esign/download/<id> without login
+        resp = self.client.get(f'/api/esign/download/{doc.id}')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.mimetype, 'application/pdf')
+
+        # 2. Test /esign/download/<id> without login
+        resp2 = self.client.get(f'/esign/download/{doc.id}')
+        self.assertEqual(resp2.status_code, 200)
+        self.assertEqual(resp2.mimetype, 'application/pdf')
+
 if __name__ == '__main__':
     unittest.main()
