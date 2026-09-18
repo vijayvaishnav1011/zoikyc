@@ -393,7 +393,10 @@ def callback():
                 if doc.callback_url:
                     from urllib.parse import urlencode, urlparse, parse_qsl, urlunparse
                     try:
-                        parsed = urlparse(doc.callback_url)
+                        target_cb = doc.callback_url.strip()
+                        if not (target_cb.startswith('http://') or target_cb.startswith('https://')):
+                            target_cb = f"https://{target_cb}"
+                        parsed = urlparse(target_cb)
                         qs = dict(parse_qsl(parsed.query))
                         qs.update({
                             "status": "success",
@@ -477,7 +480,10 @@ def callback():
         import requests
         def _post_client_webhook(cb_url, payload):
             try:
-                requests.post(cb_url, json=payload, timeout=10)
+                cb_target = cb_url.strip()
+                if not (cb_target.startswith('http://') or cb_target.startswith('https://')):
+                    cb_target = f"https://{cb_target}"
+                requests.post(cb_target, json=payload, timeout=10)
             except Exception as ex:
                 current_app.logger.warning(f"Failed to post client callbackurl {cb_url}: {ex}")
         cb_payload = {
@@ -496,7 +502,10 @@ def callback():
             if doc.callback_url:
                 from urllib.parse import urlencode, urlparse, parse_qsl, urlunparse
                 try:
-                    parsed = urlparse(doc.callback_url)
+                    target_cb = doc.callback_url.strip()
+                    if not (target_cb.startswith('http://') or target_cb.startswith('https://')):
+                        target_cb = f"https://{target_cb}"
+                    parsed = urlparse(target_cb)
                     qs = dict(parse_qsl(parsed.query))
                     qs.update({
                         "status": "success",
@@ -739,6 +748,8 @@ def public_api_esign(api_key=None):
         payload_data.get('return_url') or 
         ""
     ).strip() or None
+    if client_callback_url and not (client_callback_url.startswith('http://') or client_callback_url.startswith('https://')):
+        client_callback_url = f"https://{client_callback_url}"
 
     # Save to disk
     unique_name = f"esign_{uuid.uuid4().hex[:12]}.pdf"
