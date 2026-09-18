@@ -404,7 +404,14 @@ def callback():
                             "reference_id": doc.capricorn_reference or "",
                             "download_url": clean_download_url
                         })
-                        return redirect(urlunparse(parsed._replace(query=urlencode(qs))))
+                        final_redirect_url = urlunparse(parsed._replace(query=urlencode(qs)))
+                        return render_template(
+                            'client/esign_auto_download.html',
+                            download_url=clean_download_url,
+                            redirect_url=final_redirect_url,
+                            filename=doc.original_filename or f"Signed_{doc.id}.pdf",
+                            doc=doc
+                        )
                     except Exception:
                         pass
                 return redirect(clean_download_url)
@@ -513,7 +520,14 @@ def callback():
                         "reference_id": doc.capricorn_reference or "",
                         "download_url": clean_download_url
                     })
-                    return redirect(urlunparse(parsed._replace(query=urlencode(qs))))
+                    final_redirect_url = urlunparse(parsed._replace(query=urlencode(qs)))
+                    return render_template(
+                        'client/esign_auto_download.html',
+                        download_url=clean_download_url,
+                        redirect_url=final_redirect_url,
+                        filename=doc.original_filename or f"Signed_{doc.id}.pdf",
+                        doc=doc
+                    )
                 except Exception:
                     pass
             return redirect(clean_download_url)
