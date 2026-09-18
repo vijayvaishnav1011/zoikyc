@@ -4,184 +4,170 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }} | ZoiKYC</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
         body {
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #090d16 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 24px;
-            color: #f8fafc;
         }
-        .card {
-            background: rgba(30, 41, 59, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 28px;
-            padding: 44px 36px;
-            max-width: 480px;
+        .container {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            max-width: 440px;
             width: 100%;
-            text-align: center;
-            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6), 0 0 40px -10px rgba(99, 102, 241, 0.2);
-            animation: cardAppear 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 36px 32px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
-        @keyframes cardAppear {
-            from { opacity: 0; transform: translateY(16px) scale(0.97); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .brand-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(99, 102, 241, 0.15);
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            color: #a5b4fc;
-            padding: 6px 14px;
-            border-radius: 999px;
-            font-size: 0.78rem;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
+        .header {
             margin-bottom: 24px;
         }
-        .icon-wrap {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 22px;
+        .brand {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #64748b;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .icon-container {
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            margin-bottom: 16px;
         }
-        .icon-wrap.cancelled {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            box-shadow: 0 12px 30px -6px rgba(245, 158, 11, 0.4);
+        .icon-container.cancelled {
+            background-color: #fef3c7;
+            color: #d97706;
         }
-        .icon-wrap.failed {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            box-shadow: 0 12px 30px -6px rgba(239, 68, 68, 0.4);
+        .icon-container.failed {
+            background-color: #fee2e2;
+            color: #dc2626;
         }
-        .icon-wrap svg {
-            width: 38px;
-            height: 38px;
-            stroke: #ffffff;
-            stroke-width: 2.5;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
+        .icon-container svg {
+            width: 22px;
+            height: 22px;
+            stroke-width: 2;
         }
         h1 {
-            font-size: 1.6rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            margin-bottom: 12px;
-            color: #ffffff;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 8px;
         }
-        p.subtitle {
-            font-size: 0.94rem;
-            color: #94a3b8;
-            line-height: 1.6;
-            margin-bottom: 28px;
+        p.description {
+            font-size: 0.875rem;
+            color: #475467;
+            line-height: 1.5;
         }
-        .info-box {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 24px;
-            text-align: left;
-            font-size: 0.85rem;
+        .details-card {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-top: 24px;
+            padding: 14px 16px;
         }
-        .info-row {
+        .details-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 6px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.8125rem;
         }
-        .info-row:last-child {
-            border-bottom: none;
+        .details-row:not(:last-child) {
+            border-bottom: 1px solid #edf2f7;
         }
-        .info-label {
+        .details-label {
             color: #64748b;
+        }
+        .details-value {
+            color: #1e293b;
             font-weight: 500;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         }
-        .info-val {
-            color: #f1f5f9;
-            font-weight: 600;
-            font-family: monospace;
-        }
-        .status-pill {
+        .badge {
             display: inline-block;
-            padding: 3px 10px;
-            border-radius: 999px;
+            padding: 2px 8px;
+            border-radius: 4px;
             font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
+            font-weight: 600;
+            text-transform: capitalize;
         }
-        .status-pill.cancelled {
-            background: rgba(245, 158, 11, 0.15);
-            color: #fbbf24;
-            border: 1px solid rgba(245, 158, 11, 0.3);
+        .badge.cancelled {
+            background-color: #fef3c7;
+            color: #92400e;
         }
-        .status-pill.failed {
-            background: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+        .badge.failed {
+            background-color: #fee2e2;
+            color: #991b1b;
         }
-        .notice {
-            font-size: 0.82rem;
-            color: #64748b;
-            line-height: 1.5;
+        .footer {
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid #f1f5f9;
+            font-size: 0.8125rem;
+            color: #94a3b8;
+            text-align: center;
+            line-height: 1.4;
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <div class="brand-badge">
-            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
-            ZoiKYC E-Sign
+    <div class="container">
+        <div class="header">
+            <div class="brand">ZoiKYC</div>
+            <div class="icon-container {{ status }}">
+                {% if status == 'cancelled' %}
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                {% else %}
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                {% endif %}
+            </div>
+            <h1>{{ title }}</h1>
+            <p class="description">{{ message }}</p>
         </div>
-
-        <div class="icon-wrap {{ status }}">
-            {% if status == 'cancelled' %}
-            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            {% else %}
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-            {% endif %}
-        </div>
-
-        <h1>{{ title }}</h1>
-        <p class="subtitle">{{ message }}</p>
 
         {% if doc %}
-        <div class="info-box">
-            <div class="info-row">
-                <span class="info-label">Document</span>
-                <span class="info-val">{{ doc.title or 'Agreement' }}</span>
+        <div class="details-card">
+            <div class="details-row">
+                <span class="details-label">Document</span>
+                <span class="details-value">{{ doc.title or 'Agreement' }}</span>
             </div>
             {% if doc.capricorn_reference %}
-            <div class="info-row">
-                <span class="info-label">Reference ID</span>
-                <span class="info-val">{{ doc.capricorn_reference }}</span>
+            <div class="details-row">
+                <span class="details-label">Reference ID</span>
+                <span class="details-value">{{ doc.capricorn_reference }}</span>
             </div>
             {% endif %}
-            <div class="info-row">
-                <span class="info-label">Session Status</span>
-                <span class="status-pill {{ status }}">{{ status }}</span>
+            <div class="details-row">
+                <span class="details-label">Status</span>
+                <span class="badge {{ status }}">{{ status }}</span>
             </div>
         </div>
         {% endif %}
 
-        <div class="notice">
-            No charges have been deducted from your wallet.<br>You may safely close this window.
+        <div class="footer">
+            No charges have been deducted from your account.<br>You may safely close this tab or browser window.
         </div>
     </div>
 </body>
