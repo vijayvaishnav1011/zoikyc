@@ -358,26 +358,27 @@ Directly streams or downloads the finalized digitally signed PDF file from ZoiKY
 - **Endpoint**: `POST https://zoikyc.com/api/esign/download`
 - **Headers**:
   - `Content-Type: application/json`
-  - `X-API-Key: <YOUR_API_KEY>` *(or include `"api_key": "<YOUR_API_KEY>"` in the JSON body)*
 - **Request Body**:
 ```json
 {
   "document_id": 119,
-  "reference_id": "2VFZXJKGZHL7OGR"
+  "reference_id": "2VFZXJKGZHL7OGR",
+  "api_key": "zoi_live_YOUR_API_KEY"
 }
 ```
+*(Also supports passing API Key via header `X-API-Key: zoi_live_YOUR_API_KEY`)*
 
-#### Option B: GET with Query Parameters
-- **Endpoint**: `GET https://zoikyc.com/api/esign/download?document_id=119&reference_id=2VFZXJKGZHL7OGR&api_key=<YOUR_API_KEY>`
-
-#### Option C: Direct Path
-- **URL**: `https://zoikyc.com/api/esign/<YOUR_API_KEY>/<DOCUMENT_ID>/download`
+#### Option B: Direct Browser Link (GET)
+Paste this link in any browser tab to open the signed PDF immediately:
+```text
+https://zoikyc.com/api/esign/download?document_id=119&reference_id=2VFZXJKGZHL7OGR&api_key=zoi_live_YOUR_API_KEY
+```
 
 #### Response When Signed:
 - **HTTP Status**: `200 OK`
 - **Content-Type**: `application/pdf`
-- **Content-Disposition**: `attachment; filename="Signed_Employment_Agreement.pdf"`
-- **Body**: Binary `%PDF` stream with DSC certificates and Aadhaar e-Sign mark embedded on every page.
+- **Content-Disposition**: `inline; filename="Signed_Employment_Agreement.pdf"`
+- **Body**: Direct `%PDF` binary file stream (opens directly in PDF viewer/browser, or saves cleanly in cURL/code).
 
 *(Optional: Pass `"format": "base64"` in request to receive JSON containing base64-encoded PDF stream).*
 
