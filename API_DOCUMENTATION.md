@@ -381,8 +381,8 @@ You can pass any external domain link in `callback_url` for each document dispat
 - **Any External Domain Supported**: Different documents can route to different domains or landing pages.
 - **Automatic Protocol Normalization**: If you pass `www.elitefincorp.com` or `xyz.com/done` without `http://` or `https://`, ZoiKYC automatically prepends `https://`.
 
-#### 1. Browser Redirection & Automatic Signed PDF Download:
-- **If `callback_url` is provided**: ZoiKYC automatically initiates the download of the signed PDF directly onto the customer's device, and immediately forwards their browser to your clean callback destination:
+#### 1. Browser Redirection:
+- **If `callback_url` is provided**: Once signed, ZoiKYC immediately forwards the user's browser to your callback destination with `status=success` and the clean `download_url` in query parameters:
   ```
   {callback_url}?status=success&document_id={document_id}&reference_id={reference_id}&download_url=https://zoikyc.com/api/esign/download/{document_id}
   ```
