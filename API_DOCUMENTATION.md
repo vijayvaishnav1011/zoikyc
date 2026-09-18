@@ -6,7 +6,7 @@ Welcome to the **ZoiKYC Developer API Documentation**. This guide provides compl
 
 ---
 
-## 1. Authentication & Base URLs
+## 1. Authentication & Base URL
 
 
 
