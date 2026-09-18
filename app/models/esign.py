@@ -116,8 +116,7 @@ class ESignDocument(db.Model):
         return f"https://zoikyc.com/esign/sign/{self.id}"
 
     def to_dict(self):
-        active_key = self.company.api_key if self.company else None
-        download_url = f"https://zoikyc.com/api/esign/{active_key}/{self.id}/download" if active_key else f"https://zoikyc.com/esign/{self.id}/download?type=signed"
+        download_url = f"https://zoikyc.com/api/esign/download/{self.id}"
         data = {
             "id": self.id,
             "title": self.title,

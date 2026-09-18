@@ -194,11 +194,11 @@ ZoiKYC provides legally binding digital signature execution under the Indian IT 
 
 ### Workflow Overview:
 1. **Dispatch**: Your system calls `POST /api/esign/<API_KEY>` with the PDF and signatory details.
-2. **Sign URL Delivered**: ZoiKYC prepares the document and returns a live `sign_url` and a `download_url`.
+2. **Sign URL Delivered**: ZoiKYC prepares the document and returns a live `sign_url` and a clean `download_url`.
 3. **Signatory OTP Signing**: The customer opens `sign_url` in any web or mobile browser, enters their 12-digit Aadhaar / VID number, and receives an OTP on their Aadhaar-registered mobile number.
-4. **Instant Viewer Redirect**: Once the signatory enters the OTP, the browser **automatically redirects directly to the Capricorn signed PDF viewer URL** (`signedpdfurl`).
+4. **Instant Viewer Redirect**: Once the signatory enters the OTP, the browser automatically redirects to your `callback_url` (or to download the signed PDF).
 5. **Wallet Debiting**: Your wallet is charged **only when the document is successfully signed** (`charges_on_completion`).
-6. **Fetch / Download**: Retrieve signed status via `GET /api/esign/<API_KEY>/<doc_id>` or download binary PDF via `GET /api/esign/<API_KEY>/<doc_id>/download`.
+6. **Fetch / Download**: Retrieve signed status via `GET /api/esign/<API_KEY>/<doc_id>` or download binary PDF via `GET /api/esign/download/<doc_id>`.
 
 ---
 
@@ -262,7 +262,7 @@ curl -X POST "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY" \
   "reference_id": "1UCDYQEFALFTNWX",
   "txn_id": "49591406",
   "sign_url": "https://zoikyc.com/esign/sign/19",
-  "download_url": "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY/19/download",
+  "download_url": "https://zoikyc.com/api/esign/download/19",
   "callback_url": "",
   "signatory_name": "Vijay Vaishnav",
   "signatory_mobile": "9999999999",
@@ -273,7 +273,7 @@ curl -X POST "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY" \
 
 #### Key Fields:
 - `sign_url`: **Branded ZoiKYC Signing Link**. Provide this URL to the customer. When opened, it smoothly redirects the customer to the live Aadhaar OTP signing session.
-- `download_url`: Direct ZoiKYC endpoint to download the digitally signed PDF once complete.
+- `download_url`: Clean direct ZoiKYC endpoint to download the digitally signed PDF once complete (no API key required).
 - `callback_url`: Your webhook / return destination (optional). If omitted, the signer is redirected directly to download their signed PDF from ZoiKYC.
 - `created_at`: Timestamp generated in Indian Standard Time (IST - UTC+05:30).
 
@@ -300,7 +300,7 @@ Returns current status and audit timestamps.
     "reference_id": "1UCDYQEFALFTNWX",
     "txn_id": "49591406",
     "sign_url": "https://zoikyc.com/esign/sign/19",
-    "download_url": "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY/19/download",
+    "download_url": "https://zoikyc.com/api/esign/download/19",
     "callback_url": "",
     "created_at": "2026-09-17T11:05:30+05:30",
     "dispatched_at": "2026-09-17T11:05:31+05:30",
@@ -329,7 +329,7 @@ Returns current status and audit timestamps.
     "reference_id": "1UCDYQEFALFTNWX",
     "txn_id": "49591406",
     "sign_url": "https://zoikyc.com/esign/sign/19",
-    "download_url": "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY/19/download",
+    "download_url": "https://zoikyc.com/api/esign/download/19",
     "callback_url": "",
     "created_at": "2026-09-17T11:05:30+05:30",
     "dispatched_at": "2026-09-17T11:05:31+05:30",
@@ -349,7 +349,8 @@ Returns current status and audit timestamps.
 Directly streams or downloads the finalized digitally signed PDF file from ZoiKYC secure storage.
 
 - **Method**: `GET`
-- **URL**: `https://zoikyc.com/api/esign/<YOUR_API_KEY>/<DOCUMENT_ID>/download`
+- **URL**: `https://zoikyc.com/api/esign/download/<DOCUMENT_ID>`
+*(Also supports `https://zoikyc.com/api/esign/<YOUR_API_KEY>/<DOCUMENT_ID>/download`)*
 
 #### Response When Signed:
 - **HTTP Status**: `200 OK`
@@ -373,10 +374,10 @@ Directly streams or downloads the finalized digitally signed PDF file from ZoiKY
 When the customer completes Aadhaar OTP verification:
 
 1. **Browser Redirection**:
-   - **If `callback_url` is provided**: Signer is redirected to your front-end:
-     `{callback_url}?document_id={document_id}&status=success&reference_id={reference_id}&signedpdfurl={signedpdfurl}`
+   - **If `callback_url` is provided**: Signer is redirected to your clean front-end URL:
+     `{callback_url}?status=success&document_id={document_id}&reference_id={reference_id}&download_url=https://zoikyc.com/api/esign/download/{document_id}`
    - **If `callback_url` is blank `""`**: Signer is redirected directly to download their signed PDF from ZoiKYC:
-     `https://zoikyc.com/api/esign/{YOUR_API_KEY}/{document_id}/download`
+     `https://zoikyc.com/api/esign/download/{document_id}`
 
 2. **Server-to-Server Webhook (POST)**:
    If `callback_url` was provided, ZoiKYC sends an asynchronous background `POST` request to your webhook URL immediately when the signature is complete. 
@@ -388,7 +389,7 @@ When the customer completes Aadhaar OTP verification:
   "document_id": 19,
   "reference_id": "1UCDYQEFALFTNWX",
   "txn_id": "49591406",
-  "download_url": "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY/19/download"
+  "download_url": "https://zoikyc.com/api/esign/download/19"
 }
 ```
 
