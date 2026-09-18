@@ -9,6 +9,7 @@ Welcome to the **ZoiKYC Developer API Documentation**. This guide provides compl
 ## 1. Authentication & Base URLs
 
 
+
 All API calls are authenticated using your unique organisation **API Key** (format: `zoi_live_...` or your Client ID).
 
 ### Production Base URL
