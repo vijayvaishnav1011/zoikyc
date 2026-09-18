@@ -217,6 +217,7 @@ Dispatches a PDF document for Aadhaar OTP e-signature.
 | `signatory_name` | `string` | **Yes** | — | Signatory name (must match name on Aadhaar). |
 | `signatory_mobile`| `string` | **Yes** | — | 10-digit mobile number of the signatory. |
 | `signatory_email` | `string` | No | `""` | Email of the signatory. |
+| `callback_url` | `string` | No | `""` | Custom redirection & webhook URL for this specific document (e.g., `"https://www.elitefincorp.com/callback"` or `"https://xyz.com/success"`). Signer will be redirected here after completing Aadhaar OTP. |
 | `file_base64` | `string` | **Yes\*** | — | Base64-encoded PDF string (used with JSON body). |
 | `file` | `file` | **Yes\*** | — | Binary PDF file (used with `multipart/form-data`). |
 | `page_num` | `string` | No | `"all"` | `"all"` to sign every page, or page number (`"1"`, `"2"`). |
@@ -227,25 +228,27 @@ Dispatches a PDF document for Aadhaar OTP e-signature.
 
 *\* Note: Supply either `file_base64` (JSON) or `file` (multipart).*
 
-#### Example A: JSON with Base64 PDF
+#### Example A: JSON with Base64 PDF & Custom Callback URL
 ```json
 {
   "title": "Employment Agreement",
   "signatory_name": "Pankaj Vaishnav",
   "signatory_mobile": "9876543210",
   "signatory_email": "pankaj@example.com",
+  "callback_url": "https://www.elitefincorp.com/complete",
   "page_num": "all",
   "cood": "400,20,550,90",
   "file_base64": "JVBERi0xLjQKJcTl8uXrp/ogMQowIG9ia..."
 }
 ```
 
-#### Example B: cURL with Multipart File Upload
+#### Example B: cURL with Multipart File Upload & Custom Callback URL
 ```bash
 curl -X POST "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY" \
   -F "title=Employment Agreement" \
   -F "signatory_name=Pankaj Vaishnav" \
   -F "signatory_mobile=9876543210" \
+  -F "callback_url=https://www.elitefincorp.com/complete" \
   -F "page_num=all" \
   -F "file=@/path/to/contract.pdf;type=application/pdf"
 ```
@@ -262,7 +265,7 @@ curl -X POST "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY" \
   "reference_id": "1UCDYQEFALFTNWX",
   "txn_id": "49591406",
   "sign_url": "https://zoikyc.com/esign/sign/19",
-  "callback_url": "",
+  "callback_url": "https://www.elitefincorp.com/complete",
   "signatory_name": "Vijay Vaishnav",
   "signatory_mobile": "9999999999",
   "title": "Customer Agreement",
@@ -272,7 +275,7 @@ curl -X POST "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY" \
 
 #### Key Fields:
 - `sign_url`: **Branded ZoiKYC Signing Link**. Provide this URL to the customer. When opened, it smoothly redirects the customer to the live Aadhaar OTP signing session.
-- `callback_url`: Your webhook / return destination (optional). If omitted, the signer is redirected directly to download their signed PDF from ZoiKYC.
+- `callback_url`: Your custom webhook / return destination for this document (optional).
 - `created_at`: Timestamp generated in Indian Standard Time (IST - UTC+05:30).
 
 ---
@@ -369,18 +372,28 @@ Directly streams or downloads the finalized digitally signed PDF file from ZoiKY
 ---
 
 ### 3.4 Post-Signing Direct Redirect & Webhook Callback
-When the customer completes Aadhaar OTP verification:
+When the customer completes Aadhaar OTP verification on the signing portal:
 
-1. **Browser Redirection**:
-   - **If `callback_url` is provided**: Signer is redirected to your clean front-end URL:
-     `{callback_url}?status=success&document_id={document_id}&reference_id={reference_id}&download_url=https://zoikyc.com/api/esign/download/{document_id}`
-   - **If `callback_url` is blank `""`**: Signer is redirected directly to download their signed PDF from ZoiKYC:
-     `https://zoikyc.com/api/esign/download/{document_id}`
+#### Dynamic Custom Callbacks (Per-Request):
+You can pass any external domain link in `callback_url` for each document dispatch (e.g. `https://www.elitefincorp.com/complete`, `https://xyz.com/success`, or `www.myfintech.com/done`).
+- **Any External Domain Supported**: Different documents can route to different domains or landing pages.
+- **Automatic Protocol Normalization**: If you pass `www.elitefincorp.com` or `xyz.com/done` without `http://` or `https://`, ZoiKYC automatically prepends `https://`.
 
-2. **Server-to-Server Webhook (POST)**:
-   If `callback_url` was provided, ZoiKYC sends an asynchronous background `POST` request to your webhook URL immediately when the signature is complete. 
-   
-   **Webhook JSON Payload sent to your server:**
+#### 1. Browser Redirection:
+- **If `callback_url` is provided**: The signer's browser is automatically redirected to your custom frontend URL with clean parameters:
+  ```
+  {callback_url}?status=success&document_id={document_id}&reference_id={reference_id}&download_url=https://zoikyc.com/api/esign/download/{document_id}
+  ```
+  *Example:*
+  `https://www.elitefincorp.com/complete?status=success&document_id=19&reference_id=1UCDYQEFALFTNWX&download_url=https%3A%2F%2Fzoikyc.com%2Fapi%2Fesign%2Fdownload%2F19`
+
+- **If `callback_url` is blank `""`**: The signer is directly redirected to download their digitally signed PDF from ZoiKYC:
+  `https://zoikyc.com/api/esign/download/{document_id}`
+
+#### 2. Server-to-Server Webhook (POST):
+If `callback_url` was provided, ZoiKYC also sends an asynchronous background `POST` request to your webhook URL immediately when the signature is complete.
+
+**Webhook JSON Payload sent to your server:**
 ```json
 {
   "status": "success",
@@ -465,7 +478,7 @@ def verify_pan(pan, dob):
     return res.json()
 
 # 2. Dispatch Document for E-Sign
-def dispatch_esign(pdf_path, title, signer_name, signer_mobile):
+def dispatch_esign(pdf_path, title, signer_name, signer_mobile, callback_url=""):
     url = f"https://zoikyc.com/api/esign/{API_KEY}"
     with open(pdf_path, "rb") as f:
         pdf_b64 = base64.b64encode(f.read()).decode("utf-8")
@@ -474,8 +487,9 @@ def dispatch_esign(pdf_path, title, signer_name, signer_mobile):
         "title": title,
         "signatory_name": signer_name,
         "signatory_mobile": signer_mobile,
+        "callback_url": callback_url,
         "page_num": "all",
-        "coordinates": "400,700,550,750",
+        "coordinates": "400,20,550,90",
         "file_base64": pdf_b64
     }
     res = requests.post(url, json=payload)
@@ -487,9 +501,9 @@ def check_esign_status(doc_id):
     res = requests.get(url)
     return res.json()
 
-# 4. Download Signed PDF
+# 4. Download Signed PDF (Clean URL, no API key needed for signed docs)
 def download_signed_pdf(doc_id, output_path):
-    url = f"https://zoikyc.com/api/esign/{API_KEY}/{doc_id}/download"
+    url = f"https://zoikyc.com/api/esign/download/{doc_id}"
     res = requests.get(url, stream=True)
     if res.status_code == 200:
         with open(output_path, "wb") as f:
@@ -518,7 +532,7 @@ async function verifyPan(pan, dob) {
 }
 
 // 2. Dispatch E-Sign
-async function dispatchEsign(pdfPath, title, signerName, signerMobile) {
+async function dispatchEsign(pdfPath, title, signerName, signerMobile, callbackUrl = "") {
   const pdfBuffer = fs.readFileSync(pdfPath);
   const pdfBase64 = pdfBuffer.toString('base64');
 
@@ -526,8 +540,9 @@ async function dispatchEsign(pdfPath, title, signerName, signerMobile) {
     title,
     signatory_name: signerName,
     signatory_mobile: signerMobile,
+    callback_url: callbackUrl,
     page_num: 'all',
-    coordinates: '400,700,550,750',
+    coordinates: '400,20,550,90',
     file_base64: pdfBase64
   });
   return res.data;
@@ -537,6 +552,16 @@ async function dispatchEsign(pdfPath, title, signerName, signerMobile) {
 async function checkEsignStatus(docId) {
   const res = await axios.get(`https://zoikyc.com/api/esign/${API_KEY}/${docId}`);
   return res.data;
+}
+
+// 4. Download Signed PDF
+async function downloadSignedPdf(docId, outputPath) {
+  const response = await axios({
+    method: 'GET',
+    url: `https://zoikyc.com/api/esign/download/${docId}`,
+    responseType: 'stream'
+  });
+  response.data.pipe(fs.createWriteStream(outputPath));
 }
 ```
 
