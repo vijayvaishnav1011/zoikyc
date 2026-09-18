@@ -403,7 +403,11 @@ def callback():
     # If already signed, ensure charge was applied and return
     if doc.status == 'signed':
         charge_wallet_for_signed_doc(doc)
-        clean_download_url = f"https://zoikyc.com/api/esign/download/{doc.id}"
+        company_api_key = doc.company.api_key if doc.company and doc.company.api_key else ""
+        if company_api_key:
+            clean_download_url = f"https://zoikyc.com/api/esign/{company_api_key}/{doc.id}/download"
+        else:
+            clean_download_url = f"https://zoikyc.com/api/esign/download/{doc.id}"
         if request.method == 'GET':
             if doc.callback_url:
                 from urllib.parse import urlencode, urlparse, parse_qsl, urlunparse
@@ -425,6 +429,8 @@ def callback():
             if current_user.is_authenticated:
                 flash("Document is already signed and archived.", "info")
                 return redirect(url_for('esign.index'))
+            if company_api_key:
+                return redirect(url_for('esign.public_api_esign_download', api_key=company_api_key, doc_id=doc.id))
             return redirect(url_for('esign.public_api_esign_download', doc_id=doc.id))
         return jsonify({
             "status": "success",
@@ -544,7 +550,11 @@ def callback():
         # DEDUCT MONEY ONLY ONCE THE ESIGN IS CONFIRMED SIGNED
         charge_wallet_for_signed_doc(doc)
 
-        clean_download_url = f"https://zoikyc.com/api/esign/download/{doc.id}"
+        company_api_key = doc.company.api_key if doc.company and doc.company.api_key else ""
+        if company_api_key:
+            clean_download_url = f"https://zoikyc.com/api/esign/{company_api_key}/{doc.id}/download"
+        else:
+            clean_download_url = f"https://zoikyc.com/api/esign/download/{doc.id}"
 
         # If client provided a callback_url, trigger async webhook notification
         if doc.callback_url:
@@ -592,6 +602,8 @@ def callback():
             if current_user.is_authenticated:
                 flash(f"Aadhaar OTP verification completed! Document '{doc.title}' has been digitally signed.", "success")
                 return redirect(url_for('esign.index'))
+            if company_api_key:
+                return redirect(url_for('esign.public_api_esign_download', api_key=company_api_key, doc_id=doc.id))
             return redirect(url_for('esign.public_api_esign_download', doc_id=doc.id))
 
         return jsonify({
@@ -1023,6 +1035,8 @@ def public_api_esign_status(api_key, doc_id):
         charge_wallet_for_signed_doc(doc)
 
     from app.utils.timezone import to_ist_iso
+    company_api_key = company.api_key if company and company.api_key else ""
+    download_url = f"https://zoikyc.com/api/esign/{company_api_key}/{doc.id}/download" if company_api_key else f"https://zoikyc.com/api/esign/download/{doc.id}"
     doc_data = {
         "id": doc.id,
         "title": doc.title,
@@ -1034,7 +1048,7 @@ def public_api_esign_status(api_key, doc_id):
         "reference_id": doc.capricorn_reference,
         "txn_id": doc.capricorn_txn,
         "sign_url": f"https://zoikyc.com/esign/sign/{doc.id}",
-        "download_url": f"https://zoikyc.com/api/esign/download/{doc.id}",
+        "download_url": download_url,
         "callback_url": doc.callback_url or "",
         "created_at": to_ist_iso(doc.created_at),
         "dispatched_at": to_ist_iso(doc.dispatched_at),
@@ -1058,7 +1072,7 @@ def public_api_esign_status(api_key, doc_id):
 @esign_bp.route('/api/esign/<path:api_key>/<int:doc_id>/download', methods=['GET'])
 @csrf.exempt
 def public_api_esign_download(doc_id, api_key=None):
-    """Directly downloads the signed PDF for a document."""
+    """Directly downloads the signed PDF for a document with strict API Key access control."""
     target_key = (api_key or '').strip()
     if not target_key:
         target_key = (
@@ -1083,10 +1097,33 @@ def public_api_esign_download(doc_id, api_key=None):
             (db.func.upper(db.func.replace(Company.client_id, '-', '')) == clean_no_hyphen)
         ).first()
 
+    # Access control verification:
     if company:
-        doc = ESignDocument.query.filter_by(id=doc_id, company_id=company.id).first_or_404()
+        doc = ESignDocument.query.filter_by(id=doc_id, company_id=company.id).first()
+        if not doc:
+            other_doc = ESignDocument.query.get(doc_id)
+            if other_doc:
+                return jsonify({
+                    "success": False,
+                    "status": "forbidden",
+                    "error": "Access denied. The provided API Key does not have permission to download this document."
+                }), 403
+            return jsonify({
+                "success": False,
+                "status": "not_found",
+                "error": "Document not found."
+            }), 404
+    elif current_user.is_authenticated:
+        if current_user.role == 'super_admin':
+            doc = ESignDocument.query.get_or_404(doc_id)
+        else:
+            doc = ESignDocument.query.filter_by(id=doc_id, company_id=current_user.company_id).first_or_404()
     else:
-        doc = ESignDocument.query.get_or_404(doc_id)
+        return jsonify({
+            "success": False,
+            "status": "unauthorized",
+            "error": "Authentication required. A valid API Key is required to download this document. Pass your API Key in the URL path (/api/esign/<API_KEY>/<DOCUMENT_ID>/download) or header 'X-API-Key'."
+        }), 401
 
     if doc.status in ['cancelled', 'failed']:
         return jsonify({
@@ -1145,8 +1182,11 @@ def public_sign_redirect(doc_id, api_key=None):
     """
     doc = ESignDocument.query.get_or_404(doc_id)
 
-    # If already signed, send directly to clean ZoiKYC download URL
+    # If already signed, send directly to clean ZoiKYC download URL with API key
     if doc.status == 'signed':
+        company_api_key = doc.company.api_key if doc.company and doc.company.api_key else ""
+        if company_api_key:
+            return redirect(f"https://zoikyc.com/api/esign/{company_api_key}/{doc.id}/download")
         return redirect(f"https://zoikyc.com/api/esign/download/{doc.id}")
 
     if doc.status in ['cancelled', 'failed']:

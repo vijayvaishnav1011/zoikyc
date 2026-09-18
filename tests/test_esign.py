@@ -45,6 +45,7 @@ class ESignIntegrationTestCase(unittest.TestCase):
             per_kyc_price=Decimal("25.00"),
             min_recharge_amount=Decimal("1000.00")
         )
+        self.company.generate_api_key()
         db.session.add(self.company)
         db.session.commit()
 
@@ -583,15 +584,24 @@ class ESignIntegrationTestCase(unittest.TestCase):
         db.session.add(doc)
         db.session.commit()
 
-        # 1. Test /api/esign/download/<id> without login
-        resp = self.client.get(f'/api/esign/download/{doc.id}')
+        # 1. Download with valid API Key in URL path
+        resp = self.client.get(f'/api/esign/{self.company.api_key}/{doc.id}/download')
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.mimetype, 'application/pdf')
 
-        # 2. Test /esign/download/<id> without login
-        resp2 = self.client.get(f'/esign/download/{doc.id}')
+        # 2. Download with valid API Key in X-API-Key header
+        resp2 = self.client.get(f'/api/esign/download/{doc.id}', headers={'X-API-Key': self.company.api_key})
         self.assertEqual(resp2.status_code, 200)
         self.assertEqual(resp2.mimetype, 'application/pdf')
+
+        # 3. Download WITHOUT API Key should be denied (401 Unauthorized)
+        resp_unauth = self.client.get(f'/api/esign/download/{doc.id}')
+        self.assertEqual(resp_unauth.status_code, 401)
+        self.assertFalse(resp_unauth.get_json()['success'])
+
+        # 4. Download with fake/other API Key should be denied (401/403)
+        resp_fake = self.client.get(f'/api/esign/zoi_live_invalid_key_999/{doc.id}/download')
+        self.assertEqual(resp_fake.status_code, 401)
 
     def test_capricorn_callback_cancelled_no_charge_and_clean_redirect(self):
         """Verify that when signing is cancelled, wallet is not charged and callback redirect contains no download_url."""
@@ -632,8 +642,8 @@ class ESignIntegrationTestCase(unittest.TestCase):
         self.assertIn("reference_id=REFCANCEL123", location)
         self.assertNotIn("download_url", location)
 
-        # Ensure public download returns 400 without downloading
-        dl_resp = self.client.get(f'/api/esign/download/{doc.id}')
+        # Ensure public download returns 400 without downloading even with api_key
+        dl_resp = self.client.get(f'/api/esign/{self.company.api_key}/{doc.id}/download')
         self.assertEqual(dl_resp.status_code, 400)
         dl_json = dl_resp.get_json()
         self.assertFalse(dl_json['success'])

@@ -303,7 +303,7 @@ Returns current status and audit timestamps.
     "reference_id": "1UCDYQEFALFTNWX",
     "txn_id": "49591406",
     "sign_url": "https://zoikyc.com/esign/sign/19",
-    "download_url": "https://zoikyc.com/api/esign/download/19",
+    "download_url": "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY/19/download",
     "callback_url": "",
     "created_at": "2026-09-17T11:05:30+05:30",
     "dispatched_at": "2026-09-17T11:05:31+05:30",
@@ -332,7 +332,7 @@ Returns current status and audit timestamps.
     "reference_id": "1UCDYQEFALFTNWX",
     "txn_id": "49591406",
     "sign_url": "https://zoikyc.com/esign/sign/19",
-    "download_url": "https://zoikyc.com/api/esign/download/19",
+    "download_url": "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY/19/download",
     "callback_url": "",
     "created_at": "2026-09-17T11:05:30+05:30",
     "dispatched_at": "2026-09-17T11:05:31+05:30",
@@ -351,15 +351,27 @@ Returns current status and audit timestamps.
 ### 3.3 Download Signed PDF
 Directly streams or downloads the finalized digitally signed PDF file from ZoiKYC secure storage.
 
+> [!IMPORTANT]
+> **Authentication Required**: For security and data privacy, download endpoints require your valid API Key so unauthorized third parties cannot access or download documents.
+
 - **Method**: `GET`
-- **URL**: `https://zoikyc.com/api/esign/download/<DOCUMENT_ID>`
-*(Also supports `https://zoikyc.com/api/esign/<YOUR_API_KEY>/<DOCUMENT_ID>/download`)*
+- **URL Format**: `https://zoikyc.com/api/esign/<YOUR_API_KEY>/<DOCUMENT_ID>/download`
+*(Also supports header authentication via `GET /api/esign/download/<DOCUMENT_ID>` with header `X-API-Key: <YOUR_API_KEY>`)*
 
 #### Response When Signed:
 - **HTTP Status**: `200 OK`
 - **Content-Type**: `application/pdf`
 - **Content-Disposition**: `attachment; filename="Signed_Employment_Agreement.pdf"`
 - **Body**: Binary `%PDF` stream with DSC certificates and Aadhaar e-Sign mark embedded on every page.
+
+#### Response When Unauthenticated (`401 Unauthorized`):
+```json
+{
+  "success": false,
+  "status": "unauthorized",
+  "error": "Authentication required. A valid API Key is required to download this document."
+}
+```
 
 #### Response When Not Yet Signed:
 - **HTTP Status**: `404 Not Found`
@@ -382,15 +394,15 @@ You can pass any external domain link in `callback_url` for each document dispat
 - **Automatic Protocol Normalization**: If you pass `www.elitefincorp.com` or `xyz.com/done` without `http://` or `https://`, ZoiKYC automatically prepends `https://`.
 
 #### 1. Browser Redirection:
-- **If `callback_url` is provided**: Once signed, ZoiKYC immediately forwards the user's browser to your callback destination with `status=success` and the clean `download_url` in query parameters:
+- **If `callback_url` is provided**: Once signed, ZoiKYC immediately forwards the user's browser to your callback destination with `status=success` and the secure `download_url` in query parameters:
   ```
-  {callback_url}?status=success&document_id={document_id}&reference_id={reference_id}&download_url=https://zoikyc.com/api/esign/download/{document_id}
+  {callback_url}?status=success&document_id={document_id}&reference_id={reference_id}&download_url=https://zoikyc.com/api/esign/{api_key}/{document_id}/download
   ```
   *Example:*
-  `https://www.elitefincorp.com/complete?status=success&document_id=19&reference_id=1UCDYQEFALFTNWX&download_url=https%3A%2F%2Fzoikyc.com%2Fapi%2Fesign%2Fdownload%2F19`
+  `https://www.elitefincorp.com/complete?status=success&document_id=19&reference_id=1UCDYQEFALFTNWX&download_url=https%3A%2F%2Fzoikyc.com%2Fapi%2Fesign%2Fzoi_live_YOUR_API_KEY%2F19%2Fdownload`
 
 - **If `callback_url` is blank `""`**: The signer is directly redirected to download their digitally signed PDF from ZoiKYC:
-  `https://zoikyc.com/api/esign/download/{document_id}`
+  `https://zoikyc.com/api/esign/{api_key}/{document_id}/download`
 
 #### 2. Server-to-Server Webhook (POST):
 If `callback_url` was provided, ZoiKYC also sends an asynchronous background `POST` request to your webhook URL immediately when the signature is complete.
@@ -402,7 +414,7 @@ If `callback_url` was provided, ZoiKYC also sends an asynchronous background `PO
   "document_id": 19,
   "reference_id": "1UCDYQEFALFTNWX",
   "txn_id": "49591406",
-  "download_url": "https://zoikyc.com/api/esign/download/19"
+  "download_url": "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY/19/download"
 }
 ```
 
