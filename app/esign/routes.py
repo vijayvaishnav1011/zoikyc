@@ -420,8 +420,7 @@ def callback():
                     qs.update({
                         "status": "success",
                         "document_id": str(doc.id),
-                        "reference_id": doc.capricorn_reference or "",
-                        "download_url": clean_download_url
+                        "reference_id": doc.capricorn_reference or ""
                     })
                     return redirect(urlunparse(parsed._replace(query=urlencode(qs))))
                 except Exception:
@@ -593,8 +592,7 @@ def callback():
                     qs.update({
                         "status": "success",
                         "document_id": str(doc.id),
-                        "reference_id": doc.capricorn_reference or "",
-                        "download_url": clean_download_url
+                        "reference_id": doc.capricorn_reference or ""
                     })
                     return redirect(urlunparse(parsed._replace(query=urlencode(qs))))
                 except Exception:
@@ -1066,25 +1064,66 @@ def public_api_esign_status(api_key, doc_id):
     })
 
 
-@esign_bp.route('/api/esign/download/<int:doc_id>', methods=['GET'])
-@esign_bp.route('/api/esign/<int:doc_id>/download', methods=['GET'])
+@esign_bp.route('/api/esign/download', methods=['GET', 'POST'])
+@esign_bp.route('/api/esign/download/<int:doc_id>', methods=['GET', 'POST'])
+@esign_bp.route('/api/esign/<int:doc_id>/download', methods=['GET', 'POST'])
 @esign_bp.route('/esign/download/<int:doc_id>', methods=['GET'])
-@esign_bp.route('/api/esign/<path:api_key>/<int:doc_id>/download', methods=['GET'])
+@esign_bp.route('/api/esign/<path:api_key>/<int:doc_id>/download', methods=['GET', 'POST'])
+@esign_bp.route('/api/esign/document/download', methods=['GET', 'POST'])
+@esign_bp.route('/api/esign/get-document', methods=['GET', 'POST'])
 @csrf.exempt
-def public_api_esign_download(doc_id, api_key=None):
-    """Directly downloads the signed PDF for a document with strict API Key access control."""
+def public_api_esign_download(doc_id=None, api_key=None):
+    """Directly downloads or retrieves the signed PDF using document_id, reference_id, and API Key."""
+    req_json = request.get_json(silent=True) or {}
+    req_form = request.form or {}
+    req_args = request.args or {}
+
     target_key = (api_key or '').strip()
     if not target_key:
         target_key = (
             request.headers.get('X-API-Key') or 
             request.headers.get('x-api-key') or 
             request.headers.get('api_key') or
-            request.args.get('api_key') or
+            req_json.get('api_key') or
+            req_form.get('api_key') or
+            req_args.get('api_key') or
             ""
         ).strip()
         auth_header = request.headers.get('Authorization', '').strip()
         if auth_header.lower().startswith('bearer '):
             target_key = auth_header[7:].strip()
+
+    if not doc_id:
+        raw_doc_id = (
+            req_json.get('document_id') or 
+            req_json.get('doc_id') or
+            req_form.get('document_id') or 
+            req_form.get('doc_id') or
+            req_args.get('document_id') or 
+            req_args.get('doc_id')
+        )
+        if raw_doc_id:
+            try:
+                doc_id = int(raw_doc_id)
+            except (ValueError, TypeError):
+                doc_id = None
+
+    ref_id = str(
+        req_json.get('reference_id') or 
+        req_json.get('reference') or
+        req_form.get('reference_id') or 
+        req_form.get('reference') or
+        req_args.get('reference_id') or 
+        req_args.get('reference') or
+        ""
+    ).strip()
+
+    if not doc_id and not ref_id:
+        return jsonify({
+            "success": False,
+            "status": "bad_request",
+            "error": "Missing identifier. Please provide 'document_id' and/or 'reference_id'."
+        }), 400
 
     company = None
     if target_key:
@@ -1097,33 +1136,48 @@ def public_api_esign_download(doc_id, api_key=None):
             (db.func.upper(db.func.replace(Company.client_id, '-', '')) == clean_no_hyphen)
         ).first()
 
-    # Access control verification:
-    if company:
-        doc = ESignDocument.query.filter_by(id=doc_id, company_id=company.id).first()
-        if not doc:
-            other_doc = ESignDocument.query.get(doc_id)
-            if other_doc:
-                return jsonify({
-                    "success": False,
-                    "status": "forbidden",
-                    "error": "Access denied. The provided API Key does not have permission to download this document."
-                }), 403
-            return jsonify({
-                "success": False,
-                "status": "not_found",
-                "error": "Document not found."
-            }), 404
-    elif current_user.is_authenticated:
-        if current_user.role == 'super_admin':
-            doc = ESignDocument.query.get_or_404(doc_id)
-        else:
-            doc = ESignDocument.query.filter_by(id=doc_id, company_id=current_user.company_id).first_or_404()
-    else:
+    if not company and not current_user.is_authenticated:
         return jsonify({
             "success": False,
             "status": "unauthorized",
-            "error": "Authentication required. A valid API Key is required to download this document. Pass your API Key in the URL path (/api/esign/<API_KEY>/<DOCUMENT_ID>/download) or header 'X-API-Key'."
+            "error": "Authentication required. A valid API Key is required to download this document. Pass your API Key in header 'X-API-Key', request body, or query param."
         }), 401
+
+    company_id = company.id if company else current_user.company_id
+    doc = None
+    if doc_id and ref_id:
+        doc = ESignDocument.query.filter_by(id=doc_id, capricorn_reference=ref_id, company_id=company_id).first()
+        if not doc:
+            chk_doc = ESignDocument.query.filter_by(id=doc_id, company_id=company_id).first()
+            if chk_doc:
+                return jsonify({
+                    "success": False,
+                    "status": "mismatch",
+                    "error": "The provided reference_id does not match document_id."
+                }), 400
+    elif doc_id:
+        doc = ESignDocument.query.filter_by(id=doc_id, company_id=company_id).first()
+    elif ref_id:
+        doc = ESignDocument.query.filter_by(capricorn_reference=ref_id, company_id=company_id).first()
+
+    # Access control verification:
+    if not doc:
+        other_doc = None
+        if doc_id:
+            other_doc = ESignDocument.query.get(doc_id)
+        elif ref_id:
+            other_doc = ESignDocument.query.filter_by(capricorn_reference=ref_id).first()
+        if other_doc:
+            return jsonify({
+                "success": False,
+                "status": "forbidden",
+                "error": "Access denied. The provided API Key does not have permission to download this document."
+            }), 403
+        return jsonify({
+            "success": False,
+            "status": "not_found",
+            "error": "Document not found."
+        }), 404
 
     if doc.status in ['cancelled', 'failed']:
         return jsonify({
@@ -1165,6 +1219,20 @@ def public_api_esign_download(doc_id, api_key=None):
                 "status": "pending_or_not_found",
                 "error": "Signed PDF is not available yet. Signatory may not have completed Aadhaar OTP."
             }), 404
+
+    format_opt = req_args.get('format') or req_json.get('format') or ''
+    if format_opt.lower() == 'base64':
+        import base64
+        with open(full_path, 'rb') as pdf_file:
+            encoded_pdf = base64.b64encode(pdf_file.read()).decode('utf-8')
+        return jsonify({
+            "success": True,
+            "status": "signed",
+            "document_id": doc.id,
+            "reference_id": doc.capricorn_reference,
+            "filename": f"Signed_{doc.original_filename}",
+            "pdf_base64": encoded_pdf
+        }), 200
 
     download_name = f"Signed_{doc.original_filename}"
     return send_file(full_path, as_attachment=True, download_name=download_name, mimetype='application/pdf')

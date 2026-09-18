@@ -348,21 +348,38 @@ Returns current status and audit timestamps.
 
 ---
 
-### 3.3 Download Signed PDF
-Directly streams or downloads the finalized digitally signed PDF file from ZoiKYC secure storage.
+### 3.3 Download Signed PDF (Separate API)
+Directly streams or downloads the finalized digitally signed PDF file from ZoiKYC secure storage using your `document_id`, `reference_id`, and `api_key`.
 
 > [!IMPORTANT]
 > **Authentication Required**: For security and data privacy, download endpoints require your valid API Key so unauthorized third parties cannot access or download documents.
 
-- **Method**: `GET`
-- **URL Format**: `https://zoikyc.com/api/esign/<YOUR_API_KEY>/<DOCUMENT_ID>/download`
-*(Also supports header authentication via `GET /api/esign/download/<DOCUMENT_ID>` with header `X-API-Key: <YOUR_API_KEY>`)*
+#### Option A: POST with JSON Body (Recommended)
+- **Endpoint**: `POST https://zoikyc.com/api/esign/download`
+- **Headers**:
+  - `Content-Type: application/json`
+  - `X-API-Key: <YOUR_API_KEY>` *(or include `"api_key": "<YOUR_API_KEY>"` in the JSON body)*
+- **Request Body**:
+```json
+{
+  "document_id": 119,
+  "reference_id": "2VFZXJKGZHL7OGR"
+}
+```
+
+#### Option B: GET with Query Parameters
+- **Endpoint**: `GET https://zoikyc.com/api/esign/download?document_id=119&reference_id=2VFZXJKGZHL7OGR&api_key=<YOUR_API_KEY>`
+
+#### Option C: Direct Path
+- **URL**: `https://zoikyc.com/api/esign/<YOUR_API_KEY>/<DOCUMENT_ID>/download`
 
 #### Response When Signed:
 - **HTTP Status**: `200 OK`
 - **Content-Type**: `application/pdf`
 - **Content-Disposition**: `attachment; filename="Signed_Employment_Agreement.pdf"`
 - **Body**: Binary `%PDF` stream with DSC certificates and Aadhaar e-Sign mark embedded on every page.
+
+*(Optional: Pass `"format": "base64"` in request to receive JSON containing base64-encoded PDF stream).*
 
 #### Response When Unauthenticated (`401 Unauthorized`):
 ```json
@@ -389,17 +406,17 @@ Directly streams or downloads the finalized digitally signed PDF file from ZoiKY
 When the customer completes Aadhaar OTP verification on the signing portal:
 
 #### Dynamic Custom Callbacks (Per-Request):
-You can pass any external domain link in `callback_url` for each document dispatch (e.g. `https://www.elitefincorp.com/complete`, `https://xyz.com/success`, or `www.myfintech.com/done`).
+You can pass any external domain link in `callback_url` for each document dispatch (e.g. `https://elitefinserv.in`, `https://xyz.com/success`, or `www.myfintech.com/done`).
 - **Any External Domain Supported**: Different documents can route to different domains or landing pages.
-- **Automatic Protocol Normalization**: If you pass `www.elitefincorp.com` or `xyz.com/done` without `http://` or `https://`, ZoiKYC automatically prepends `https://`.
+- **Automatic Protocol Normalization**: If you pass `www.elitefinserv.in` or `xyz.com/done` without `http://` or `https://`, ZoiKYC automatically prepends `https://`.
 
-#### 1. Browser Redirection:
-- **If `callback_url` is provided**: Once signed, ZoiKYC immediately forwards the user's browser to your callback destination with `status=success` and the secure `download_url` in query parameters:
+#### 1. Clean Browser Redirection:
+- **If `callback_url` is provided**: Once signed, ZoiKYC immediately forwards the user's browser to your callback destination with a clean URL containing only `status`, `document_id`, and `reference_id` (no messy, long download links in the address bar):
   ```
-  {callback_url}?status=success&document_id={document_id}&reference_id={reference_id}&download_url=https://zoikyc.com/api/esign/{api_key}/{document_id}/download
+  {callback_url}?status=success&document_id={document_id}&reference_id={reference_id}
   ```
-  *Example:*
-  `https://www.elitefincorp.com/complete?status=success&document_id=19&reference_id=1UCDYQEFALFTNWX&download_url=https%3A%2F%2Fzoikyc.com%2Fapi%2Fesign%2Fzoi_live_YOUR_API_KEY%2F19%2Fdownload`
+  *Live Example:*
+  `https://elitefinserv.in/?status=success&document_id=119&reference_id=2VFZXJKGZHL7OGR`
 
 - **If `callback_url` is blank `""`**: The signer is directly redirected to download their digitally signed PDF from ZoiKYC:
   `https://zoikyc.com/api/esign/{api_key}/{document_id}/download`

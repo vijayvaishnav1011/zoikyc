@@ -681,5 +681,109 @@ class ESignIntegrationTestCase(unittest.TestCase):
         updated_doc = db.session.get(ESignDocument, doc.id)
         self.assertEqual(updated_doc.status, "cancelled")
 
+    def test_successful_signing_clean_redirect_without_download_url(self):
+        """Verify that on successful sign, callback redirect is clean and does NOT include download_url in query string."""
+        doc = ESignDocument(
+            company_id=self.company.id,
+            title="Elite Agreement",
+            original_filename="elite_test.pdf",
+            file_path="uploads/test_sample.pdf",
+            signed_file_path="uploads/test_sample.pdf",
+            signatory_name="Vijay Vaishnav",
+            signatory_mobile="9876543210",
+            capricorn_txn="12344321",
+            capricorn_reference="2VFZXJKGZHL7OGR",
+            callback_url="https://elitefinserv.in",
+            status="signed",
+            cost_charged=Decimal("25.00")
+        )
+        db.session.add(doc)
+        db.session.commit()
+
+        # Signer browser hitting callback redirect
+        resp = self.client.get('/esign/callback?txn=12344321&reference=2VFZXJKGZHL7OGR&status=SUCCESS')
+        self.assertEqual(resp.status_code, 302)
+        location = resp.headers.get('Location')
+        self.assertIn("https://elitefinserv.in", location)
+        self.assertIn("status=success", location)
+        self.assertIn(f"document_id={doc.id}", location)
+        self.assertIn("reference_id=2VFZXJKGZHL7OGR", location)
+        # MUST NOT contain download_url
+        self.assertNotIn("download_url", location)
+
+    def test_separate_download_api_with_post_and_get(self):
+        """Test separate download API using POST JSON, GET query params, and base64 format."""
+        doc = ESignDocument(
+            company_id=self.company.id,
+            title="Clean Contract",
+            original_filename="contract.pdf",
+            file_path="uploads/test_sample.pdf",
+            signed_file_path="uploads/test_sample.pdf",
+            signatory_name="Rahul Sharma",
+            capricorn_txn="55554444",
+            capricorn_reference="REFSEP123",
+            status="signed"
+        )
+        db.session.add(doc)
+        db.session.commit()
+
+        # 1. POST with X-API-Key header and JSON body
+        resp = self.client.post('/api/esign/download',
+            json={"document_id": doc.id, "reference_id": "REFSEP123"},
+            headers={"X-API-Key": self.company.api_key}
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.content_type, 'application/pdf')
+        self.assertTrue(resp.data.startswith(b'%PDF'))
+
+        # 2. POST with api_key in JSON body
+        resp2 = self.client.post('/api/esign/download',
+            json={
+                "api_key": self.company.api_key,
+                "document_id": doc.id,
+                "reference_id": "REFSEP123"
+            }
+        )
+        self.assertEqual(resp2.status_code, 200)
+        self.assertEqual(resp2.content_type, 'application/pdf')
+
+        # 3. GET with query parameters
+        resp3 = self.client.get(f'/api/esign/download?document_id={doc.id}&reference_id=REFSEP123&api_key={self.company.api_key}')
+        self.assertEqual(resp3.status_code, 200)
+        self.assertEqual(resp3.content_type, 'application/pdf')
+
+        # 4. POST with format=base64
+        resp4 = self.client.post('/api/esign/download',
+            json={
+                "api_key": self.company.api_key,
+                "document_id": doc.id,
+                "reference_id": "REFSEP123",
+                "format": "base64"
+            }
+        )
+        self.assertEqual(resp4.status_code, 200)
+        data4 = resp4.get_json()
+        self.assertTrue(data4['success'])
+        self.assertEqual(data4['status'], 'signed')
+        self.assertIn('pdf_base64', data4)
+
+        # 5. Mismatched reference_id returns 400
+        resp5 = self.client.post('/api/esign/download',
+            json={
+                "api_key": self.company.api_key,
+                "document_id": doc.id,
+                "reference_id": "WRONG_REF"
+            }
+        )
+        self.assertEqual(resp5.status_code, 400)
+        self.assertEqual(resp5.get_json()['status'], 'mismatch')
+
+        # 6. Missing API key returns 401
+        resp6 = self.client.post('/api/esign/download',
+            json={"document_id": doc.id, "reference_id": "REFSEP123"}
+        )
+        self.assertEqual(resp6.status_code, 401)
+        self.assertEqual(resp6.get_json()['status'], 'unauthorized')
+
 if __name__ == '__main__':
     unittest.main()
