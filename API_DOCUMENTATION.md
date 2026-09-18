@@ -262,7 +262,6 @@ curl -X POST "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY" \
   "reference_id": "1UCDYQEFALFTNWX",
   "txn_id": "49591406",
   "sign_url": "https://zoikyc.com/esign/sign/19",
-  "download_url": "https://zoikyc.com/api/esign/download/19",
   "callback_url": "",
   "signatory_name": "Vijay Vaishnav",
   "signatory_mobile": "9999999999",
@@ -273,7 +272,6 @@ curl -X POST "https://zoikyc.com/api/esign/zoi_live_YOUR_API_KEY" \
 
 #### Key Fields:
 - `sign_url`: **Branded ZoiKYC Signing Link**. Provide this URL to the customer. When opened, it smoothly redirects the customer to the live Aadhaar OTP signing session.
-- `download_url`: Clean direct ZoiKYC endpoint to download the digitally signed PDF once complete (no API key required).
 - `callback_url`: Your webhook / return destination (optional). If omitted, the signer is redirected directly to download their signed PDF from ZoiKYC.
 - `created_at`: Timestamp generated in Indian Standard Time (IST - UTC+05:30).
 

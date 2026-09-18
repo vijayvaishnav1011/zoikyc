@@ -563,9 +563,9 @@ class ESignIntegrationTestCase(unittest.TestCase):
         self.assertNotIn("per_sign_fee", data)
         self.assertNotIn("cost_charged", data)
         self.assertNotIn("wallet_balance", data)
-        # Ensure sign_url, download_url, and callback_url are present
+        # Ensure sign_url and callback_url are present, and download_url is not in initial dispatch
         self.assertIn("sign_url", data)
-        self.assertIn("download_url", data)
+        self.assertNotIn("download_url", data)
         self.assertEqual(data.get("callback_url"), "http://161.97.150.41/getpdf")
         self.assertNotIn("redirect_url", data)
 

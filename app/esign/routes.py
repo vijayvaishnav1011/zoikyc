@@ -822,7 +822,6 @@ def public_api_esign(api_key=None):
 
         active_key = company.api_key or target_key
         sign_api_url = f"https://zoikyc.com/esign/sign/{esign_doc.id}"
-        download_api_url = f"https://zoikyc.com/api/esign/download/{esign_doc.id}"
         from app.utils.timezone import to_ist_iso
         resp_payload = {
             "success": True,
@@ -832,7 +831,6 @@ def public_api_esign(api_key=None):
             "reference_id": esign_doc.capricorn_reference,
             "txn_id": esign_doc.capricorn_txn,
             "sign_url": sign_api_url,
-            "download_url": download_api_url,
             "callback_url": esign_doc.callback_url or "",
             "signatory_name": esign_doc.signatory_name,
             "signatory_mobile": esign_doc.signatory_mobile,
